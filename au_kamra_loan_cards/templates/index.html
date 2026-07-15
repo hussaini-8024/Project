@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">AU</div>
+        <div class="brand-text">
+          <div class="brand-name">AU-Kamra</div>
+          <div class="brand-sub">IT Loan Cards</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" data-view="search">Search &amp; Filter</button>
+        <button class="nav-item" data-view="upload">Upload Files</button>
+        <button class="nav-item" data-view="create">New Loan Card</button>
+        <button class="nav-item" data-view="records">Activity Log</button>
+        <button class="nav-item" data-view="backup">Backup / Import</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="version">v{{ app_version }}</div>
+        <div class="campus">Air University · Kamra</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">Dashboard</h1>
+          <p id="view-subtitle" class="subtitle">Manage IT equipment loan cards with fast search and secure backups.</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn ghost" id="btn-refresh" title="Refresh">Refresh</button>
+          <button class="btn primary" id="btn-quick-upload">Upload PDF/HTML</button>
+        </div>
+      </header>
+
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard">
+        <div class="hero-panel">
+          <div class="hero-copy">
+            <p class="eyebrow">AU-Kamra-IT Loan Cards Management</p>
+            <h2>Equipment loans, organized.</h2>
+            <p>Upload PDF or HTML loan cards, filter by name, designation, department, issue date, equipment, or telephone extension — then open the original file instantly.</p>
+            <div class="hero-cta">
+              <button class="btn primary" data-goto="upload">Upload Cards</button>
+              <button class="btn ghost" data-goto="create">Create New Card</button>
+            </div>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="orbit"></div>
+            <div class="card-preview">
+              <span>IT LOAN CARD</span>
+              <strong>Kamra Campus</strong>
+            </div>
+          </div>
+        </div>
+        <div class="stats" id="stats-grid">
+          <article class="stat"><span>Total Cards</span><strong id="stat-total">0</strong></article>
+          <article class="stat"><span>Departments</span><strong id="stat-depts">0</strong></article>
+          <article class="stat"><span>Equipment Items</span><strong id="stat-items">0</strong></article>
+          <article class="stat"><span>Added This Week</span><strong id="stat-week">0</strong></article>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Recent Loan Cards</h3>
+            <button class="linkish" data-goto="search">View all</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Designation</th>
+                  <th>Department</th>
+                  <th>Extension</th>
+                  <th>Issue Date</th>
+                  <th>Equipment</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="recent-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEARCH -->
+      <section class="view" id="view-search">
+        <div class="panel filters">
+          <div class="filter-grid">
+            <label>Quick Search
+              <input type="search" id="f-q" placeholder="Search anything…" />
+            </label>
+            <label>Name
+              <input type="text" id="f-name" placeholder="Employee name" />
+            </label>
+            <label>Designation
+              <input type="text" id="f-designation" placeholder="Designation" />
+            </label>
+            <label>Department
+              <input type="text" id="f-department" placeholder="Department / section" />
+            </label>
+            <label>Tel. Extension
+              <input type="text" id="f-tel" placeholder="Extension number" />
+            </label>
+            <label>Item / Equipment
+              <input type="text" id="f-item" placeholder="Laptop, printer…" />
+            </label>
+            <label>Issue Date From
+              <input type="date" id="f-from" />
+            </label>
+            <label>Issue Date To
+              <input type="date" id="f-to" />
+            </label>
+          </div>
+          <div class="filter-actions">
+            <button class="btn primary" id="btn-search">Apply Filters</button>
+            <button class="btn ghost" id="btn-clear-filters">Clear</button>
+            <span class="result-count" id="result-count"></span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Card No</th>
+                  <th>Name</th>
+                  <th>Designation</th>
+                  <th>Department</th>
+                  <th>Tel. Ext</th>
+                  <th>Issue Date</th>
+                  <th>Equipment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="search-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- UPLOAD -->
+      <section class="view" id="view-upload">
+        <div class="panel upload-panel">
+          <div class="dropzone" id="dropzone">
+            <div class="drop-icon" aria-hidden="true"></div>
+            <h3>Drop PDF or HTML loan cards here</h3>
+            <p>Multiple files supported. Data is extracted automatically for search.</p>
+            <button class="btn primary" id="btn-pick-files">Choose Files</button>
+            <input type="file" id="file-input" accept=".pdf,.html,.htm,application/pdf,text/html" multiple hidden />
+          </div>
+          <div id="upload-status" class="upload-status" hidden></div>
+        </div>
+      </section>
+
+      <!-- CREATE -->
+      <section class="view" id="view-create">
+        <form class="panel form-panel" id="create-form">
+          <div class="form-grid">
+            <label>Name *
+              <input required name="name" placeholder="Full name" />
+            </label>
+            <label>Designation
+              <input name="designation" placeholder="Designation / rank" />
+            </label>
+            <label>Department
+              <input name="department" placeholder="Department" />
+            </label>
+            <label>Tel. Extension
+              <input name="tel_extension" placeholder="e.g. 2345" />
+            </label>
+            <label>Issue Date
+              <input type="date" name="issue_date" id="create-issue-date" />
+            </label>
+            <label>Card Number
+              <input name="card_number" placeholder="Auto-generated if empty" />
+            </label>
+          </div>
+
+          <div class="equip-head">
+            <h3>Equipment / Items</h3>
+            <button type="button" class="btn ghost" id="btn-add-item">Add Item</button>
+          </div>
+          <div id="items-list" class="items-list"></div>
+
+          <label class="full">Notes
+            <textarea name="notes" rows="3" placeholder="Optional remarks"></textarea>
+          </label>
+
+          <div class="form-footer">
+            <label class="inline">Output format
+              <select name="format">
+                <option value="html">HTML</option>
+                <option value="pdf">PDF</option>
+                <option value="both">HTML + PDF</option>
+              </select>
+            </label>
+            <button type="submit" class="btn primary">Generate Loan Card</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- RECORDS -->
+      <section class="view" id="view-records">
+        <div class="panel">
+          <div class="panel-head"><h3>Activity Log</h3></div>
+          <ul class="activity" id="activity-list"></ul>
+        </div>
+      </section>
+
+      <!-- BACKUP -->
+      <section class="view" id="view-backup">
+        <div class="backup-grid">
+          <article class="panel">
+            <h3>Backup</h3>
+            <p>Create a full ZIP backup of the database and all uploaded/generated files.</p>
+            <div class="stack-actions">
+              <button class="btn primary" id="btn-backup">Create Backup</button>
+              <a class="btn ghost" id="btn-download-backup" href="/api/backup/download">Download Latest Backup</a>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Restore</h3>
+            <p>Restore from a previous AU-Kamra backup ZIP. A safety backup is taken first.</p>
+            <input type="file" id="restore-input" accept=".zip" hidden />
+            <button class="btn primary" id="btn-restore">Restore from ZIP</button>
+          </article>
+          <article class="panel">
+            <h3>Export</h3>
+            <p>Export all loan card records for sharing or archival.</p>
+            <div class="stack-actions">
+              <a class="btn primary" href="/api/export/json">Export JSON</a>
+              <a class="btn ghost" href="/api/export/csv">Export CSV</a>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Import</h3>
+            <p>Import loan card records from a previously exported JSON file.</p>
+            <input type="file" id="import-input" accept=".json,application/json" hidden />
+            <button class="btn primary" id="btn-import">Import JSON</button>
+          </article>
+        </div>
+        <div class="panel path-panel">
+          <h3>Data Location</h3>
+          <code id="data-path">—</code>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Detail modal -->
+  <dialog id="detail-modal">
+    <div class="modal-card">
+      <header>
+        <div>
+          <p class="eyebrow" id="modal-cardno"></p>
+          <h2 id="modal-name"></h2>
+        </div>
+        <button class="icon-close" id="modal-close" aria-label="Close">&times;</button>
+      </header>
+      <div class="modal-grid" id="modal-meta"></div>
+      <h3>Equipment</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Item</th><th>Serial</th><th>Qty</th><th>Remarks</th></tr>
+          </thead>
+          <tbody id="modal-items"></tbody>
+        </table>
+      </div>
+      <footer class="modal-actions">
+        <button class="btn primary" id="modal-open">Open Original File</button>
+        <a class="btn ghost" id="modal-download" href="#">Download</a>
+        <button class="btn danger" id="modal-delete">Delete</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
