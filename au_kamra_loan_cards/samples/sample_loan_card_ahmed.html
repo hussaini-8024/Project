@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Loan Card — Ahmed Khan</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; max-width: 860px; margin: 24px auto; color: #0a1628; }
+    h1 { margin-bottom: 4px; }
+    .meta { color: #5b6b7c; margin-bottom: 18px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #d5dde8; padding: 8px 10px; text-align: left; }
+    th { background: #f0f4f9; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin: 16px 0; }
+    .label { font-size: 12px; color: #5b6b7c; text-transform: uppercase; }
+    .value { font-weight: 600; border-bottom: 1px solid #d5dde8; padding-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <article data-loancard="au-kamra">
+    <h1>IT Loan Card</h1>
+    <div class="meta">Air University — Kamra Campus</div>
+    <div class="grid">
+      <div><div class="label">Card Number</div><div class="value" data-field="card_number">AU-KC-20260315-001</div></div>
+      <div><div class="label">Issue Date</div><div class="value" data-field="issue_date">2026-03-15</div></div>
+      <div><div class="label">Name</div><div class="value" data-field="name">Ahmed Khan</div></div>
+      <div><div class="label">Designation</div><div class="value" data-field="designation">Assistant Manager IT</div></div>
+      <div><div class="label">Department</div><div class="value" data-field="department">Information Technology</div></div>
+      <div><div class="label">Tel. Extension</div><div class="value" data-field="tel_extension">2145</div></div>
+    </div>
+    <h2>Equipment / Items</h2>
+    <table data-section="equipment">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item / Equipment</th>
+          <th>Serial Number</th>
+          <th>Qty</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-item-name="Dell Latitude 5540 Laptop" data-serial="DL5540-PK-88921" data-qty="1" data-remarks="With charger">
+          <td>1</td><td>Dell Latitude 5540 Laptop</td><td>DL5540-PK-88921</td><td>1</td><td>With charger</td>
+        </tr>
+        <tr data-item-name="Logitech Wireless Mouse" data-serial="LG-M185-5521" data-qty="1" data-remarks="">
+          <td>2</td><td>Logitech Wireless Mouse</td><td>LG-M185-5521</td><td>1</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div data-field="notes">Issued for project deployment duties.</div>
+  </article>
+</body>
+</html>

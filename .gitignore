@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+dist/
+build/
+*.spec.bak
+AU_Kamra_Data/
+au_kamra_loan_cards/data/
+.pytest_cache/
+.mypy_cache/
+*.log
+.DS_Store
+Thumbs.db

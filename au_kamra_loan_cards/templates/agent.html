@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }} — Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/agent.css') }}" />
+</head>
+<body class="agent-body">
+  <div id="agent-connect" class="login-screen">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="brand-mark">AU</div>
+        <h1>AU-Kamra Agent</h1>
+        <p>Remote workstation client</p>
+      </div>
+      <form id="connect-form">
+        <label>Server IP Address
+          <input name="server_ip" required placeholder="e.g. 192.168.1.50" value="127.0.0.1" />
+        </label>
+        <label>Port
+          <input name="server_port" required value="8765" />
+        </label>
+        <label>Username
+          <input name="username" required autocomplete="username" />
+        </label>
+        <label>Password
+          <input name="password" type="password" required autocomplete="current-password" />
+        </label>
+        <button class="btn primary full-btn" type="submit">Connect &amp; Sign In</button>
+        <p class="login-hint">Agent authenticates to the AU-Kamra server on your LAN.</p>
+        <p id="connect-error" class="login-error" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="agent-app" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AU</div>
+        <div class="brand-text">
+          <div class="brand-name">AU-Kamra</div>
+          <div class="brand-sub">Agent Panel</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="home">My Panel</button>
+        <button class="nav-item" data-view="search" data-perm="loan_view">Search Cards</button>
+        <button class="nav-item" data-view="inventory" data-perm="inventory_view">Inventory</button>
+        <button class="nav-item" data-view="upload" data-perm="loan_upload">Upload</button>
+        <button class="nav-item" data-view="create" data-perm="loan_create">New Card</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="user-chip" id="agent-user">—</div>
+        <div class="version" id="agent-server">Server —</div>
+        <button class="btn ghost logout-btn" id="agent-logout">Disconnect</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="agent-title">My Panel</h1>
+          <p class="subtitle" id="agent-sub">Connected agent workspace</p>
+        </div>
+        <span class="online-pill" id="agent-status">Connecting…</span>
+      </header>
+
+      <section class="view active" id="view-home">
+        <div class="hero-panel agent-hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Remote Agent</p>
+            <h2 id="welcome-name">Welcome</h2>
+            <p>Your activity on this panel is visible to administrators on the server live dashboard.</p>
+          </div>
+        </div>
+        <div class="stats">
+          <article class="stat"><span>Role</span><strong id="home-role">—</strong></article>
+          <article class="stat"><span>Loan Cards</span><strong id="home-cards">0</strong></article>
+          <article class="stat"><span>Inventory</span><strong id="home-inv">0</strong></article>
+          <article class="stat"><span>Available</span><strong id="home-avail">0</strong></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-search">
+        <div class="panel filters">
+          <div class="filter-grid">
+            <label>Name<input id="a-name" /></label>
+            <label>Designation<input id="a-desig" /></label>
+            <label>Department<input id="a-dept" /></label>
+            <label>Extension<input id="a-tel" /></label>
+            <label>Equipment<input id="a-item" /></label>
+            <label>Issue From<input type="date" id="a-from" /></label>
+            <label>Issue To<input type="date" id="a-to" /></label>
+            <label>Quick Search<input id="a-q" /></label>
+          </div>
+          <div class="filter-actions">
+            <button class="btn primary" id="a-search-btn">Search</button>
+            <span class="result-count" id="a-count"></span>
+          </div>
+        </div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Department</th><th>Ext</th><th>Issue</th><th>Equipment</th><th></th></tr></thead>
+          <tbody id="a-search-tbody"></tbody>
+        </table></div></div>
+      </section>
+
+      <section class="view" id="view-inventory">
+        <div class="panel filters">
+          <div class="filter-grid">
+            <label>Item<input id="ai-name" /></label>
+            <label>Officer<input id="ai-officer" /></label>
+            <label>Allocated To<input id="ai-to" /></label>
+            <label>Status
+              <select id="ai-status">
+                <option value="">All</option>
+                <option value="available">Available</option>
+                <option value="allocated">Allocated</option>
+                <option value="issued">Issued</option>
+              </select>
+            </label>
+            <label>Added From<input type="date" id="ai-added-from" /></label>
+            <label>Alloc From<input type="date" id="ai-alloc-from" /></label>
+          </div>
+          <div class="filter-actions">
+            <button class="btn primary" id="ai-search-btn">Search Inventory</button>
+            <span class="result-count" id="ai-count"></span>
+          </div>
+        </div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr>
+            <th>Item</th><th>Status</th><th>Officer</th><th>Allocated To</th>
+            <th>Added</th><th>Issued</th><th>Allocated</th>
+          </tr></thead>
+          <tbody id="ai-tbody"></tbody>
+        </table></div></div>
+      </section>
+
+      <section class="view" id="view-upload">
+        <div class="panel upload-panel">
+          <div class="dropzone" id="a-dropzone">
+            <div class="drop-icon"></div>
+            <h3>Upload loan cards to server</h3>
+            <p>PDF or HTML files are sent to the AU-Kamra server.</p>
+            <button class="btn primary" id="a-pick">Choose Files</button>
+            <input type="file" id="a-files" accept=".pdf,.html,.htm" multiple hidden />
+          </div>
+          <div id="a-upload-status" class="upload-status" hidden></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-create">
+        <form class="panel form-panel" id="a-create-form">
+          <div class="form-grid">
+            <label>Name *<input name="name" required /></label>
+            <label>Designation<input name="designation" /></label>
+            <label>Department<input name="department" /></label>
+            <label>Tel. Extension<input name="tel_extension" /></label>
+            <label>Issue Date<input type="date" name="issue_date" id="a-issue" /></label>
+            <label>Format
+              <select name="format"><option value="html">HTML</option><option value="pdf">PDF</option><option value="both">Both</option></select>
+            </label>
+          </div>
+          <div class="equip-head"><h3>Equipment</h3><button type="button" class="btn ghost" id="a-add-item">Add Item</button></div>
+          <div id="a-items" class="items-list"></div>
+          <div class="form-footer"><button class="btn primary" type="submit">Generate on Server</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="a-detail">
+    <div class="modal-card">
+      <header>
+        <div><p class="eyebrow" id="ad-cardno"></p><h2 id="ad-name"></h2></div>
+        <button class="icon-close" id="ad-close">&times;</button>
+      </header>
+      <div class="modal-grid" id="ad-meta"></div>
+      <footer class="modal-actions">
+        <button class="btn primary" id="ad-open">Open File</button>
+      </footer>
+    </div>
+  </dialog>
+  <div id="toast" class="toast" hidden></div>
+  <script src="{{ url_for('static', filename='js/agent.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="brand-mark">AU</div>
+        <h1>AU-Kamra</h1>
+        <p>IT Loan Cards Management</p>
+      </div>
+      <form id="login-form">
+        <label>Username<input name="username" autocomplete="username" required placeholder="admin" /></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="••••••••" /></label>
+        <button class="btn primary full-btn" type="submit">Sign In to Server</button>
+        <p class="login-hint">Default administrator: <strong>admin</strong> / <strong>admin123</strong></p>
+        <p id="login-error" class="login-error" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-shell" id="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">AU</div>
+        <div class="brand-text">
+          <div class="brand-name">AU-Kamra</div>
+          <div class="brand-sub">IT Loan Cards</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard" data-perm="loan_view">Dashboard</button>
+        <button class="nav-item" data-view="search" data-perm="loan_view">Search Cards</button>
+        <button class="nav-item" data-view="inventory" data-perm="inventory_view">Inventory</button>
+        <button class="nav-item" data-view="upload" data-perm="loan_upload">Upload Files</button>
+        <button class="nav-item" data-view="create" data-perm="loan_create">New Loan Card</button>
+        <button class="nav-item" data-view="presence" data-perm="presence_view">Online Users</button>
+        <button class="nav-item" data-view="users" data-perm="users_manage">Users &amp; Roles</button>
+        <button class="nav-item" data-view="records" data-perm="activity_view">Activity Log</button>
+        <button class="nav-item" data-view="backup" data-perm="backup">Backup / Import</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="user-chip" id="user-chip">—</div>
+        <button class="btn ghost logout-btn" id="btn-logout">Sign Out</button>
+        <div class="version">v{{ app_version }} · Server</div>
+        <div class="campus">Air University · Kamra</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">Dashboard</h1>
+          <p id="view-subtitle" class="subtitle">Manage loan cards, inventory, and network agents.</p>
+        </div>
+        <div class="top-actions">
+          <span class="online-pill" id="online-pill">0 online</span>
+          <button class="btn ghost" id="btn-refresh">Refresh</button>
+          <button class="btn primary" id="btn-quick-upload" data-perm="loan_upload">Upload PDF/HTML</button>
+        </div>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <div class="hero-panel">
+          <div class="hero-copy">
+            <p class="eyebrow">AU-Kamra-IT Loan Cards Management</p>
+            <h2>Equipment loans &amp; inventory, secured.</h2>
+            <p>Role-based server for loan cards and inventory. Remote agents connect over the LAN by IP and report live panel activity.</p>
+            <div class="hero-cta">
+              <button class="btn primary" data-goto="upload" data-perm="loan_upload">Upload Cards</button>
+              <button class="btn ghost" data-goto="inventory" data-perm="inventory_view">Inventory</button>
+            </div>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="orbit"></div>
+            <div class="card-preview"><span>IT LOAN CARD</span><strong>Kamra Campus</strong></div>
+          </div>
+        </div>
+        <div class="stats" id="stats-grid">
+          <article class="stat"><span>Loan Cards</span><strong id="stat-total">0</strong></article>
+          <article class="stat"><span>Inventory</span><strong id="stat-inv">0</strong></article>
+          <article class="stat"><span>Available Stock</span><strong id="stat-avail">0</strong></article>
+          <article class="stat"><span>Users Online</span><strong id="stat-online">0</strong></article>
+        </div>
+        <div class="dash-split">
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Loan Cards</h3><button class="linkish" data-goto="search">View all</button></div>
+            <div class="table-wrap"><table><thead><tr>
+              <th>Name</th><th>Department</th><th>Extension</th><th>Issue Date</th><th>Equipment</th><th></th>
+            </tr></thead><tbody id="recent-tbody"></tbody></table></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Inventory Snapshot</h3><button class="linkish" data-goto="inventory">Manage</button></div>
+            <div class="table-wrap"><table><thead><tr>
+              <th>Item</th><th>Status</th><th>Officer</th><th>Allocated To</th><th>Alloc. Date</th>
+            </tr></thead><tbody id="dash-inv-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-search">
+        <div class="panel filters">
+          <div class="filter-grid">
+            <label>Quick Search<input type="search" id="f-q" placeholder="Search anything…" /></label>
+            <label>Name<input type="text" id="f-name" placeholder="Employee name" /></label>
+            <label>Designation<input type="text" id="f-designation" /></label>
+            <label>Department<input type="text" id="f-department" /></label>
+            <label>Tel. Extension<input type="text" id="f-tel" /></label>
+            <label>Item / Equipment<input type="text" id="f-item" /></label>
+            <label>Issue Date From<input type="date" id="f-from" /></label>
+            <label>Issue Date To<input type="date" id="f-to" /></label>
+          </div>
+          <div class="filter-actions">
+            <button class="btn primary" id="btn-search">Apply Filters</button>
+            <button class="btn ghost" id="btn-clear-filters">Clear</button>
+            <span class="result-count" id="result-count"></span>
+          </div>
+        </div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr>
+            <th>Card No</th><th>Name</th><th>Designation</th><th>Department</th>
+            <th>Tel. Ext</th><th>Issue Date</th><th>Equipment</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="search-tbody"></tbody>
+        </table></div></div>
+      </section>
+
+      <section class="view" id="view-inventory">
+        <div class="panel filters">
+          <div class="filter-grid">
+            <label>Quick Search<input type="search" id="inv-q" /></label>
+            <label>Item Name<input type="text" id="inv-name" /></label>
+            <label>Allocation Officer<input type="text" id="inv-officer" /></label>
+            <label>Allocated To<input type="text" id="inv-to" /></label>
+            <label>Status
+              <select id="inv-status">
+                <option value="">All</option>
+                <option value="available">Available</option>
+                <option value="allocated">Allocated</option>
+                <option value="issued">Issued</option>
+                <option value="retired">Retired</option>
+              </select>
+            </label>
+            <label>Added From<input type="date" id="inv-added-from" /></label>
+            <label>Added To<input type="date" id="inv-added-to" /></label>
+            <label>Issued From<input type="date" id="inv-issue-from" /></label>
+            <label>Issued To<input type="date" id="inv-issue-to" /></label>
+            <label>Allocation From<input type="date" id="inv-alloc-from" /></label>
+            <label>Allocation To<input type="date" id="inv-alloc-to" /></label>
+          </div>
+          <div class="filter-actions">
+            <button class="btn primary" id="btn-inv-search">Apply Filters</button>
+            <button class="btn ghost" id="btn-inv-clear">Clear</button>
+            <button class="btn primary" id="btn-inv-add" data-perm="inventory_manage">Add Inventory</button>
+            <span class="result-count" id="inv-count"></span>
+          </div>
+        </div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr>
+            <th>Item</th><th>Serial</th><th>Category</th><th>Status</th><th>Qty</th>
+            <th>Officer</th><th>Allocated To</th><th>Added</th><th>Issued</th><th>Allocated</th><th></th>
+          </tr></thead>
+          <tbody id="inv-tbody"></tbody>
+        </table></div></div>
+      </section>
+
+      <section class="view" id="view-upload">
+        <div class="panel upload-panel">
+          <div class="dropzone" id="dropzone">
+            <div class="drop-icon" aria-hidden="true"></div>
+            <h3>Drop PDF or HTML loan cards here</h3>
+            <p>Multiple files supported. Data is extracted automatically for search.</p>
+            <button class="btn primary" id="btn-pick-files">Choose Files</button>
+            <input type="file" id="file-input" accept=".pdf,.html,.htm,application/pdf,text/html" multiple hidden />
+          </div>
+          <div id="upload-status" class="upload-status" hidden></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-create">
+        <form class="panel form-panel" id="create-form">
+          <div class="form-grid">
+            <label>Name *<input required name="name" /></label>
+            <label>Designation<input name="designation" /></label>
+            <label>Department<input name="department" /></label>
+            <label>Tel. Extension<input name="tel_extension" /></label>
+            <label>Issue Date<input type="date" name="issue_date" id="create-issue-date" /></label>
+            <label>Card Number<input name="card_number" placeholder="Auto if empty" /></label>
+          </div>
+          <div class="equip-head"><h3>Equipment / Items</h3><button type="button" class="btn ghost" id="btn-add-item">Add Item</button></div>
+          <div id="items-list" class="items-list"></div>
+          <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
+          <div class="form-footer">
+            <label class="inline">Output
+              <select name="format"><option value="html">HTML</option><option value="pdf">PDF</option><option value="both">HTML + PDF</option></select>
+            </label>
+            <button type="submit" class="btn primary">Generate Loan Card</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="view" id="view-presence">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Live User Activity</h3>
+            <span class="result-count" id="presence-count">0 online</span>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr>
+              <th>User</th><th>Role</th><th>Client</th><th>IP</th><th>Host</th>
+              <th>Current Panel</th><th>Activity</th><th>Last Seen</th>
+            </tr></thead>
+            <tbody id="presence-tbody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-users">
+        <div class="panel">
+          <div class="panel-head"><h3>Users &amp; Role Assignment</h3>
+            <button class="btn primary" id="btn-user-add">Add User</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Status</th><th>Created</th><th></th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-records">
+        <div class="panel">
+          <div class="panel-head"><h3>Activity Log</h3></div>
+          <ul class="activity" id="activity-list"></ul>
+        </div>
+      </section>
+
+      <section class="view" id="view-backup">
+        <div class="backup-grid">
+          <article class="panel"><h3>Backup</h3>
+            <p>Full ZIP of database, uploads, and generated files.</p>
+            <div class="stack-actions">
+              <button class="btn primary" id="btn-backup">Create Backup</button>
+              <a class="btn ghost" id="btn-download-backup" href="#">Download Latest</a>
+            </div>
+          </article>
+          <article class="panel"><h3>Restore</h3>
+            <p>Restore from an AU-Kamra backup ZIP (safety backup taken first).</p>
+            <input type="file" id="restore-input" accept=".zip" hidden />
+            <button class="btn primary" id="btn-restore">Restore from ZIP</button>
+          </article>
+          <article class="panel"><h3>Export</h3>
+            <p>Export loan cards and inventory records.</p>
+            <div class="stack-actions">
+              <button class="btn primary" id="btn-export-json">Export JSON</button>
+              <button class="btn ghost" id="btn-export-csv">Export CSV</button>
+            </div>
+          </article>
+          <article class="panel"><h3>Import</h3>
+            <p>Import records from a previously exported JSON file.</p>
+            <input type="file" id="import-input" accept=".json,application/json" hidden />
+            <button class="btn primary" id="btn-import">Import JSON</button>
+          </article>
+        </div>
+        <div class="panel path-panel"><h3>Data Location</h3><code id="data-path">—</code></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="detail-modal">
+    <div class="modal-card">
+      <header>
+        <div><p class="eyebrow" id="modal-cardno"></p><h2 id="modal-name"></h2></div>
+        <button class="icon-close" id="modal-close" aria-label="Close">&times;</button>
+      </header>
+      <div class="modal-grid" id="modal-meta"></div>
+      <h3>Equipment</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Item</th><th>Serial</th><th>Qty</th><th>Remarks</th></tr></thead>
+        <tbody id="modal-items"></tbody>
+      </table></div>
+      <footer class="modal-actions">
+        <button class="btn primary" id="modal-open">Open Original File</button>
+        <button class="btn ghost" id="modal-download">Download</button>
+        <button class="btn danger" id="modal-delete" data-perm="loan_delete">Delete</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <dialog id="inv-modal">
+    <div class="modal-card">
+      <header>
+        <div><p class="eyebrow">Inventory</p><h2 id="inv-modal-title">Add Item</h2></div>
+        <button class="icon-close" id="inv-modal-close">&times;</button>
+      </header>
+      <form id="inv-form" class="form-grid">
+        <input type="hidden" name="id" />
+        <label>Item Name *<input name="item_name" required /></label>
+        <label>Serial Number<input name="serial_number" /></label>
+        <label>Category<input name="category" placeholder="Laptop, Printer…" /></label>
+        <label>Status
+          <select name="status">
+            <option value="available">Available</option>
+            <option value="allocated">Allocated</option>
+            <option value="issued">Issued</option>
+            <option value="retired">Retired</option>
+          </select>
+        </label>
+        <label>Quantity<input name="quantity" value="1" /></label>
+        <label>Allocation Officer<input name="allocation_officer" /></label>
+        <label>Allocated To<input name="allocated_to" /></label>
+        <label>Added Date<input type="date" name="added_date" /></label>
+        <label>Issue Date<input type="date" name="issue_date" /></label>
+        <label>Allocation Date<input type="date" name="allocation_date" /></label>
+        <label class="full span2">Notes<textarea name="notes" rows="2"></textarea></label>
+        <div class="form-footer span2">
+          <button type="button" class="btn ghost" id="inv-allocate-btn" data-perm="inventory_allocate">Quick Allocate</button>
+          <button type="submit" class="btn primary">Save Inventory</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="user-modal">
+    <div class="modal-card">
+      <header>
+        <div><p class="eyebrow">Administration</p><h2 id="user-modal-title">Add User</h2></div>
+        <button class="icon-close" id="user-modal-close">&times;</button>
+      </header>
+      <form id="user-form" class="form-grid">
+        <input type="hidden" name="id" />
+        <label>Username *<input name="username" required /></label>
+        <label>Full Name *<input name="full_name" required /></label>
+        <label>Role *
+          <select name="role" required>
+            {% for role in roles %}
+            <option value="{{ role }}">{{ role_labels[role] }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Password <input name="password" type="password" placeholder="Required for new users" /></label>
+        <label>Active
+          <select name="is_active"><option value="1">Active</option><option value="0">Disabled</option></select>
+        </label>
+        <div class="form-footer span2">
+          <button type="submit" class="btn primary">Save User</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
