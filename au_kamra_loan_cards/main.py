@@ -37,8 +37,17 @@ def find_port(preferred: int = PORT) -> int:
     raise RuntimeError("No free local port available")
 
 
+def _browser_disabled() -> bool:
+    import os
+
+    return os.environ.get("BROWSER", "").strip().lower() in {"none", "off", "0"}
+
+
 def open_ui(url: str) -> None:
     """Prefer a native window on Windows; fall back to the default browser."""
+    if _browser_disabled():
+        print(f"Browser auto-open disabled. Visit: {url}")
+        return
     if sys.platform.startswith("win"):
         try:
             import webview  # type: ignore
@@ -92,7 +101,8 @@ def main() -> None:
         print(f"{APP_NAME}")
         print(f"Open in your browser: {url}")
         print("Press Ctrl+C to stop.")
-        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        if not _browser_disabled():
+            threading.Timer(0.8, lambda: webbrowser.open(url)).start()
         app.run(host=HOST, port=port, debug=False, use_reloader=False, threaded=True)
 
 

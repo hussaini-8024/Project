@@ -338,8 +338,10 @@ def create_app() -> Flask:
 
     @app.errorhandler(Exception)
     def on_error(err):
-        if isinstance(err, Exception) and hasattr(err, "code"):
-            raise err
+        from werkzeug.exceptions import HTTPException
+
+        if isinstance(err, HTTPException):
+            return err
         traceback.print_exc()
         return jsonify({"error": str(err)}), 500
 
