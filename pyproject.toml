@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aulabs"
+version = "1.0.0"
+description = "AU Labs IT Management — local Linux VPS hosting panel"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "AU Labs" }]
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.34.0",
+  "jinja2==3.1.5",
+  "python-multipart==0.0.20",
+  "passlib[bcrypt]==1.7.4",
+  "bcrypt==4.0.1",
+  "itsdangerous==2.2.0",
+  "aiofiles==24.1.0",
+  "psutil==6.1.1",
+  "pydantic==2.10.4",
+  "pydantic-settings==2.7.0",
+  "websockets==14.1",
+  "httpx==0.28.1",
+]
+
+[project.scripts]
+aulabs = "aulabs.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["aulabs*"]
+
+[tool.setuptools.package-data]
+aulabs = ["web/templates/*", "web/static/css/*", "web/static/js/*"]

@@ -1,0 +1,17 @@
+[Unit]
+Description=AU Labs IT Management
+After=network.target
+
+[Service]
+Type=simple
+User=aulabs
+Group=aulabs
+WorkingDirectory=/opt/aulabs
+EnvironmentFile=/opt/aulabs/aulabs.env
+ExecStart=/opt/aulabs/.venv/bin/python -m aulabs serve
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
