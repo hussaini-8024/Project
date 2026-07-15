@@ -1,0 +1,7 @@
+.agent-body .hero-panel.agent-hero {
+  min-height: 180px;
+  grid-template-columns: 1fr;
+}
+.agent-body .brand-sub {
+  color: #9fd0c8;
+}

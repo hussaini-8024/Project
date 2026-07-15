@@ -12,9 +12,10 @@ from pathlib import Path
 
 APP_NAME = "AU-Kamra-IT Loan Cards Management"
 APP_SHORT = "AU-Kamra Loan Cards"
-APP_VERSION = "1.0.0"
-HOST = "127.0.0.1"
+APP_VERSION = "2.0.0"
+HOST = "0.0.0.0"  # Network server — agents connect via LAN IP
 PORT = 8765
+ONLINE_TIMEOUT_SECONDS = 90
 
 
 def app_root() -> Path:

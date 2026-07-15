@@ -83,7 +83,7 @@ def export_json(dest: Path, db: Optional[Database] = None) -> Path:
     return dest
 
 
-def import_json(src: Path, db: Optional[Database] = None) -> int:
+def import_json(src: Path, db: Optional[Database] = None) -> dict:
     db = db or Database()
     payload = load_json(Path(src))
     if not isinstance(payload, dict):

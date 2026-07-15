@@ -1,68 +1,80 @@
 # AU-Kamra-IT Loan Cards Management
 
-Desktop software for managing IT equipment loan cards at **Air University — Kamra Campus**.
+Professional Windows desktop software for **Air University — Kamra Campus** IT loan cards and inventory.
 
-Upload PDF or HTML loan cards, search with filters, open the original file, generate new cards in the same format, and keep secure backups — all from one Windows application.
+## Software packages (single EXE each)
+
+| Package | File | Install on |
+|---------|------|------------|
+| **Server** | `AU-Kamra-IT-Loan-Cards-Server.exe` | Windows server / main PC |
+| **Agent** | `AU-Kamra-IT-Agent.exe` | Remote PCs on the same LAN |
+
+Supports **Windows 7 / 8 / 10 / 11**.
 
 ## Features
 
-- **Upload** PDF / HTML loan card files (multiple at once)
-- **Search & filter** by:
-  - Name
-  - Designation
-  - Department
-  - Issue date (from / to)
-  - Item / Equipment name
-  - Tel. extension number
-- **Open original file** when you click a result (same format you uploaded)
-- **Generate** new loan cards as HTML and/or PDF in the AU-Kamra format
-- **Activity log** of uploads, edits, backups, and imports
-- **Backup / Restore** (full ZIP of database + files)
-- **Import / Export** (JSON and CSV)
+- **Authentication** with role-based access (Administrator assigns roles)
+- **Loan cards**: upload PDF/HTML, search, open original file, generate new cards
+- **Inventory**: add / edit / delete / allocate with allocation officer
+- **Inventory search** by item name, allocation officer, allocated-to, added date, issued date, allocation date
+- **Live Online Users dashboard** — who is online and what panel/activity they are on
+- **Backup / Restore** (ZIP) and **Import / Export** (JSON, CSV)
+- **Network agents** authenticate to the server by LAN IP address
 
-## Software name
+### Default roles
 
-**AU-Kamra-IT Loan Cards Management**
+| Role | Access |
+|------|--------|
+| Administrator | Full access + user/role management |
+| Allocation Officer | Inventory manage/allocate + loan cards |
+| User | Upload/create/search loan cards, view inventory |
+| Viewer | Read-only search |
 
-## Windows support
+Default login: **admin** / **admin123** (change after first login)
 
-Runs on **Windows 7 / 8 / 10 / 11** (64-bit recommended).
+## Build both EXEs (on Windows)
 
-Build a **single `.exe`** with the included script (see below). No separate installer required — copy the EXE and run it.
+```bat
+scripts\build_windows.bat
+```
 
-## Quick start (from source)
+Outputs:
+
+```text
+dist\AU-Kamra-IT-Loan-Cards-Server.exe
+dist\AU-Kamra-IT-Agent.exe
+```
+
+## Run from source
 
 ```bat
 python -m pip install -r requirements.txt
 python run.py
 ```
 
-The app opens in your browser (or a desktop window on Windows when `pywebview` is installed) at `http://127.0.0.1:8765/`.
+Server listens on all interfaces (`0.0.0.0:8765`) so agents can connect via the PC’s LAN IP.
 
-## Build single EXE (Windows)
+Agent launcher:
 
-1. Install [Python 3.8+](https://www.python.org/downloads/) and check **Add Python to PATH**.
-2. Double-click:
-
-```text
-scripts\build_windows.bat
+```bat
+python agent_run.py
 ```
 
-3. Find the EXE at:
+Or: `python agent_run.py 192.168.1.50 8765`
 
-```text
-dist\AU-Kamra-IT-Loan-Cards.exe
-```
+## Network setup
 
-Data is stored next to the EXE in a folder named `AU_Kamra_Data` (database, uploads, generated cards, backups).
+1. Run **Server EXE** on the main Windows machine.
+2. Allow port **8765** in Windows Firewall if prompted.
+3. Note the server LAN IP (shown at startup, e.g. `192.168.1.50`).
+4. On each remote PC, run **Agent EXE**, enter the server IP, then sign in with your username/password.
+5. Administrators open **Online Users** on the server to see live agent activity.
 
-## Sample files
+## Filters
 
-Try the sample HTML loan cards in:
+**Loan cards:** name, designation, department, issue date, equipment/item name, tel. extension  
 
-```text
-au_kamra_loan_cards\samples\
-```
+**Inventory:** item name, allocation officer, allocated to, status, added date, issued date, allocation date
 
 ## Tests
 
@@ -70,25 +82,6 @@ au_kamra_loan_cards\samples\
 python -m unittest discover -s tests -v
 ```
 
-## Project layout
+## Data storage
 
-```text
-run.py                          Entry point
-au_kamra_loan_cards/
-  main.py                       Desktop launcher
-  server.py                     Local web API + UI
-  database.py                   SQLite storage
-  parsers.py                    PDF / HTML parsers
-  generator.py                  HTML / PDF loan card generator
-  backup.py                     Backup, restore, import, export
-  templates/                    UI
-  static/                       CSS / JS
-  samples/                      Example loan cards
-scripts/build_windows.bat       One-file EXE builder
-```
-
-## Notes
-
-- Only **PDF** and **HTML/HTM** uploads are accepted.
-- Generated cards use the same structured HTML format the importer understands, so re-import works cleanly.
-- Keep periodic ZIP backups from the **Backup / Import** screen.
+Next to the Server EXE: `AU_Kamra_Data\` (database, uploads, generated files, backups).

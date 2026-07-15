@@ -70,17 +70,32 @@ def main() -> None:
     data_dir()  # ensure folders exist
     port = find_port()
     app = create_app()
-    url = f"http://{HOST}:{port}/"
+    local_url = f"http://127.0.0.1:{port}/"
 
-    # Run Flask in a daemon thread when using pywebview (blocking UI loop)
+    # Discover LAN IP for agent connections
+    lan_ip = "127.0.0.1"
+    try:
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as s:
+            s.connect(("8.8.8.8", 80))
+            lan_ip = s.getsockname()[0]
+    except Exception:
+        pass
+
     use_webview = False
-    if sys.platform.startswith("win"):
+    if sys.platform.startswith("win") and not _browser_disabled():
         try:
             import webview  # noqa: F401
 
             use_webview = True
         except Exception:
             use_webview = False
+
+    print(f"{APP_NAME}")
+    print(f"Local UI : {local_url}")
+    print(f"LAN URL  : http://{lan_ip}:{port}/  (agents connect here)")
+    print(f"Agent UI : http://{lan_ip}:{port}/agent")
+    print("Default login: admin / admin123")
+    print("Press Ctrl+C to stop.")
 
     if use_webview:
 
@@ -89,20 +104,16 @@ def main() -> None:
 
         thread = threading.Thread(target=run_server, daemon=True)
         thread.start()
-        # Wait until server responds
         for _ in range(50):
             try:
-                with closing(socket.create_connection((HOST, port), timeout=0.2)):
+                with closing(socket.create_connection(("127.0.0.1", port), timeout=0.2)):
                     break
             except OSError:
                 time.sleep(0.1)
-        open_ui(url)
+        open_ui(local_url)
     else:
-        print(f"{APP_NAME}")
-        print(f"Open in your browser: {url}")
-        print("Press Ctrl+C to stop.")
         if not _browser_disabled():
-            threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+            threading.Timer(0.8, lambda: webbrowser.open(local_url)).start()
         app.run(host=HOST, port=port, debug=False, use_reloader=False, threaded=True)
 
 
