@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/panel.css" />
+</head>
+<body class="app-body" data-role="{{ user.role }}" data-user-id="{{ user.id }}">
+  <div class="app-glow" aria-hidden="true"></div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">AU Labs</span>
+      <strong>IT Management</strong>
+    </div>
+    <nav class="sidebar-nav" id="main-nav">
+      <button type="button" data-view="overview" class="nav-item active">Overview</button>
+      <button type="button" data-view="users" class="nav-item" data-need="users.manage">Users</button>
+      <button type="button" data-view="storage" class="nav-item">Storage</button>
+      <button type="button" data-view="sessions" class="nav-item">Sessions</button>
+      <button type="button" data-view="permissions" class="nav-item" data-need="permissions.manage">Permissions</button>
+      <button type="button" data-view="shell" class="nav-item" data-need="shell.access">Shell</button>
+      <button type="button" data-view="system" class="nav-item" data-need="system.manage">Master OS</button>
+      <button type="button" data-view="agents" class="nav-item" data-need="system.manage">Agents</button>
+      <button type="button" data-view="audit" class="nav-item" data-need="audit.view">Audit</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="whoami">
+        <span class="who-name">{{ user.display_name }}</span>
+        <span class="who-role">{{ user.role }}</span>
+      </div>
+      <button type="button" id="logout-btn" class="btn ghost">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <header class="workspace-head">
+      <div>
+        <p class="eyebrow">AU Labs IT Management</p>
+        <h1 id="view-title">Overview</h1>
+        <p id="view-sub" class="view-sub">Host status, users, and active environments</p>
+      </div>
+      <div class="head-actions">
+        <span id="clock" class="mono"></span>
+      </div>
+    </header>
+
+    <section id="view-overview" class="view active">
+      <div class="metric-row" id="overview-metrics"></div>
+      <div class="split">
+        <div class="panel-block">
+          <h2>Active sessions</h2>
+          <div id="overview-sessions" class="list-stack"></div>
+        </div>
+        <div class="panel-block">
+          <h2>Storage snapshot</h2>
+          <div id="overview-storage" class="list-stack"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-users" class="view">
+      <div class="toolbar">
+        <button type="button" class="btn primary" id="open-create-user">Create user</button>
+      </div>
+      <div id="users-table" class="data-table"></div>
+      <dialog id="create-user-dialog" class="modal">
+        <form method="dialog" id="create-user-form" class="modal-form">
+          <h2>Create isolated user</h2>
+          <p class="muted">Each user gets a private directory and independent sessions on this Linux host.</p>
+          <label><span>Username</span><input name="username" required pattern="[a-zA-Z0-9_-]+" /></label>
+          <label><span>Display name</span><input name="display_name" /></label>
+          <label><span>Password</span><input name="password" type="password" required minlength="4" /></label>
+          <label><span>Storage quota (MB)</span><input name="storage_quota_mb" type="number" value="1024" min="64" /></label>
+          <div class="modal-actions">
+            <button type="submit" class="btn primary" value="create">Create</button>
+            <button type="button" class="btn ghost" id="close-create-user">Cancel</button>
+          </div>
+          <p class="form-error" id="create-user-error" hidden></p>
+        </form>
+      </dialog>
+    </section>
+
+    <section id="view-storage" class="view">
+      <div id="storage-panel" class="list-stack"></div>
+      <div class="panel-block">
+        <h2>Your files</h2>
+        <div class="toolbar">
+          <input id="files-path" value="" placeholder="relative path under home" />
+          <button type="button" class="btn" id="refresh-files">Browse</button>
+          <button type="button" class="btn primary" id="mkdir-btn">New folder</button>
+        </div>
+        <div id="files-list" class="list-stack"></div>
+      </div>
+    </section>
+
+    <section id="view-sessions" class="view">
+      <div class="toolbar">
+        <button type="button" class="btn primary" id="new-web-session">New web session</button>
+        <button type="button" class="btn" id="new-shell-session">New shell session</button>
+      </div>
+      <div id="sessions-list" class="list-stack"></div>
+    </section>
+
+    <section id="view-permissions" class="view">
+      <div class="toolbar">
+        <label class="inline">
+          <span>User</span>
+          <select id="perm-user-select"></select>
+        </label>
+        <button type="button" class="btn primary" id="save-permissions">Save permissions</button>
+      </div>
+      <div id="permissions-grid" class="perm-grid"></div>
+    </section>
+
+    <section id="view-shell" class="view">
+      <div class="panel-block shell-block">
+        <h2>Command runner</h2>
+        <p class="muted">Runs inside your isolated home with your own environment variables and working directory.</p>
+        <form id="shell-form" class="shell-form">
+          <input id="shell-input" class="mono" placeholder="ls -la workspace" autocomplete="off" />
+          <button type="submit" class="btn primary">Run</button>
+        </form>
+        <pre id="shell-output" class="shell-output mono"></pre>
+      </div>
+    </section>
+
+    <section id="view-system" class="view">
+      <div id="system-overview" class="metric-row"></div>
+      <div class="panel-block">
+        <h2>Host details</h2>
+        <pre id="system-details" class="shell-output mono"></pre>
+      </div>
+    </section>
+
+    <section id="view-agents" class="view">
+      <div class="toolbar">
+        <button type="button" class="btn" id="refresh-agents">Refresh</button>
+      </div>
+      <div id="agents-list" class="list-stack"></div>
+    </section>
+
+    <section id="view-audit" class="view">
+      <div id="audit-list" class="list-stack"></div>
+    </section>
+  </main>
+
+  <script>
+    window.AULABS_USER = {{ user | tojson }};
+  </script>
+  <script src="/static/js/panel.js"></script>
+</body>
+</html>
