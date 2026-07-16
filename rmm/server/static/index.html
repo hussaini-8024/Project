@@ -1465,20 +1465,19 @@
       document.getElementById("enroll-help").textContent =
 `${PRODUCT} — multi-OS agent install
 
-1) Click "Generate agent packages" (builds kit for all OS; native build for this server OS).
-2) Download for the target OS:
-   • Windows → run Agent as Administrator:
-       AU-Kamra-Remote-Manager-Agent-Windows.exe --install --server ${base} --token ${data.token}
-   • macOS → unzip if needed, then:
-       chmod +x AU-Kamra-Remote-Manager-Agent-macOS
-       ./AU-Kamra-Remote-Manager-Agent-macOS --install --server ${base} --token ${data.token}
-   • Linux → same as macOS with the Linux binary, or ./install.sh ${base} ${data.token}
-3) Agent installs permanently and auto-starts.
-4) PC appears under Remote PCs (discovery + enrollment).
-5) Uninstall (password from Settings):
-       <agent> --uninstall
+1) Generate agent packages, then Download for Windows / macOS / Linux.
+2) Windows (double-click the .exe as Administrator once):
+   • Enter server + token in the dialog — OR silent:
+     AU-Kamra-Remote-Manager-Agent-Windows.exe --install --server ${base} --token ${data.token}
+   • Agent installs permanently and runs in the BACKGROUND (no CMD window).
+   • Survives reboot. Closing dialogs does NOT stop it.
+3) macOS / Linux:
+   chmod +x AU-Kamra-Remote-Manager-Agent-*
+   ./AU-Kamra-Remote-Manager-Agent-macOS --install --server ${base} --token ${data.token}
+4) PC appears under Remote PCs.
+5) Uninstall only with password (Settings):
+   AU-Kamra-Remote-Manager-Agent-Windows.exe --uninstall
 
-Tip: Upload native builds from Windows/macOS/Linux build machines for best results (no Python on endpoints).
 Default uninstall password until changed: UninstallMe!`;
 
       document.querySelectorAll("[data-dl]").forEach((btn) => {

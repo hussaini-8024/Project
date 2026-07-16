@@ -35,6 +35,7 @@ import websocket
 from agent.discovery import DiscoveryBeacon
 from agent.install_service import (
     agent_id_path,
+    ensure_running,
     hash_uninstall_password,
     install_agent,
     is_installed,
@@ -424,36 +425,77 @@ def capture_frame(max_width: int, quality: int, burn_in_banner: bool = True) -> 
     return buf.getvalue()
 
 
-def _gui_install_wizard() -> tuple[str, str] | None:
-    """Simple Windows-friendly install dialog when exe is double-clicked."""
+def _gui_message(title: str, message: str, error: bool = False) -> None:
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+
+        root = tk.Tk()
+        root.withdraw()
+        if error:
+            messagebox.showerror(title, message)
+        else:
+            messagebox.showinfo(title, message)
+        root.destroy()
+    except Exception:
+        try:
+            print(f"{title}: {message}")
+        except Exception:
+            pass
+
+
+def _gui_ask_password(title: str, prompt: str) -> str | None:
+    try:
+        import tkinter as tk
+        from tkinter import simpledialog
+
+        root = tk.Tk()
+        root.withdraw()
+        value = simpledialog.askstring(title, prompt, show="*")
+        root.destroy()
+        return value
+    except Exception:
+        try:
+            return getpass.getpass(prompt + " ")
+        except Exception:
+            return None
+
+
+def _gui_install_wizard(defaults: dict[str, str] | None = None) -> tuple[str, str] | None:
+    """One-time install dialog when agent .exe is double-clicked."""
     try:
         import tkinter as tk
         from tkinter import messagebox
     except Exception:
         return None
 
+    defaults = defaults or {}
     result: dict[str, str] = {}
 
     root = tk.Tk()
-    root.title("AU-Kamra Remote Manager — Agent Install")
-    root.geometry("480x280")
+    root.title("AU-Kamra IT Experts Remote Manager")
+    root.geometry("520x300")
     root.resizable(False, False)
-    tk.Label(root, text="AU-Kamra IT Experts Remote Manager", font=("Segoe UI", 12, "bold")).pack(
-        pady=(16, 4)
-    )
     tk.Label(
         root,
-        text="Installs once and stays until removed with the admin uninstall password.",
-        wraplength=420,
-    ).pack()
+        text="AU-Kamra IT Experts Remote Manager",
+        font=("Segoe UI", 13, "bold"),
+    ).pack(pady=(18, 4))
+    tk.Label(
+        root,
+        text="One-time permanent install. Agent runs in the background after reboot.\n"
+        "Closing this window will not stop the agent. Uninstall requires admin password.",
+        wraplength=480,
+        justify="center",
+    ).pack(padx=16)
     frm = tk.Frame(root)
-    frm.pack(padx=20, pady=12, fill="x")
-    tk.Label(frm, text="Server URL").grid(row=0, column=0, sticky="w")
-    server_var = tk.StringVar(value="http://192.168.1.10:8443")
-    tk.Entry(frm, textvariable=server_var, width=40).grid(row=0, column=1, pady=4)
-    tk.Label(frm, text="Enrollment token").grid(row=1, column=0, sticky="w")
-    token_var = tk.StringVar(value="")
-    tk.Entry(frm, textvariable=token_var, width=40).grid(row=1, column=1, pady=4)
+    frm.pack(padx=24, pady=16, fill="x")
+    tk.Label(frm, text="Server URL").grid(row=0, column=0, sticky="w", pady=6)
+    server_var = tk.StringVar(value=defaults.get("server") or "http://192.168.1.10:8443")
+    tk.Entry(frm, textvariable=server_var, width=42).grid(row=0, column=1, pady=6)
+    tk.Label(frm, text="Enrollment token").grid(row=1, column=0, sticky="w", pady=6)
+    token_var = tk.StringVar(value=defaults.get("token") or "")
+    tk.Entry(frm, textvariable=token_var, width=42).grid(row=1, column=1, pady=6)
 
     def do_install() -> None:
         s = server_var.get().strip()
@@ -465,92 +507,194 @@ def _gui_install_wizard() -> tuple[str, str] | None:
         result["token"] = t
         root.destroy()
 
-    tk.Button(root, text="Install permanently", command=do_install).pack(pady=8)
-    tk.Label(
+    tk.Button(
         root,
-        text="Uninstall later: Agent.exe --uninstall  (password from admin panel)",
-        fg="#555",
-    ).pack()
+        text="Install permanently & run in background",
+        command=do_install,
+        font=("Segoe UI", 10, "bold"),
+        padx=12,
+        pady=6,
+    ).pack(pady=10)
     root.mainloop()
     if "server" in result:
         return result["server"], result["token"]
     return None
 
 
+def _acquire_single_instance() -> bool:
+    """Prevent multiple --run instances. Returns False if another instance holds the lock."""
+    try:
+        lock_path = agent_id_path().parent / "agent.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        if platform.system().lower() == "windows":
+            # Exclusive create; if exists and process alive, skip. Simple file lock via msvcrt.
+            import msvcrt  # type: ignore
+
+            fp = open(lock_path, "a+b")
+            fp.seek(0)
+            if fp.read(1) == b"":
+                fp.write(b"1")
+                fp.flush()
+            fp.seek(0)
+            try:
+                msvcrt.locking(fp.fileno(), msvcrt.LK_NBLCK, 1)
+            except OSError:
+                fp.close()
+                return False
+            # Keep handle alive for process lifetime
+            Agent._lock_fp = fp  # type: ignore[attr-defined]
+            return True
+        import fcntl  # type: ignore
+
+        fp = open(lock_path, "a+")
+        try:
+            fcntl.flock(fp.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            fp.close()
+            return False
+        Agent._lock_fp = fp  # type: ignore[attr-defined]
+        return True
+    except Exception:
+        return True
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="DiscloseRMM Agent (permanent install, visible sessions)")
+    p = argparse.ArgumentParser(description="AU-Kamra IT Experts Remote Manager Agent")
     p.add_argument("--server", default=None, help="Server base URL, e.g. http://192.168.1.10:8443")
     p.add_argument("--token", default=None, help="Enrollment token from administrator")
     p.add_argument("--agent-id", default=None, help="Optional fixed agent id")
-    p.add_argument("--install", action="store_true", help="Install permanently (autostart)")
+    p.add_argument("--install", action="store_true", help="Install permanently (background + autostart)")
     p.add_argument("--uninstall", action="store_true", help="Uninstall (requires admin password)")
     p.add_argument("--uninstall-password", default=None, help="Uninstall password (or prompt)")
-    p.add_argument("--run", action="store_true", help="Run agent service loop (used by autostart)")
+    p.add_argument("--run", action="store_true", help="Background service loop (autostart uses this)")
     return p.parse_args(argv)
+
+
+def _do_permanent_install(server: str, token: str) -> Path:
+    uninstall_hash = ""
+    try:
+        r = requests.get(f"{server.rstrip('/')}/api/public/agent-bootstrap", timeout=10)
+        if r.ok:
+            uninstall_hash = str(r.json().get("uninstall_password_hash") or "")
+    except Exception:
+        pass
+    if not uninstall_hash:
+        uninstall_hash = hash_uninstall_password(config.DEFAULT_UNINSTALL_PASSWORD)
+    return install_agent(server, token, uninstall_hash)
 
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
 
     if args.uninstall:
-        password = args.uninstall_password
+        password = args.uninstall_password or _gui_ask_password(
+            "Uninstall AU-Kamra Agent",
+            "Enter uninstall password from admin Settings:",
+        )
         if not password:
-            password = getpass.getpass("Uninstall password (from server admin panel): ")
+            sys.exit(1)
         try:
             uninstall_agent(password)
-            print("AU-Kamra agent uninstalled.")
+            _gui_message("Uninstalled", "AU-Kamra agent was removed from this PC.")
         except PermissionError as exc:
-            print(str(exc))
+            _gui_message("Uninstall failed", str(exc), error=True)
             sys.exit(2)
         except Exception as exc:
-            print("Uninstall failed:", exc)
+            _gui_message("Uninstall failed", str(exc), error=True)
             sys.exit(1)
         return
 
-    # Resolve server/token from args, saved config, or GUI wizard
     cfg = load_config()
     server = args.server or cfg.get("server")
     token = args.token or cfg.get("token")
 
-    if args.install or (not args.run and not server and not token):
+    # Background service mode (scheduled task / Run key / detached process)
+    if args.run:
         if not server or not token:
-            wizard = _gui_install_wizard()
+            sys.exit(1)
+        if not _acquire_single_instance():
+            # Another background agent already running
+            return
+        save_config(
+            {
+                "server": str(server).rstrip("/"),
+                "token": token,
+                "installed": True,
+                "background": True,
+            }
+        )
+        agent = Agent(str(server), str(token), args.agent_id)
+        try:
+            agent.run()
+        except KeyboardInterrupt:
+            agent._stop.set()
+            agent._stop_live()
+        return
+
+    # Double-click / --install: permanent install then EXIT (background keeps running)
+    want_install = args.install or not args.run
+    if want_install:
+        if is_installed() and server and token and not args.install:
+            # Already installed — ensure background is up, show brief notice, exit
+            ensure_running(str(server), str(token))
+            _gui_message(
+                "AU-Kamra Agent",
+                "Agent is already installed and running in the background.\n"
+                "It will start automatically after reboot.\n\n"
+                "To remove it, run the agent with --uninstall (admin password required).",
+            )
+            return
+
+        if not server or not token or (not is_installed() and not args.server):
+            wizard = _gui_install_wizard({"server": server or "", "token": token or ""})
             if not wizard:
-                # CLI fallback
-                server = server or input("Server URL: ").strip()
-                token = token or input("Enrollment token: ").strip()
+                # Silent CLI fallback only if stdin is a TTY
+                if sys.stdin and sys.stdin.isatty():
+                    server = (server or input("Server URL: ").strip())
+                    token = (token or input("Enrollment token: ").strip())
+                else:
+                    _gui_message(
+                        "Install cancelled",
+                        "Server URL and enrollment token are required.",
+                        error=True,
+                    )
+                    sys.exit(1)
             else:
                 server, token = wizard
-        # Fetch uninstall hash from server public bootstrap endpoint if available
-        uninstall_hash = ""
+
         try:
-            r = requests.get(f"{server.rstrip('/')}/api/public/agent-bootstrap", timeout=10)
-            if r.ok:
-                uninstall_hash = str(r.json().get("uninstall_password_hash") or "")
-        except Exception:
-            pass
-        if not uninstall_hash:
-            uninstall_hash = hash_uninstall_password(config.DEFAULT_UNINSTALL_PASSWORD)
-        exe = install_agent(server, token, uninstall_hash)
-        print(f"Installed permanently: {exe}")
-        print("Agent will start automatically. Uninstall requires the admin uninstall password.")
-        # Start running now as well
-        args.run = True
+            exe = _do_permanent_install(str(server), str(token))
+        except Exception as exc:
+            if args.install and args.server and args.token:
+                print("Install failed:", exc)
+            else:
+                _gui_message("Install failed", str(exc), error=True)
+            sys.exit(1)
+
+        # Remote/silent push: no dialog. Interactive double-click: confirm then exit.
+        if not (args.install and args.server and args.token):
+            _gui_message(
+                "Installed",
+                "AU-Kamra agent installed permanently and is running in the background.\n\n"
+                f"Location:\n{exe}\n\n"
+                "• Survives reboot automatically\n"
+                "• Closing windows will not stop it\n"
+                "• Remove only with uninstall password from the admin panel",
+            )
+        # Critical: do NOT keep this process as the agent — background copy already started
+        return
 
     if not server or not token:
-        print("Missing --server and --token (or install first).")
+        _gui_message("Missing settings", "Server URL and token required.", error=True)
         sys.exit(1)
 
-    # Persist config when running with explicit args
-    save_config({"server": server.rstrip("/"), "token": token, "installed": is_installed()})
-
-    agent = Agent(server, token, args.agent_id)
+    # Explicit foreground run (rare / debug)
+    agent = Agent(str(server), str(token), args.agent_id)
     try:
         agent.run()
     except KeyboardInterrupt:
         agent._stop.set()
         agent._stop_live()
-        print("Agent stopped.")
 
 
 if __name__ == "__main__":

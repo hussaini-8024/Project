@@ -1,4 +1,4 @@
-"""Agent install paths, permanent Windows/macOS/Linux install, password-gated uninstall."""
+"""Agent install paths — permanent background install (Windows/macOS/Linux)."""
 
 from __future__ import annotations
 
@@ -14,9 +14,12 @@ from typing import Any
 
 SERVICE_NAME = "AUKamraRemoteManagerAgent"
 TASK_NAME = "AU-Kamra Remote Manager Agent"
+TASK_NAME_LOGON = "AU-Kamra Remote Manager Agent Logon"
 PRODUCT_DIR_NAME = "AUKamraRemoteManager"
 LAUNCH_AGENT_LABEL = "com.aukamra.remotemanager.agent"
 LINUX_UNIT = "aukamra-agent.service"
+RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+RUN_VALUE = "AUKamraRemoteManagerAgent"
 
 
 def is_windows() -> bool:
@@ -25,10 +28,6 @@ def is_windows() -> bool:
 
 def is_macos() -> bool:
     return platform.system().lower() == "darwin"
-
-
-def is_linux() -> bool:
-    return platform.system().lower() == "linux"
 
 
 def is_frozen() -> bool:
@@ -67,6 +66,12 @@ def uninstall_hash_path() -> Path:
 
 def agent_id_path() -> Path:
     return install_root() / "agent_id.txt"
+
+
+def log_path() -> Path:
+    d = install_root() / "logs"
+    d.mkdir(parents=True, exist_ok=True)
+    return d / "agent.log"
 
 
 def installed_agent_exe() -> Path:
@@ -121,13 +126,12 @@ def copy_self_to_install_dir() -> Path:
             dest.chmod(0o755)
         return dest
 
-    # Source/dev install: write a launcher that invokes run_agent.py
     root = Path(__file__).resolve().parent.parent
     run_py = root / "run_agent.py"
     if is_windows():
         dest = install_root() / "AU-Kamra-Remote-Manager-Agent.cmd"
         dest.write_text(
-            f'@echo off\r\n"{sys.executable}" "{run_py}" %*\r\n',
+            f'@echo off\r\nstart "" /B "{sys.executable}" "{run_py}" %*\r\n',
             encoding="utf-8",
         )
         return dest
@@ -141,14 +145,84 @@ def copy_self_to_install_dir() -> Path:
     return dest
 
 
+def _windows_run_command(exe: Path, server: str, token: str) -> str:
+    return f'"{exe}" --run --server "{server}" --token "{token}"'
+
+
+def _register_windows_run_key(exe: Path, server: str, token: str) -> None:
+    """Current-user Run key so agent starts even without admin scheduled-task rights."""
+    try:
+        import winreg  # type: ignore
+
+        cmd = _windows_run_command(exe, server, token)
+        key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, RUN_KEY)
+        winreg.SetValueEx(key, RUN_VALUE, 0, winreg.REG_SZ, cmd)
+        winreg.CloseKey(key)
+    except Exception:
+        pass
+
+
+def _unregister_windows_run_key() -> None:
+    try:
+        import winreg  # type: ignore
+
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE)
+        try:
+            winreg.DeleteValue(key, RUN_VALUE)
+        except FileNotFoundError:
+            pass
+        winreg.CloseKey(key)
+    except Exception:
+        pass
+
+
+def start_background_agent(exe: Path, server: str, token: str) -> None:
+    """
+    Start the agent as a detached background process.
+    Closing any installer/dialog must NOT kill this process.
+    """
+    args = [str(exe), "--run", "--server", server, "--token", token]
+    log = log_path()
+    if is_windows():
+        # Also kick scheduled tasks if present
+        subprocess.run(["schtasks", "/Run", "/TN", TASK_NAME], capture_output=True, text=True)
+        subprocess.run(["schtasks", "/Run", "/TN", TASK_NAME_LOGON], capture_output=True, text=True)
+        flags = 0
+        flags |= getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+        flags |= getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+        flags |= getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        with open(log, "a", encoding="utf-8") as lf:
+            subprocess.Popen(
+                args,
+                cwd=str(install_root()),
+                stdin=subprocess.DEVNULL,
+                stdout=lf,
+                stderr=lf,
+                creationflags=flags,
+                close_fds=True,
+            )
+        return
+
+    # POSIX: fully detach
+    with open(log, "a", encoding="utf-8") as lf:
+        subprocess.Popen(
+            args,
+            cwd=str(install_root()),
+            stdin=subprocess.DEVNULL,
+            stdout=lf,
+            stderr=lf,
+            start_new_session=True,
+            close_fds=True,
+        )
+
+
 def _register_windows_autostart(exe: Path, server: str, token: str) -> None:
-    tr = f'"{exe}" --run --server "{server}" --token "{token}"'
+    tr = _windows_run_command(exe, server, token)
+    for name in (TASK_NAME, TASK_NAME_LOGON):
+        subprocess.run(["schtasks", "/Delete", "/TN", name, "/F"], capture_output=True, text=True)
+
+    # Boot (SYSTEM) — best permanence
     subprocess.run(
-        ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"],
-        capture_output=True,
-        text=True,
-    )
-    create = subprocess.run(
         [
             "schtasks", "/Create", "/TN", TASK_NAME, "/TR", tr,
             "/SC", "ONSTART", "/RU", "SYSTEM", "/RL", "HIGHEST", "/F",
@@ -156,25 +230,25 @@ def _register_windows_autostart(exe: Path, server: str, token: str) -> None:
         capture_output=True,
         text=True,
     )
-    if create.returncode != 0:
-        subprocess.run(
-            [
-                "schtasks", "/Create", "/TN", TASK_NAME, "/TR", tr,
-                "/SC", "ONLOGON", "/RL", "HIGHEST", "/F",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    subprocess.run(["schtasks", "/Run", "/TN", TASK_NAME], capture_output=True, text=True)
+    # User logon fallback (works without elevating to SYSTEM)
+    subprocess.run(
+        [
+            "schtasks", "/Create", "/TN", TASK_NAME_LOGON, "/TR", tr,
+            "/SC", "ONLOGON", "/RL", "HIGHEST", "/F",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    _register_windows_run_key(exe, server, token)
+    start_background_agent(exe, server, token)
 
 
 def _register_macos_autostart(exe: Path, server: str, token: str) -> None:
     launch_dir = Path.home() / "Library" / "LaunchAgents"
     launch_dir.mkdir(parents=True, exist_ok=True)
     plist_path = launch_dir / f"{LAUNCH_AGENT_LABEL}.plist"
-    log_dir = install_root() / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    logs = install_root() / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
     plist = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -192,8 +266,8 @@ def _register_macos_autostart(exe: Path, server: str, token: str) -> None:
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>WorkingDirectory</key><string>{install_root()}</string>
-  <key>StandardOutPath</key><string>{log_dir / "agent.out.log"}</string>
-  <key>StandardErrorPath</key><string>{log_dir / "agent.err.log"}</string>
+  <key>StandardOutPath</key><string>{logs / "agent.out.log"}</string>
+  <key>StandardErrorPath</key><string>{logs / "agent.err.log"}</string>
 </dict>
 </plist>
 """
@@ -201,6 +275,7 @@ def _register_macos_autostart(exe: Path, server: str, token: str) -> None:
     subprocess.run(["launchctl", "unload", str(plist_path)], capture_output=True, text=True)
     subprocess.run(["launchctl", "load", str(plist_path)], capture_output=True, text=True)
     subprocess.run(["launchctl", "start", LAUNCH_AGENT_LABEL], capture_output=True, text=True)
+    start_background_agent(exe, server, token)
 
 
 def _register_linux_autostart(exe: Path, server: str, token: str) -> None:
@@ -225,30 +300,32 @@ WantedBy=multi-user.target
             system_unit.write_text(unit, encoding="utf-8")
             subprocess.run(["systemctl", "daemon-reload"], check=False)
             subprocess.run(["systemctl", "enable", "--now", LINUX_UNIT], check=False)
+            start_background_agent(exe, server, token)
             return
     except Exception:
         pass
     user_unit_dir.mkdir(parents=True, exist_ok=True)
-    user_unit = user_unit_dir / LINUX_UNIT
-    user_unit.write_text(user_unit_text, encoding="utf-8")
+    (user_unit_dir / LINUX_UNIT).write_text(user_unit_text, encoding="utf-8")
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
     subprocess.run(["systemctl", "--user", "enable", "--now", LINUX_UNIT], check=False)
+    start_background_agent(exe, server, token)
 
 
 def install_agent(server: str, token: str, uninstall_password_hash: str = "") -> Path:
-    """One-time permanent install. Copies binary, saves config, registers autostart."""
+    """One-time permanent install. Starts background agent and registers reboot autostart."""
     exe = copy_self_to_install_dir()
+    server = server.rstrip("/")
     cfg = {
-        "server": server.rstrip("/"),
+        "server": server,
         "token": token,
         "installed": True,
         "install_path": str(exe),
         "os": platform.system(),
+        "background": True,
     }
     save_config(cfg)
     if uninstall_password_hash:
         set_uninstall_password_hash(uninstall_password_hash)
-    server = server.rstrip("/")
     if is_windows():
         _register_windows_autostart(exe, server, token)
     elif is_macos():
@@ -258,9 +335,31 @@ def install_agent(server: str, token: str, uninstall_password_hash: str = "") ->
     return exe
 
 
+def ensure_running(server: str | None = None, token: str | None = None) -> None:
+    """If already installed, make sure background agent is running."""
+    cfg = load_config()
+    server = (server or cfg.get("server") or "").rstrip("/")
+    token = token or cfg.get("token") or ""
+    exe = installed_agent_exe()
+    if not exe.is_file() or not server or not token:
+        return
+    start_background_agent(exe, server, token)
+
+
 def _remove_windows_autostart() -> None:
-    subprocess.run(["schtasks", "/End", "/TN", TASK_NAME], capture_output=True, text=True)
-    subprocess.run(["schtasks", "/Delete", "/TN", TASK_NAME, "/F"], capture_output=True, text=True)
+    for name in (TASK_NAME, TASK_NAME_LOGON):
+        subprocess.run(["schtasks", "/End", "/TN", name], capture_output=True, text=True)
+        subprocess.run(["schtasks", "/Delete", "/TN", name, "/F"], capture_output=True, text=True)
+    _unregister_windows_run_key()
+    # Best-effort kill background agent processes for this product
+    try:
+        subprocess.run(
+            ["taskkill", "/F", "/IM", "AU-Kamra-Remote-Manager-Agent.exe"],
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        pass
 
 
 def _remove_macos_autostart() -> None:
@@ -273,14 +372,12 @@ def _remove_macos_autostart() -> None:
 def _remove_linux_autostart() -> None:
     subprocess.run(["systemctl", "disable", "--now", LINUX_UNIT], check=False, capture_output=True)
     subprocess.run(["systemctl", "--user", "disable", "--now", LINUX_UNIT], check=False, capture_output=True)
-    # legacy unit name cleanup
     for name in (LINUX_UNIT, "disclosermm-agent.service"):
         Path(f"/etc/systemd/system/{name}").unlink(missing_ok=True)
         (Path.home() / ".config" / "systemd" / "user" / name).unlink(missing_ok=True)
 
 
 def uninstall_agent(password: str) -> None:
-    """Remove permanent install only if uninstall password matches."""
     if not verify_uninstall_password(password):
         raise PermissionError(
             "Incorrect uninstall password. Ask your AU-Kamra administrator."

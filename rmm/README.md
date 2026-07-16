@@ -35,9 +35,15 @@ build\build_windows.bat
 4. **Download** the Windows / macOS / Linux agent
 5. On the target machine, run with `--install --server http://SERVER_IP:8443 --token <token>`
 
-**Important (Windows .exe):** rebuild with `build\build_windows.bat` so the Agent is built **first** and bundled into the Server. Then **Generate** stages that real `.exe` for download (it does **not** recompile from inside the running Server .exe).
+**Important (Windows .exe):** rebuild with `build\build_windows.bat` so the Agent is built **first** and bundled into the Server.
 
-You can also **Upload** a native agent built on each OS (`build\build_windows.bat` or `build/build_unix_agent.sh`).
+### Agent behavior (Windows)
+- Double-click `AU-Kamra-Remote-Manager-Agent.exe` once (Run as administrator)
+- It installs permanently under `%ProgramData%\AUKamraRemoteManager\`
+- Runs **in the background** (no CMD window)
+- Auto-starts after reboot (Scheduled Task + Run key)
+- Closing dialogs/windows does **not** stop it
+- Remove only with: `AU-Kamra-Remote-Manager-Agent.exe --uninstall` + admin password
 
 ### Defaults (change immediately)
 

@@ -77,5 +77,6 @@ exe = EXE(
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    # No console window — agent runs silently in the background
+    console=False,
 )
