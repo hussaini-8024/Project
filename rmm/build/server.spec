@@ -1,22 +1,37 @@
-# Build single-file Windows executables with PyInstaller (run on Windows).
-# Usage (from rmm/):
-#   pip install -r requirements.txt
-#   pyinstaller build/server.spec
-#   pyinstaller build/agent.spec
+# Build single-file Windows Server executable with PyInstaller (run on Windows).
+# Prefer build\build_windows.bat which builds the Agent first, then this Server
+# with the agent bundled for admin-panel Generate/Download.
+
+import os
+from pathlib import Path
 
 block_cipher = None
+root = Path(SPECPATH).resolve().parent.parent  # rmm/
+
+datas = [(str(root / 'server' / 'static'), 'server/static')]
+
+# Bundle Windows agent into the server so Generate/Download works without recompiling
+agent_candidates = [
+    root / 'bin' / 'agents' / 'windows' / 'AU-Kamra-Remote-Manager-Agent.exe',
+    root / 'dist' / 'AU-Kamra-Remote-Manager-Agent.exe',
+    root / 'bin' / 'AU-Kamra-Remote-Manager-Agent.exe',
+]
+for agent_path in agent_candidates:
+    if agent_path.is_file() and agent_path.stat().st_size > 1024:
+        datas.append((str(agent_path), 'bundled_agents/windows'))
+        break
 
 a = Analysis(
-    ['../run_server.py'],
-    pathex=['..'],
+    [str(root / 'run_server.py')],
+    pathex=[str(root)],
     binaries=[],
-    datas=[('../server/static', 'server/static')],
+    datas=datas,
     hiddenimports=['uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto',
                    'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets', 'uvicorn.protocols.websockets.auto',
                    'uvicorn.lifespan', 'uvicorn.lifespan.on',
                    'agent.discovery', 'agent.install_service', 'server.remote_push',
-                   'server.database', 'shared.protocol', 'shared.config'],
+                   'server.agent_packages', 'server.database', 'shared.protocol', 'shared.config'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

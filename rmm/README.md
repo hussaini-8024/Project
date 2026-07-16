@@ -32,10 +32,12 @@ build\build_windows.bat
 1. `AU-Kamra-Remote-Manager-Server.exe` → open `http://SERVER_IP:8443`
 2. Sign in, set uninstall password under **Settings**
 3. Open **Add / Discover PC** → **Generate agent packages**
-4. **Download** the agent for **Windows**, **macOS**, or **Linux**
+4. **Download** the Windows / macOS / Linux agent
 5. On the target machine, run with `--install --server http://SERVER_IP:8443 --token <token>`
 
-You can also **Upload** a native agent built on each OS (`build\build_windows.bat` or `build/build_unix_agent.sh`) so downloads are true single-file binaries (no Python on endpoints).
+**Important (Windows .exe):** rebuild with `build\build_windows.bat` so the Agent is built **first** and bundled into the Server. Then **Generate** stages that real `.exe` for download (it does **not** recompile from inside the running Server .exe).
+
+You can also **Upload** a native agent built on each OS (`build\build_windows.bat` or `build/build_unix_agent.sh`).
 
 ### Defaults (change immediately)
 

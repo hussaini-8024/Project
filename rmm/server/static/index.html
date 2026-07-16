@@ -1424,19 +1424,26 @@
       a.click();
     }
 
+    function fmtBytes(n) {
+      n = Number(n) || 0;
+      if (n < 1024) return n + " B";
+      if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+      return (n / 1048576).toFixed(1) + " MB";
+    }
+
     function renderAgentPlatformCards(platforms) {
       (platforms || []).forEach((p) => {
         const st = document.getElementById("st-" + p.platform);
         const hint = document.getElementById("hint-" + p.platform);
         if (!st || !hint) return;
         if (p.native_available) {
-          st.textContent = "Native ready";
+          st.textContent = "Native .exe ready";
           st.style.color = "var(--live)";
-          hint.textContent = `Binary ${(p.native_size / 1048576).toFixed(1)} MB — no Python needed`;
+          hint.textContent = `Binary ${fmtBytes(p.native_size)} — ready to download`;
         } else if (p.kit_available) {
           st.textContent = "Installer kit";
           st.style.color = "var(--accent-warm)";
-          hint.textContent = `ZIP kit ${(p.kit_size / 1048576).toFixed(1)} MB`;
+          hint.textContent = `ZIP ${fmtBytes(p.kit_size)} — upload native .exe for best result`;
         } else {
           st.textContent = "Missing";
           st.style.color = "var(--muted)";
@@ -1496,16 +1503,23 @@ Default uninstall password until changed: UninstallMe!`;
       });
       document.getElementById("generate-agents").onclick = async () => {
         const status = document.getElementById("generate-status");
-        status.textContent = "Generating… (may take a minute)";
+        status.textContent = "Generating packages…";
         try {
           const result = await api("/api/agent-binary/generate", { method: "POST" });
           renderAgentPlatformCards(result.platforms || []);
-          const native = result.built_native
-            ? ` Native built for ${result.built_native.platform}.`
-            : "";
-          status.textContent = "Packages ready." + native;
-          if (result.errors && result.errors.length) {
-            status.textContent += " Notes: " + result.errors.join("; ");
+          const win = (result.platforms || []).find((p) => p.platform === "windows");
+          if (win && win.native_available) {
+            status.textContent = "Windows agent .exe ready — click Download on Windows.";
+          } else if (result.built_native) {
+            status.textContent = `Agent staged for ${result.built_native.platform}.`;
+          } else {
+            status.textContent = "Kits created. Windows .exe missing — Upload agent or rebuild with build_windows.bat.";
+          }
+          const notes = []
+            .concat(result.warnings || [])
+            .concat(result.errors || []);
+          if (notes.length) {
+            status.textContent += " " + notes[0];
           }
         } catch (e) {
           status.textContent = e.message;

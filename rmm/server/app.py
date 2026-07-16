@@ -338,10 +338,13 @@ async def download_agent_for_platform(
 
 @app.post("/api/agent-binary/generate")
 async def generate_agent_packages(admin: dict = Depends(require_admin)) -> dict[str, Any]:
-    """Generate Windows/macOS/Linux download kits; build native agent for this host OS if possible."""
+    """Stage/bundled native agents + kits. Does not relaunch the server .exe as Python."""
     result = await asyncio.to_thread(generate_all_packages, True)
-    db.audit(admin["username"], "generate_agent_packages", detail=str(result.get("built_native")))
-    return {"ok": True, **result, "platforms": list_platform_status()}
+    platforms = list_platform_status()
+    win = next((p for p in platforms if p["platform"] == "windows"), None)
+    detail = "windows_native" if win and win.get("native_available") else "windows_missing"
+    db.audit(admin["username"], "generate_agent_packages", detail=detail)
+    return {"ok": True, **result, "platforms": platforms}
 
 
 @app.post("/api/agent-binary/upload/{platform}")
