@@ -17,9 +17,9 @@ from pathlib import Path
 from typing import Any
 
 # Allow running from repo root or packaged exe
-ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_SOURCE_ROOT = Path(__file__).resolve().parent.parent
+if str(_SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SOURCE_ROOT))
 
 from fastapi import (
     Depends,
@@ -39,6 +39,7 @@ import uvicorn
 from shared import config
 from shared import protocol as proto
 from server.database import Database
+from server.paths import static_dir, writable_root
 from server.remote_push import push_agent_windows
 from server.agent_packages import (
     find_agent_binary,
@@ -53,7 +54,8 @@ from agent.install_service import hash_uninstall_password
 db = Database()
 app = FastAPI(title="AU-Kamra IT Experts Remote Manager", version="1.0.0")
 
-STATIC_DIR = Path(__file__).resolve().parent / "static"
+ROOT = writable_root()
+STATIC_DIR = static_dir()
 PACKAGES_DIR = ROOT / "data" / "packages"
 BIN_DIR = ROOT / "bin"
 PACKAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -174,7 +176,9 @@ class RemoteUninstallBody(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> HTMLResponse:
-    html_path = STATIC_DIR / "index.html"
+    html_path = static_dir() / "index.html"
+    if not html_path.is_file():
+        raise HTTPException(status_code=500, detail=f"Dashboard missing at {html_path}")
     return HTMLResponse(html_path.read_text(encoding="utf-8"))
 
 
@@ -440,12 +444,12 @@ async def add_manual_pc(body: ManualPcBody, admin: dict = Depends(require_admin)
         db.update_pending_pc(
             pending_id,
             "needs_binary",
-            "Agent .exe missing on server. Build DiscloseRMM-Agent.exe and place in bin/ or dist/.",
+            "Agent .exe missing on server. Generate/Download or Upload the Windows agent in Add / Discover.",
         )
         return {
             "id": pending_id,
             "status": "needs_binary",
-            "detail": "Place DiscloseRMM-Agent.exe on the server, then retry push.",
+            "detail": "Generate agent packages or Upload AU-Kamra-Remote-Manager-Agent.exe, then retry.",
         }
 
     ok, detail = await asyncio.to_thread(

@@ -13,48 +13,30 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-_SOURCE_ROOT = Path(__file__).resolve().parent.parent
+try:
+    from server.paths import is_frozen, resource_root, writable_root
+except Exception:  # pragma: no cover - early import / tests
+    def is_frozen() -> bool:
+        return bool(getattr(sys, "frozen", False))
 
+    def resource_root() -> Path:
+        return Path(__file__).resolve().parent.parent
 
-def is_frozen() -> bool:
-    return bool(getattr(sys, "frozen", False))
+    def writable_root() -> Path:
+        return Path(__file__).resolve().parent.parent
 
 
 def project_root() -> Path:
     """Read-only source/bundle root (may be inside _MEIPASS when frozen)."""
-    return _SOURCE_ROOT
-
-
-def writable_root() -> Path:
-    """Directory where generated agents/kits can be written."""
-    if not is_frozen():
-        return _SOURCE_ROOT
-
-    exe_dir = Path(sys.executable).resolve().parent
-    probe = exe_dir / ".aukamra_write_test"
-    try:
-        probe.write_text("ok", encoding="utf-8")
-        probe.unlink(missing_ok=True)
-        return exe_dir
-    except Exception:
-        pass
-
-    # Server may live under Program Files (not writable) — use AppData / home
-    if sys.platform == "win32":
-        base = Path(os.environ.get("LOCALAPPDATA") or Path.home())
-    else:
-        base = Path.home() / ".local" / "share"
-    root = base / "AUKamraRemoteManager"
-    root.mkdir(parents=True, exist_ok=True)
-    return root
+    return resource_root()
 
 
 def agents_dir() -> Path:
     return writable_root() / "bin" / "agents"
 
 
-# Back-compat aliases used below (resolved dynamically via helpers)
-ROOT = _SOURCE_ROOT
+# Back-compat
+ROOT = resource_root()
 
 PLATFORMS = ("windows", "macos", "linux")
 

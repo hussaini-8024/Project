@@ -1,4 +1,4 @@
-"""Entry point for DiscloseRMM Agent (PyInstaller / python -m)."""
+"""Entry point for AU-Kamra IT Experts Remote Manager Agent."""
 
 from agent.agent import main
 

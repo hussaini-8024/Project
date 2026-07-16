@@ -1,4 +1,4 @@
-"""Entry point for DiscloseRMM Server (PyInstaller / python -m)."""
+"""Entry point for AU-Kamra IT Experts Remote Manager Server."""
 
 from server.app import main
 

@@ -10,7 +10,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "rmm.db"
+try:
+    from server.paths import writable_root
+except Exception:  # pragma: no cover
+    def writable_root() -> Path:  # type: ignore
+        return Path(__file__).resolve().parent.parent
+
+
+DB_PATH = writable_root() / "data" / "rmm.db"
 
 
 def _hash_password(password: str, salt: str) -> str:
