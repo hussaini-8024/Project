@@ -31,9 +31,11 @@ build\build_windows.bat
 
 1. `AU-Kamra-Remote-Manager-Server.exe` → open `http://SERVER_IP:8443`
 2. Sign in, set uninstall password under **Settings**
-3. On each PC (Run as admin once): `AU-Kamra-Remote-Manager-Agent.exe`
+3. Open **Add / Discover PC** → **Generate agent packages**
+4. **Download** the agent for **Windows**, **macOS**, or **Linux**
+5. On the target machine, run with `--install --server http://SERVER_IP:8443 --token <token>`
 
-See full feature docs in previous sections of this project (discovery, groups, deploy, shell, live view, network monitor).
+You can also **Upload** a native agent built on each OS (`build\build_windows.bat` or `build/build_unix_agent.sh`) so downloads are true single-file binaries (no Python on endpoints).
 
 ### Defaults (change immediately)
 

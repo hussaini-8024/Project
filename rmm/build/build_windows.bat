@@ -29,8 +29,10 @@ pyinstaller --noconfirm build\agent.spec
 if errorlevel 1 exit /b 1
 
 if not exist bin mkdir bin
+if not exist bin\agents\windows mkdir bin\agents\windows
 copy /Y dist\AU-Kamra-Remote-Manager-Agent.exe bin\AU-Kamra-Remote-Manager-Agent.exe >nul
 copy /Y dist\AU-Kamra-Remote-Manager-Server.exe bin\AU-Kamra-Remote-Manager-Server.exe >nul
+copy /Y dist\AU-Kamra-Remote-Manager-Agent.exe bin\agents\windows\AU-Kamra-Remote-Manager-Agent.exe >nul
 REM Legacy aliases for older docs/scripts
 copy /Y dist\AU-Kamra-Remote-Manager-Agent.exe bin\DiscloseRMM-Agent.exe >nul
 copy /Y dist\AU-Kamra-Remote-Manager-Server.exe bin\DiscloseRMM-Server.exe >nul

@@ -10,31 +10,10 @@ from pathlib import Path
 
 
 def find_agent_binary() -> Path | None:
-    """Locate packaged agent exe next to server or in dist/."""
-    candidates = []
-    if getattr(__import__("sys"), "frozen", False):
-        here = Path(__import__("sys").executable).resolve().parent
-        candidates.extend(
-            [
-                here / "AU-Kamra-Remote-Manager-Agent.exe",
-                here / "DiscloseRMM-Agent.exe",
-                here / "agent" / "AU-Kamra-Remote-Manager-Agent.exe",
-            ]
-        )
-    root = Path(__file__).resolve().parent.parent
-    candidates.extend(
-        [
-            root / "dist" / "AU-Kamra-Remote-Manager-Agent.exe",
-            root / "dist" / "DiscloseRMM-Agent.exe",
-            root / "bin" / "AU-Kamra-Remote-Manager-Agent.exe",
-            root / "bin" / "DiscloseRMM-Agent.exe",
-            Path(os.environ.get("RMM_AGENT_EXE", "")),
-        ]
-    )
-    for c in candidates:
-        if c and c.is_file():
-            return c
-    return None
+    """Locate Windows agent binary for remote push-install."""
+    from server.agent_packages import find_agent_binary as _find
+
+    return _find("windows")
 
 
 def push_agent_windows(

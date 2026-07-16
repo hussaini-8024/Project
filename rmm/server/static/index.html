@@ -963,12 +963,51 @@
           </div>
         </div>
         <div class="panel" style="margin-top:16px">
-          <h3>3) One-time local install</h3>
-          <label>Enrollment token</label>
+          <h3>3) Download agent for Windows / macOS / Linux</h3>
+          <p class="sub">Generate packages on the server, or upload a native build per OS. Endpoints install permanently with the enrollment token.</p>
+          <div class="toolbar">
+            <button id="generate-agents">Generate agent packages</button>
+            <span class="sub" style="margin:0" id="generate-status"></span>
+          </div>
+          <div class="stats" style="margin-top:8px" id="agent-dl-cards">
+            <div class="stat">
+              <div class="label">Windows</div>
+              <div class="value" style="font-size:1.1rem" id="st-windows">—</div>
+              <div class="hint" id="hint-windows">Not generated yet</div>
+              <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+                <button data-dl="windows">Download</button>
+                <label class="secondary" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin:0">
+                  Upload<input type="file" data-up="windows" hidden />
+                </label>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="label">macOS</div>
+              <div class="value" style="font-size:1.1rem" id="st-macos">—</div>
+              <div class="hint" id="hint-macos">Not generated yet</div>
+              <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+                <button data-dl="macos">Download</button>
+                <label class="secondary" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin:0">
+                  Upload<input type="file" data-up="macos" hidden />
+                </label>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="label">Linux</div>
+              <div class="value" style="font-size:1.1rem" id="st-linux">—</div>
+              <div class="hint" id="hint-linux">Not generated yet</div>
+              <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+                <button data-dl="linux">Download</button>
+                <label class="secondary" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin:0">
+                  Upload<input type="file" data-up="linux" hidden />
+                </label>
+              </div>
+            </div>
+          </div>
+          <label style="margin-top:18px">Enrollment token</label>
           <div class="toolbar">
             <input id="enroll-token" class="mono" style="flex:1;min-width:220px" />
             <button id="save-token">Save token</button>
-            <a id="dl-agent" class="secondary" style="display:inline-block;padding:12px 16px;text-decoration:none;border:1px solid var(--border);background:rgba(255,255,255,0.04);border-radius:10px;font-weight:700">Download Agent.exe</a>
           </div>
           <pre class="mono" id="enroll-help"></pre>
         </div>
@@ -988,9 +1027,9 @@
             <button id="save-uninstall">Save &amp; push to agents</button>
           </div>
           <div class="panel">
-            <h3>Agent binary on server</h3>
+            <h3>Agent packages on server</h3>
             <p class="sub" id="binary-meta">—</p>
-            <p class="sub">End users only need the .exe files — no Python on managed PCs.</p>
+            <p class="sub">Use <strong>Add / Discover → Generate agent packages</strong>, then download for Windows, macOS, or Linux.</p>
           </div>
         </div>
       </section>
@@ -1366,42 +1405,113 @@
       loadNetwork();
     };
 
+    async function downloadPlatformAgent(platform) {
+      const res = await fetch(`/api/agent-binary/download/${platform}`, {
+        headers: { Authorization: "Bearer " + state.token },
+      });
+      if (!res.ok) {
+        let msg = await res.text();
+        try { msg = JSON.parse(msg).detail || msg; } catch {}
+        throw new Error(msg || "Download failed");
+      }
+      const disp = res.headers.get("Content-Disposition") || "";
+      const match = /filename="?([^"]+)"?/i.exec(disp);
+      const filename = match ? match[1] : `AU-Kamra-Agent-${platform}.bin`;
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    function renderAgentPlatformCards(platforms) {
+      (platforms || []).forEach((p) => {
+        const st = document.getElementById("st-" + p.platform);
+        const hint = document.getElementById("hint-" + p.platform);
+        if (!st || !hint) return;
+        if (p.native_available) {
+          st.textContent = "Native ready";
+          st.style.color = "var(--live)";
+          hint.textContent = `Binary ${(p.native_size / 1048576).toFixed(1)} MB — no Python needed`;
+        } else if (p.kit_available) {
+          st.textContent = "Installer kit";
+          st.style.color = "var(--accent-warm)";
+          hint.textContent = `ZIP kit ${(p.kit_size / 1048576).toFixed(1)} MB`;
+        } else {
+          st.textContent = "Missing";
+          st.style.color = "var(--muted)";
+          hint.textContent = "Click Generate or Upload";
+        }
+      });
+    }
+
+    async function loadAgentDownloads() {
+      const bin = await api("/api/agent-binary");
+      renderAgentPlatformCards(bin.platforms || []);
+      return bin;
+    }
+
     async function loadEnroll() {
       const data = await api("/api/enrollment");
       document.getElementById("enroll-token").value = data.token;
       const base = location.origin;
       document.getElementById("enroll-help").textContent =
-`${PRODUCT}
+`${PRODUCT} — multi-OS agent install
 
-Windows (no Python needed):
+1) Click "Generate agent packages" (builds kit for all OS; native build for this server OS).
+2) Download for the target OS:
+   • Windows → run Agent as Administrator:
+       AU-Kamra-Remote-Manager-Agent-Windows.exe --install --server ${base} --token ${data.token}
+   • macOS → unzip if needed, then:
+       chmod +x AU-Kamra-Remote-Manager-Agent-macOS
+       ./AU-Kamra-Remote-Manager-Agent-macOS --install --server ${base} --token ${data.token}
+   • Linux → same as macOS with the Linux binary, or ./install.sh ${base} ${data.token}
+3) Agent installs permanently and auto-starts.
+4) PC appears under Remote PCs (discovery + enrollment).
+5) Uninstall (password from Settings):
+       <agent> --uninstall
 
-1. Download ${AGENT_EXE} (or legacy DiscloseRMM-Agent.exe from bin\\)
-2. On the remote PC, Run as administrator:
-
-   ${AGENT_EXE}
-   Or: ${AGENT_EXE} --install --server ${base} --token ${data.token}
-
-3. Agent installs permanently and auto-starts.
-4. PC appears here via discovery + enrollment.
-5. Uninstall (password from Settings):
-   ${AGENT_EXE} --uninstall
-
+Tip: Upload native builds from Windows/macOS/Linux build machines for best results (no Python on endpoints).
 Default uninstall password until changed: UninstallMe!`;
-      document.getElementById("dl-agent").onclick = async (e) => {
-        e.preventDefault();
-        const res = await fetch("/api/agent-binary/download", {
-          headers: { Authorization: "Bearer " + state.token },
-        });
-        if (!res.ok) {
-          alert(await res.text());
-          return;
+
+      document.querySelectorAll("[data-dl]").forEach((btn) => {
+        btn.onclick = () => downloadPlatformAgent(btn.dataset.dl).catch((e) => alert(e.message));
+      });
+      document.querySelectorAll("[data-up]").forEach((input) => {
+        input.onchange = async () => {
+          const file = input.files && input.files[0];
+          if (!file) return;
+          const fd = new FormData();
+          fd.append("file", file);
+          const res = await fetch("/api/agent-binary/upload/" + input.dataset.up, {
+            method: "POST",
+            headers: { Authorization: "Bearer " + state.token },
+            body: fd,
+          });
+          if (!res.ok) return alert(await res.text());
+          alert("Uploaded " + input.dataset.up + " agent.");
+          loadAgentDownloads();
+          input.value = "";
+        };
+      });
+      document.getElementById("generate-agents").onclick = async () => {
+        const status = document.getElementById("generate-status");
+        status.textContent = "Generating… (may take a minute)";
+        try {
+          const result = await api("/api/agent-binary/generate", { method: "POST" });
+          renderAgentPlatformCards(result.platforms || []);
+          const native = result.built_native
+            ? ` Native built for ${result.built_native.platform}.`
+            : "";
+          status.textContent = "Packages ready." + native;
+          if (result.errors && result.errors.length) {
+            status.textContent += " Notes: " + result.errors.join("; ");
+          }
+        } catch (e) {
+          status.textContent = e.message;
         }
-        const blob = await res.blob();
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = AGENT_EXE;
-        a.click();
       };
+      await loadAgentDownloads();
       await loadDiscovered();
       await loadPending();
     }
@@ -1496,9 +1606,14 @@ Default uninstall password until changed: UninstallMe!`;
       document.getElementById("uninstall-meta").textContent =
         meta.default_note + " Hint: " + (meta.hint || "");
       const bin = await api("/api/agent-binary");
-      document.getElementById("binary-meta").textContent = bin.available
-        ? ("Ready: " + bin.path)
-        : ("Missing. " + bin.hint);
+      const parts = (bin.platforms || []).map((p) => {
+        if (p.native_available) return `${p.label}: native`;
+        if (p.kit_available) return `${p.label}: kit`;
+        return `${p.label}: missing`;
+      });
+      document.getElementById("binary-meta").textContent = parts.length
+        ? parts.join(" · ")
+        : (bin.hint || "—");
     }
 
     document.getElementById("save-uninstall").onclick = async () => {

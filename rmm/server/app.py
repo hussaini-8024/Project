@@ -39,7 +39,14 @@ import uvicorn
 from shared import config
 from shared import protocol as proto
 from server.database import Database
-from server.remote_push import find_agent_binary, push_agent_windows
+from server.remote_push import push_agent_windows
+from server.agent_packages import (
+    find_agent_binary,
+    generate_all_packages,
+    list_platform_status,
+    resolve_download,
+    save_uploaded_binary,
+)
 from agent.discovery import listen_udp_beacons, probe_host
 from agent.install_service import hash_uninstall_password
 
@@ -266,38 +273,99 @@ async def set_uninstall_password(
     return {"ok": "true"}
 
 
+def _allow_agent_download(token: str | None, authorization: str | None) -> bool:
+    expected = db.get_setting("enrollment_token", config.DEFAULT_ENROLLMENT_TOKEN)
+    if token and secrets.compare_digest(str(token), str(expected)):
+        return True
+    if authorization and authorization.startswith("Bearer "):
+        if db.get_admin_by_session(authorization.removeprefix("Bearer ").strip()):
+            return True
+    return False
+
+
 @app.get("/api/agent-binary")
 async def agent_binary_status(admin: dict = Depends(require_admin)) -> dict[str, Any]:
-    path = find_agent_binary()
+    """Multi-platform agent availability for the admin panel."""
+    platforms = list_platform_status()
+    any_native = any(p["native_available"] for p in platforms)
     return {
-        "available": bool(path),
-        "path": str(path) if path else "",
-        "download_url": "/api/agent-binary/download",
-        "hint": "Place AU-Kamra-Remote-Manager-Agent.exe (or DiscloseRMM-Agent.exe) in rmm/dist or rmm/bin.",
+        "available": any_native or any(p["kit_available"] for p in platforms),
+        "platforms": platforms,
+        "hint": "Click Generate to build packages, or Upload a native agent per OS. Then download Windows / macOS / Linux.",
+        "download_windows": "/api/agent-binary/download/windows",
+        "download_macos": "/api/agent-binary/download/macos",
+        "download_linux": "/api/agent-binary/download/linux",
     }
 
 
 @app.get("/api/agent-binary/download")
-async def download_agent_binary(
+async def download_agent_binary_legacy(
+    token: str | None = Query(default=None),
+    authorization: str | None = Header(default=None),
+    platform: str = Query(default="windows"),
+) -> FileResponse:
+    """Legacy download URL — defaults to Windows, accepts ?platform=."""
+    return await download_agent_for_platform(platform, "auto", token, authorization)
+
+
+@app.get("/api/agent-binary/download/{platform}")
+async def download_agent_for_platform(
+    platform: str,
+    prefer: str = Query(default="auto"),
     token: str | None = Query(default=None),
     authorization: str | None = Header(default=None),
 ) -> FileResponse:
-    allowed = False
-    expected = db.get_setting("enrollment_token", config.DEFAULT_ENROLLMENT_TOKEN)
-    if token and secrets.compare_digest(str(token), str(expected)):
-        allowed = True
-    elif authorization and authorization.startswith("Bearer "):
-        if db.get_admin_by_session(authorization.removeprefix("Bearer ").strip()):
-            allowed = True
-    if not allowed:
+    if not _allow_agent_download(token, authorization):
         raise HTTPException(status_code=401, detail="Unauthorized")
-    path = find_agent_binary()
-    if not path:
+    plat = platform.lower().strip()
+    if plat in ("mac", "osx", "darwin"):
+        plat = "macos"
+    if plat in ("win", "win32", "win64"):
+        plat = "windows"
+    try:
+        path, filename = resolve_download(plat, prefer=prefer)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="platform must be windows, macos, or linux")
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    if not path.is_file():
         raise HTTPException(
             status_code=404,
-            detail="Agent .exe not found on server. Build with build\\build_windows.bat and copy to bin/ or dist/.",
+            detail=f"No agent package for {plat}. Use Generate or Upload in the admin panel.",
         )
-    return FileResponse(path, filename=path.name)
+    return FileResponse(path, filename=filename, media_type="application/octet-stream")
+
+
+@app.post("/api/agent-binary/generate")
+async def generate_agent_packages(admin: dict = Depends(require_admin)) -> dict[str, Any]:
+    """Generate Windows/macOS/Linux download kits; build native agent for this host OS if possible."""
+    result = await asyncio.to_thread(generate_all_packages, True)
+    db.audit(admin["username"], "generate_agent_packages", detail=str(result.get("built_native")))
+    return {"ok": True, **result, "platforms": list_platform_status()}
+
+
+@app.post("/api/agent-binary/upload/{platform}")
+async def upload_agent_binary(
+    platform: str,
+    file: UploadFile = File(...),
+    admin: dict = Depends(require_admin),
+) -> dict[str, Any]:
+    """Admin uploads a pre-built native agent for windows / macos / linux."""
+    plat = platform.lower().strip()
+    if plat in ("mac", "osx", "darwin"):
+        plat = "macos"
+    if plat not in ("windows", "macos", "linux"):
+        raise HTTPException(status_code=400, detail="platform must be windows, macos, or linux")
+    data = await file.read()
+    if len(data) < 64:
+        raise HTTPException(status_code=400, detail="File too small")
+    path = save_uploaded_binary(plat, file.filename or "agent", data)
+    # Refresh kit so zip includes the native binary
+    from server.agent_packages import build_kit_zip
+
+    kit = build_kit_zip(plat)
+    db.audit(admin["username"], "upload_agent_binary", target=plat, detail=str(path))
+    return {"ok": True, "platform": plat, "path": str(path), "kit": str(kit), "size": len(data)}
 
 
 @app.get("/api/discovered")
