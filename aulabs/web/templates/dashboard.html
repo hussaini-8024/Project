@@ -25,6 +25,7 @@
       <button type="button" data-view="permissions" class="nav-item" data-need="permissions.manage">Permissions</button>
       <button type="button" data-view="shell" class="nav-item" data-need="shell.access">Shell</button>
       <button type="button" data-view="system" class="nav-item" data-need="system.manage">Master OS</button>
+      <button type="button" data-view="agents" class="nav-item" data-need="system.manage">Agents</button>
       <button type="button" data-view="audit" class="nav-item" data-need="audit.view">Audit</button>
     </nav>
     <div class="sidebar-foot">
@@ -134,6 +135,13 @@
         <h2>Host details</h2>
         <pre id="system-details" class="shell-output mono"></pre>
       </div>
+    </section>
+
+    <section id="view-agents" class="view">
+      <div class="toolbar">
+        <button type="button" class="btn" id="refresh-agents">Refresh</button>
+      </div>
+      <div id="agents-list" class="list-stack"></div>
     </section>
 
     <section id="view-audit" class="view">

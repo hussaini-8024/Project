@@ -1,103 +1,74 @@
 # AU Labs IT Management
 
-Local Linux VPS hosting panel. Multiple users share one Linux host with **isolated directories**, **storage quotas**, **permissions**, and **independent sessions** — managed from a web panel named **AU Labs IT Management**.
+Local Linux VPS hosting panel with a **VLC-style Setup installer**.  
+Install Server and Agent as single-file programs — **no Python, pip, or terminal required**.
 
-Runs on Linux only. Installs and starts with a single command.
+## Easy install (recommended)
 
-## One-command install
+### Windows (`.exe` like VLC)
 
-From this repository on a Linux machine:
+1. Build on a Windows machine (one time):
+   ```bat
+   scripts\build_windows.bat
+   ```
+2. Open `release\windows\` and double-click **`AULabsSetup.exe`**
+3. Next → choose **Server** and/or **Agent** → Install
+4. Open http://127.0.0.1:8787 — login `admin` / `aulabs-admin`
 
-```bash
-bash install.sh
-```
+Optional: if [Inno Setup](https://jrsoftware.org/isinfo.php) is installed, the same script also produces **`Setup-AULabs.exe`**.
 
-Or:
-
-```bash
-chmod +x install.sh && ./install.sh
-```
-
-The installer will:
-
-1. Detect Linux and package manager  
-2. Install Python dependencies  
-3. Create an app root (`/opt/aulabs` as root, or `~/.local/share/aulabs` as user)  
-4. Create a virtualenv and install packages  
-5. Initialize the database and admin account  
-6. Install a systemd service when run as root  
-7. Start the panel on **http://127.0.0.1:8787**
-
-### After install
-
-| Item | Default |
+| File | Purpose |
 |------|---------|
-| URL | http://127.0.0.1:8787 |
-| Admin user | `admin` |
-| Admin password | `aulabs-admin` |
+| `AULabsSetup.exe` | Graphical installer (double-click) |
+| `AULabsServer.exe` | Web panel server |
+| `AULabsAgent.exe` | Host agent |
+| `Setup-AULabs.exe` | Optional Inno Setup wrapper |
 
-Change the admin password after first login.
+### Linux (same flow, single-file binaries)
 
 ```bash
-aulabs serve      # start panel
-aulabs init       # initialize data
-aulabs version    # print version
-systemctl status aulabs   # when installed as root
+bash scripts/build_binaries.sh
+# then:
+./release/AULabs-linux-*/AULabsSetup
 ```
 
-## What it does
+Double-click / run **AULabsSetup** → wizard installs Server and Agent into a folder (default `~/AU Labs IT Management` or `/opt/aulabs`).
 
-- **Users** — create panel users, each with a private home under the data root  
-- **Storage** — per-user quotas, directory trees, usage reporting  
-- **Permissions** — grant/revoke capabilities (files, shell, sessions, admin ops)  
-- **Sessions** — each user can open separate web/shell working environments on the same OS  
-- **Master OS** — host CPU, memory, disk, uptime, and process overview from the panel  
-- **Audit** — activity log for user/session/storage actions  
+## What you get
 
-All of this is local: the panel binds to `127.0.0.1` by default for local access.
+- **Server** — AU Labs IT Management web panel (users, storage, permissions, sessions, master OS)
+- **Agent** — connects a host to the panel with heartbeats and local session environments
+- **Setup** — install wizard, shortcuts, uninstall script
 
-## Development run (without installer)
+## Developer run (optional)
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 export AULABS_DATA_ROOT="$(pwd)/data"
-python -m aulabs init
-python -m aulabs serve
+python -m aulabs serve          # server
+python -m aulabs.agent run      # agent
+python -m aulabs.setup_wizard   # setup GUI
 ```
 
-Open http://127.0.0.1:8787
+Classic script install is still available: `bash install.sh`
 
-## Environment variables
+## Default login
 
-| Variable | Default | Meaning |
-|----------|---------|---------|
-| `AULABS_HOST` | `127.0.0.1` | Bind address |
-| `AULABS_PORT` | `8787` | Bind port |
-| `AULABS_DATA_ROOT` | `/opt/aulabs/data` or `./data` | Data + user homes |
-| `AULABS_ADMIN_USER` | `admin` | Bootstrap admin |
-| `AULABS_ADMIN_PASS` | `aulabs-admin` | Bootstrap password |
-| `AULABS_SECRET_KEY` | auto | Session signing key |
-| `AULABS_DEFAULT_STORAGE_MB` | `1024` | New user quota |
+| Item | Value |
+|------|-------|
+| URL | http://127.0.0.1:8787 |
+| User | `admin` |
+| Password | `aulabs-admin` |
 
 ## Project layout
 
 ```
-install.sh              # one-command autoinstaller
-aulabs/                 # Python application
-  app.py                # FastAPI web panel
-  services/             # users, storage, sessions, permissions, system
-  web/                  # UI templates + static assets
-systemd/aulabs.service  # systemd unit template
+AULabsSetup / AULabsSetup.exe   # built installer
+AULabsServer / AULabsServer.exe # built server
+AULabsAgent / AULabsAgent.exe   # built agent
+packaging/                      # PyInstaller + Inno Setup
+scripts/build_binaries.sh       # Linux/macOS single-file build
+scripts/build_windows.bat       # Windows .exe build
+aulabs/                         # application source
 ```
-
-## Requirements
-
-- Linux OS  
-- Python 3.10+  
-- Root optional (root enables systemd + system packages; user mode still works)
-
-## License
-
-Proprietary — AU Labs.

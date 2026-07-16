@@ -12,6 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from aulabs import __app_name__, __version__
 from aulabs.api import api_router
+from aulabs.api.agents_routes import ensure_agents_table
 from aulabs.config import get_settings
 from aulabs.services.users import UserService
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     def _startup() -> None:
         settings.ensure_paths()
         UserService().ensure_admin()
+        ensure_agents_table()
 
     @app.get("/", response_class=HTMLResponse)
     async def index(request: Request):

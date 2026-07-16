@@ -1,0 +1,41 @@
+name: Build AU Labs Setup (exe / binaries)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build Windows .exe
+        shell: cmd
+        run: scripts\build_windows.bat
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AULabs-windows-x64
+          path: release/windows/*
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tk
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - name: Build Linux binaries
+        run: bash scripts/build_binaries.sh
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AULabs-linux-x86_64
+          path: release/AULabs-linux-x86_64/*

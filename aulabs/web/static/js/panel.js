@@ -56,6 +56,7 @@ function setView(name) {
     permissions: ["Permissions", "Fine-grained access for each panel user"],
     shell: ["Shell", "Run commands inside your isolated environment"],
     system: ["Master OS", "Linux host managed from the web panel"],
+    agents: ["Agents", "Connected AU Labs Agent hosts reporting into the panel"],
     audit: ["Audit", "Panel activity history"],
   };
   const [title, sub] = titles[name] || ["Panel", ""];
@@ -72,6 +73,7 @@ async function loadView(name) {
     if (name === "sessions") await loadSessions();
     if (name === "permissions") await loadPermissions();
     if (name === "system") await loadSystem();
+    if (name === "agents") await loadAgents();
     if (name === "audit") await loadAudit();
   } catch (err) {
     console.error(err);
@@ -279,6 +281,34 @@ async function loadSystem() {
   document.getElementById("system-details").textContent = JSON.stringify(data, null, 2);
 }
 
+async function loadAgents() {
+  const data = await api("/agents");
+  const el = document.getElementById("agents-list");
+  el.innerHTML = (data.agents || []).length
+    ? data.agents.map((a) => `
+      <div class="list-item">
+        <div>
+          <div class="title">${a.agent_name} · ${a.hostname || "—"}</div>
+          <div class="meta mono">${a.agent_id.slice(0, 12)} · ${a.platform?.system || "?"} ${a.platform?.release || ""} · v${a.version || "?"}</div>
+          <div class="meta">CPU ${a.metrics?.cpu_percent ?? "—"}% · RAM ${a.metrics?.memory?.percent ?? "—"}% · Disk ${a.metrics?.disk?.percent ?? "—"}%</div>
+        </div>
+        <div style="display:flex;gap:0.4rem;align-items:center">
+          <span class="badge ok">${a.status}</span>
+          <button class="btn" data-agent-session="${a.agent_id}">New session</button>
+        </div>
+      </div>`).join("")
+    : `<div class="list-item"><div class="meta">No agents connected. Install AU Labs Agent and point it at this panel.</div></div>`;
+  el.querySelectorAll("[data-agent-session]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await api(`/agents/${btn.dataset.agentSession}/command`, {
+        method: "POST",
+        body: JSON.stringify({ action: "create_session", label: "panel" }),
+      });
+      alert("Session create command queued for agent");
+    });
+  });
+}
+
 async function loadAudit() {
   const data = await api("/system/audit?limit=80");
   const el = document.getElementById("audit-list");
@@ -364,6 +394,8 @@ document.getElementById("save-permissions")?.addEventListener("click", async () 
   });
   alert("Permissions saved");
 });
+
+document.getElementById("refresh-agents")?.addEventListener("click", () => loadAgents().catch(alert));
 
 document.getElementById("shell-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();

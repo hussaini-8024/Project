@@ -37,13 +37,19 @@ def main(argv: list[str] | None = None) -> int:
     host = args.host or settings.host
     port = args.port or settings.port
     print(f"Starting AU Labs IT Management on http://{host}:{port}")
-    uvicorn.run(
-        "aulabs.app:app",
-        host=host,
-        port=port,
-        reload=False,
-        log_level="info",
-    )
+
+    if getattr(sys, "frozen", False):
+        from aulabs.app import app
+
+        uvicorn.run(app, host=host, port=port, log_level="info")
+    else:
+        uvicorn.run(
+            "aulabs.app:app",
+            host=host,
+            port=port,
+            reload=False,
+            log_level="info",
+        )
     return 0
 
 
