@@ -55,8 +55,8 @@ def agent_id_path() -> Path:
 
 def installed_agent_exe() -> Path:
     if is_windows():
-        return install_root() / "DiscloseRMM-Agent.exe"
-    return install_root() / "DiscloseRMM-Agent"
+        return install_root() / "AU-Kamra-Remote-Manager-Agent.exe"
+    return install_root() / "AU-Kamra-Remote-Manager-Agent"
 
 
 def load_config() -> dict[str, Any]:
@@ -74,7 +74,7 @@ def save_config(cfg: dict[str, Any]) -> None:
 
 
 def hash_uninstall_password(password: str) -> str:
-    return hashlib.sha256(f"DiscloseRMM-uninstall:{password}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"AUKamra-uninstall:{password}".encode("utf-8")).hexdigest()
 
 
 def set_uninstall_password_hash(password_hash: str) -> None:
@@ -92,7 +92,7 @@ def verify_uninstall_password(password: str) -> bool:
     expected = get_uninstall_password_hash()
     if not expected:
         return False
-    return hashlib.sha256(f"DiscloseRMM-uninstall:{password}".encode("utf-8")).hexdigest() == expected
+    return hashlib.sha256(f"AUKamra-uninstall:{password}".encode("utf-8")).hexdigest() == expected
 
 
 def copy_self_to_install_dir() -> Path:
@@ -107,14 +107,14 @@ def copy_self_to_install_dir() -> Path:
     root = Path(__file__).resolve().parent.parent
     run_py = root / "run_agent.py"
     if is_windows():
-        dest = install_root() / "DiscloseRMM-Agent.cmd"
+        dest = install_root() / "AU-Kamra-Remote-Manager-Agent.cmd"
         dest.write_text(
             f'@echo off\r\n"{sys.executable}" "{run_py}" %*\r\n',
             encoding="utf-8",
         )
         return dest
 
-    dest = install_root() / "DiscloseRMM-Agent"
+    dest = install_root() / "AU-Kamra-Remote-Manager-Agent"
     dest.write_text(
         f"#!/bin/bash\nexec '{sys.executable}' '{run_py}' \"$@\"\n",
         encoding="utf-8",
@@ -177,7 +177,7 @@ def _register_windows_autostart(exe: Path, server: str, token: str) -> None:
 
 def _register_linux_autostart(exe: Path, server: str, token: str) -> None:
     unit = f"""[Unit]
-Description=DiscloseRMM Agent
+Description=AU-Kamra IT Experts Remote Manager Agent
 After=network-online.target
 
 [Service]
@@ -242,7 +242,7 @@ def uninstall_agent(password: str) -> None:
     """Remove permanent install only if uninstall password matches."""
     if not verify_uninstall_password(password):
         raise PermissionError(
-            "Incorrect uninstall password. Ask your DiscloseRMM administrator."
+            "Incorrect uninstall password. Ask your AU-Kamra administrator."
         )
     if is_windows():
         _remove_windows_autostart()
