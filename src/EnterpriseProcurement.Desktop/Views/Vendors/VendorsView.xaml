@@ -1,0 +1,34 @@
+<UserControl x:Class="EnterpriseProcurement.Desktop.Views.Vendors.VendorsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+        <TextBlock Text="Vendor Management" Style="{StaticResource PageTitle}" />
+        <TextBlock Text="Maintain vendor profiles, NTN/STRN, bank details, and ratings." Style="{StaticResource PageSubtitle}" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <DataGrid Grid.Column="0" ItemsSource="{Binding Items}" Margin="0,0,12,0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="110" />
+                    <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="*" />
+                    <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="120" />
+                    <DataGridTextColumn Header="NTN" Binding="{Binding NTN}" Width="100" />
+                    <DataGridTextColumn Header="Rating" Binding="{Binding Rating}" Width="70" />
+                </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Company" Margin="0,0,0,4" /><TextBox Text="{Binding CompanyName}" Margin="0,0,0,8" />
+                <TextBlock Text="Contact" Margin="0,0,0,4" /><TextBox Text="{Binding ContactPerson}" Margin="0,0,0,8" />
+                <TextBlock Text="Phone" Margin="0,0,0,4" /><TextBox Text="{Binding Phone}" Margin="0,0,0,8" />
+                <TextBlock Text="Email" Margin="0,0,0,4" /><TextBox Text="{Binding Email}" Margin="0,0,0,8" />
+                <TextBlock Text="NTN" Margin="0,0,0,4" /><TextBox Text="{Binding Ntn}" Margin="0,0,0,12" />
+                <Button Content="Add Vendor" Style="{StaticResource PrimaryButton}" Command="{Binding CreateCommand}" Margin="0,0,0,8" />
+                <TextBlock Text="{Binding Message}" Foreground="{StaticResource SuccessBrush}" />
+            </StackPanel>
+        </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

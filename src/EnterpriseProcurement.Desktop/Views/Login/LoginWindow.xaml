@@ -1,0 +1,60 @@
+<Window x:Class="EnterpriseProcurement.Desktop.Views.Login.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EPIMS — Sign In"
+        Height="560" Width="920"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize"
+        Background="{StaticResource BgBrush}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.1*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{StaticResource HeroGradient}">
+            <Grid Margin="40">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="EPIMS" FontSize="42" FontWeight="Bold" Foreground="White" />
+                    <TextBlock Text="Enterprise Procurement &amp; Inventory Management"
+                               FontSize="16" Foreground="#D7E8F2" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <TextBlock Text="Secure multi-department procurement, allocation, and inventory control for enterprises."
+                               FontSize="13" Foreground="#B7CEDB" TextWrapping="Wrap" Margin="0,18,40,0" LineHeight="22" />
+                </StackPanel>
+                <TextBlock Text="v1.0.0" Foreground="#8FB0C2" VerticalAlignment="Bottom" FontSize="11" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Background="White" Padding="40">
+            <StackPanel VerticalAlignment="Center" MaxWidth="360">
+                <TextBlock Text="Sign in" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <TextBlock Text="Use your organization credentials" Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,24" />
+
+                <TextBlock Text="Username" Margin="0,0,0,6" Foreground="{StaticResource MutedTextBrush}" />
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+
+                <TextBlock Text="Password" Margin="0,0,0,6" Foreground="{StaticResource MutedTextBrush}" />
+                <PasswordBox x:Name="PasswordBox" Margin="0,0,0,10" PasswordChanged="PasswordBox_OnPasswordChanged" />
+
+                <DockPanel Margin="0,0,0,16">
+                    <CheckBox Content="Remember me" IsChecked="{Binding RememberMe}" Foreground="{StaticResource MutedTextBrush}" />
+                    <Button DockPanel.Dock="Right" Content="Forgot password?" Style="{StaticResource GhostButton}"
+                            Command="{Binding ForgotPasswordCommand}" HorizontalAlignment="Right" Padding="8,4" BorderThickness="0" />
+                </DockPanel>
+
+                <TextBlock Text="Two-factor code (if enabled)" Margin="0,0,0,6" Foreground="{StaticResource MutedTextBrush}" />
+                <TextBox Text="{Binding TwoFactorCode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+
+                <Button Content="Sign In" Style="{StaticResource PrimaryButton}" Command="{Binding LoginCommand}" Height="42" />
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+                <Border Background="#F3F6F8" CornerRadius="4" Padding="12" Margin="0,24,0,0">
+                    <TextBlock FontSize="11" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                               Text="Default admin: admin / Admin@123&#x0a;Sample user: qasim / Qasim@123 (IT + Procurement)" />
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
