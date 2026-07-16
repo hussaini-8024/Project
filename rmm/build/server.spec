@@ -2,11 +2,23 @@
 # Prefer build\build_windows.bat which builds the Agent first, then this Server
 # with the agent bundled for admin-panel Generate/Download.
 
-import os
 from pathlib import Path
 
 block_cipher = None
-root = Path(SPECPATH).resolve().parent.parent  # rmm/
+
+# SPECPATH = directory containing this .spec file (rmm/build)
+# so parent is the rmm/ project folder where run_server.py lives.
+spec_dir = Path(SPECPATH).resolve()
+root = spec_dir.parent  # rmm/
+if not (root / 'run_server.py').is_file():
+    # Fallback if SPECPATH behaves differently
+    alt = spec_dir.parent.parent / 'rmm'
+    if (alt / 'run_server.py').is_file():
+        root = alt
+
+run_server = root / 'run_server.py'
+if not run_server.is_file():
+    raise SystemExit(f'ERROR: run_server.py not found under {root}')
 
 datas = [(str(root / 'server' / 'static'), 'server/static')]
 
@@ -22,7 +34,7 @@ for agent_path in agent_candidates:
         break
 
 a = Analysis(
-    [str(root / 'run_server.py')],
+    [str(run_server)],
     pathex=[str(root)],
     binaries=[],
     datas=datas,
