@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DiscloseRMM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222c;
+      --panel-2: #243040;
+      --border: #314155;
+      --text: #e8eef5;
+      --muted: #8fa3b8;
+      --accent: #2f9e7a;
+      --accent-dim: #1e6b53;
+      --warn: #d97706;
+      --danger: #dc5252;
+      --live: #22c55e;
+      --dead: #ef4444;
+      --font: "IBM Plex Sans", sans-serif;
+      --mono: "IBM Plex Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1a3a32 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #243044 0%, transparent 50%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .hidden { display: none !important; }
+    #login-view {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .login-card {
+      width: min(420px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+    .login-card h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+    }
+    .login-card p { margin: 0 0 24px; color: var(--muted); font-size: 0.95rem; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+    input, select, textarea, button {
+      font: inherit;
+      color: var(--text);
+    }
+    input, select, textarea {
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+    button {
+      background: var(--accent);
+      border: none;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { filter: brightness(1.08); }
+    button.secondary { background: var(--panel-2); border: 1px solid var(--border); }
+    button.danger { background: var(--danger); }
+    button.warn { background: var(--warn); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #app {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: 100vh;
+    }
+    nav {
+      background: rgba(26, 34, 44, 0.95);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .brand {
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin: 0 8px 18px;
+      letter-spacing: -0.02em;
+    }
+    .brand span { color: var(--accent); }
+    .nav-btn {
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 10px 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .nav-btn.active, .nav-btn:hover {
+      background: var(--panel-2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .nav-foot {
+      margin-top: auto;
+      padding: 12px 8px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    main { padding: 24px 28px 40px; overflow: auto; }
+    .notice {
+      background: rgba(217, 119, 6, 0.15);
+      border: 1px solid rgba(217, 119, 6, 0.45);
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      font-size: 0.92rem;
+    }
+    h2 { margin: 0 0 4px; font-size: 1.35rem; }
+    .sub { color: var(--muted); margin: 0 0 18px; font-size: 0.92rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .toolbar input, .toolbar select { width: auto; margin: 0; min-width: 140px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      font-size: 0.92rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .badge.on { color: var(--live); border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.12); }
+    .badge.off { color: var(--dead); border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.12); }
+    .badge.live { color: #fbbf24; border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.12); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 16px;
+    }
+    .panel h3 { margin: 0 0 12px; font-size: 1rem; }
+    pre, .mono {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #shell-out {
+      background: #0b0f14;
+      border: 1px solid var(--border);
+      padding: 12px;
+      min-height: 180px;
+      max-height: 360px;
+      overflow: auto;
+    }
+    #live-frame {
+      width: 100%;
+      max-height: 70vh;
+      background: #000;
+      border: 1px solid var(--border);
+      object-fit: contain;
+    }
+    .live-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+    }
+    .dot.active { background: var(--live); box-shadow: 0 0 0 3px rgba(34,197,94,0.25); }
+    @media (max-width: 900px) {
+      #app { grid-template-columns: 1fr; }
+      nav { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); }
+      .nav-foot { display: none; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-view">
+    <div class="login-card">
+      <h1>Disclose<span style="color:var(--accent)">RMM</span></h1>
+      <p>Authorized remote management. Live sessions are visible on remote PCs and audited.</p>
+      <label for="user">Administrator</label>
+      <input id="user" autocomplete="username" value="admin" />
+      <label for="pass">Password</label>
+      <input id="pass" type="password" autocomplete="current-password" />
+      <button id="login-btn" style="width:100%">Sign in</button>
+      <p id="login-err" style="color:var(--danger);margin-top:12px;min-height:1.2em"></p>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <nav>
+      <div class="brand">Disclose<span>RMM</span></div>
+      <button class="nav-btn active" data-tab="pcs">Remote PCs</button>
+      <button class="nav-btn" data-tab="groups">Groups</button>
+      <button class="nav-btn" data-tab="software">Software</button>
+      <button class="nav-btn" data-tab="shell">Remote Shell</button>
+      <button class="nav-btn" data-tab="live">Live Session</button>
+      <button class="nav-btn" data-tab="network">Network Monitor</button>
+      <button class="nav-btn" data-tab="enroll">Add PC</button>
+      <button class="nav-btn" data-tab="audit">Audit Log</button>
+      <div class="nav-foot">
+        Signed in as <strong id="who"></strong><br />
+        <button class="secondary" id="logout-btn" style="margin-top:10px;width:100%">Sign out</button>
+      </div>
+    </nav>
+    <main>
+      <div class="notice">
+        Live viewing always shows a banner on the remote PC: <strong>REMOTE SESSION ACTIVE</strong>.
+        Hidden monitoring is not available by design.
+      </div>
+
+      <section id="tab-pcs" class="tab">
+        <h2>Remote PCs</h2>
+        <p class="sub">Agents enrolled with your token. Online = connected WebSocket.</p>
+        <div class="toolbar">
+          <button id="refresh-agents">Refresh</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Hostname</th><th>User</th><th>IP</th><th>OS</th><th>Status</th><th>Live</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="agents-body"></tbody>
+        </table>
+      </section>
+
+      <section id="tab-groups" class="tab hidden">
+        <h2>Groups</h2>
+        <p class="sub">Assign PCs to groups for bulk software deploy.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Create group</h3>
+            <label>Name</label>
+            <input id="group-name" />
+            <label>Description</label>
+            <input id="group-desc" />
+            <label>Members (Ctrl/Cmd multi-select)</label>
+            <select id="group-members" multiple size="8"></select>
+            <button id="create-group">Create</button>
+          </div>
+          <div class="panel">
+            <h3>Existing groups</h3>
+            <div id="groups-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-software" class="tab hidden">
+        <h2>Software deploy</h2>
+        <p class="sub">Register a setup from a path on the server host, or upload a file, then deploy to a group or PC.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Register local path (on server)</h3>
+            <label>Display name</label>
+            <input id="pkg-name" placeholder="Chrome" />
+            <label>Absolute path on server</label>
+            <input id="pkg-path" placeholder="C:\\Setups\\chrome_installer.exe" />
+            <label>Silent args (optional)</label>
+            <input id="pkg-args" placeholder="/S" />
+            <button id="reg-pkg">Register</button>
+            <hr style="border-color:var(--border);margin:18px 0" />
+            <h3>Or upload</h3>
+            <label>Name</label>
+            <input id="up-name" />
+            <label>Args</label>
+            <input id="up-args" />
+            <label>File</label>
+            <input id="up-file" type="file" />
+            <button id="up-pkg">Upload</button>
+          </div>
+          <div class="panel">
+            <h3>Deploy</h3>
+            <label>Package</label>
+            <select id="deploy-pkg"></select>
+            <label>Target group</label>
+            <select id="deploy-group"><option value="">—</option></select>
+            <label>Or single agent</label>
+            <select id="deploy-agent"><option value="">—</option></select>
+            <button id="deploy-btn">Deploy &amp; run on targets</button>
+            <p class="sub" style="margin-top:12px">Agents download the package from this server and run it. Require admin rights on the remote PC for most installers.</p>
+          </div>
+        </div>
+        <h3 style="margin-top:20px">Packages</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Path</th><th>Args</th><th></th></tr></thead>
+          <tbody id="pkg-body"></tbody>
+        </table>
+      </section>
+
+      <section id="tab-shell" class="tab hidden">
+        <h2>Remote shell</h2>
+        <p class="sub">Run cmd, PowerShell, or bash on a connected agent. Commands are audited.</p>
+        <div class="toolbar">
+          <select id="shell-agent"></select>
+          <select id="shell-type">
+            <option value="cmd">cmd</option>
+            <option value="powershell">powershell</option>
+            <option value="bash">bash</option>
+          </select>
+        </div>
+        <label>Command</label>
+        <input id="shell-cmd" placeholder="hostname &amp;&amp; whoami" />
+        <button id="shell-run">Run</button>
+        <pre id="shell-out" class="mono" style="margin-top:14px"></pre>
+      </section>
+
+      <section id="tab-live" class="tab hidden">
+        <h2>Live session</h2>
+        <p class="sub">View the remote desktop. A banner is shown on the remote PC for the entire session.</p>
+        <div class="live-bar">
+          <select id="live-agent"></select>
+          <button id="live-start" class="warn">Start live view</button>
+          <button id="live-stop" class="secondary" disabled>Stop</button>
+          <span class="dot" id="live-dot"></span>
+          <span id="live-status" class="sub" style="margin:0">Idle</span>
+        </div>
+        <img id="live-frame" alt="Live remote display" />
+      </section>
+
+      <section id="tab-network" class="tab hidden">
+        <h2>Network monitor</h2>
+        <p class="sub">Ping hosts to see live / dead status.</p>
+        <div class="toolbar">
+          <input id="net-label" placeholder="Label" />
+          <input id="net-host" placeholder="IP or hostname" />
+          <button id="net-add">Add host</button>
+          <button id="net-scan" class="secondary">Scan all</button>
+        </div>
+        <table>
+          <thead><tr><th>Label</th><th>Host</th><th>Status</th><th>Latency</th><th>Last check</th><th></th></tr></thead>
+          <tbody id="net-body"></tbody>
+        </table>
+      </section>
+
+      <section id="tab-enroll" class="tab hidden">
+        <h2>Add remote PC</h2>
+        <p class="sub">Install the agent on the remote PC and enroll with this token.</p>
+        <div class="panel">
+          <label>Enrollment token</label>
+          <div class="toolbar">
+            <input id="enroll-token" class="mono" style="flex:1;min-width:220px" />
+            <button id="save-token">Save token</button>
+          </div>
+          <h3>Agent install (Windows)</h3>
+          <pre class="mono" id="enroll-help" style="background:#0b0f14;padding:12px;border:1px solid var(--border)"></pre>
+        </div>
+      </section>
+
+      <section id="tab-audit" class="tab hidden">
+        <h2>Audit log</h2>
+        <p class="sub">Every admin action and agent connect/disconnect.</p>
+        <button id="refresh-audit" class="secondary">Refresh</button>
+        <table style="margin-top:12px">
+          <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+          <tbody id="audit-body"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const state = { token: localStorage.getItem("rmm_token") || "", username: "", liveWs: null };
+
+    async function api(path, opts = {}) {
+      const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+      if (state.token) headers["Authorization"] = "Bearer " + state.token;
+      const res = await fetch(path, { ...opts, headers });
+      if (res.status === 401) {
+        logout(false);
+        throw new Error("Unauthorized");
+      }
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+      if (!res.ok) throw new Error((data && data.detail) || res.statusText);
+      return data;
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      return new Date(ts * 1000).toLocaleString();
+    }
+
+    function showApp() {
+      document.getElementById("login-view").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      document.getElementById("who").textContent = state.username || "admin";
+      refreshAll();
+    }
+
+    function logout(callApi) {
+      if (callApi && state.token) api("/api/logout", { method: "POST" }).catch(() => {});
+      stopLive();
+      state.token = "";
+      localStorage.removeItem("rmm_token");
+      document.getElementById("app").classList.add("hidden");
+      document.getElementById("login-view").classList.remove("hidden");
+    }
+
+    document.getElementById("login-btn").onclick = async () => {
+      const username = document.getElementById("user").value.trim();
+      const password = document.getElementById("pass").value;
+      try {
+        const data = await api("/api/login", { method: "POST", body: JSON.stringify({ username, password }) });
+        state.token = data.token;
+        state.username = data.username;
+        localStorage.setItem("rmm_token", state.token);
+        showApp();
+      } catch (e) {
+        document.getElementById("login-err").textContent = e.message;
+      }
+    };
+    document.getElementById("pass").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("login-btn").click();
+    });
+    document.getElementById("logout-btn").onclick = () => logout(true);
+
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".tab").forEach((t) => t.classList.add("hidden"));
+        document.getElementById("tab-" + btn.dataset.tab).classList.remove("hidden");
+      };
+    });
+
+    async function loadAgents() {
+      const agents = await api("/api/agents");
+      const body = document.getElementById("agents-body");
+      body.innerHTML = "";
+      const selects = ["group-members", "deploy-agent", "shell-agent", "live-agent"];
+      selects.forEach((id) => {
+        const el = document.getElementById(id);
+        const prev = el.value;
+        el.innerHTML = id === "deploy-agent" ? '<option value="">—</option>' : "";
+        agents.forEach((a) => {
+          const opt = document.createElement("option");
+          opt.value = a.id;
+          opt.textContent = `${a.hostname} (${a.connected ? "online" : "offline"})`;
+          el.appendChild(opt);
+        });
+        if ([...el.options].some((o) => o.value === prev)) el.value = prev;
+      });
+      agents.forEach((a) => {
+        const tr = document.createElement("tr");
+        const status = a.connected ? '<span class="badge on">Online</span>' : '<span class="badge off">Offline</span>';
+        const live = a.live_viewers > 0 ? '<span class="badge live">Viewing</span>' : "—";
+        tr.innerHTML = `
+          <td>${esc(a.hostname)}</td>
+          <td>${esc(a.username || "")}</td>
+          <td class="mono">${esc(a.ip_address || "")}</td>
+          <td>${esc(a.os_info || "")}</td>
+          <td>${status}</td>
+          <td>${live}</td>
+          <td><button class="danger" data-del="${a.id}">Remove</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("[data-del]").forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm("Remove this agent?")) return;
+          await api("/api/agents/" + b.dataset.del, { method: "DELETE" });
+          loadAgents();
+        };
+      });
+    }
+
+    async function loadGroups() {
+      const groups = await api("/api/groups");
+      const list = document.getElementById("groups-list");
+      const sel = document.getElementById("deploy-group");
+      sel.innerHTML = '<option value="">—</option>';
+      list.innerHTML = "";
+      groups.forEach((g) => {
+        const opt = document.createElement("option");
+        opt.value = g.id;
+        opt.textContent = `${g.name} (${(g.member_ids || []).length})`;
+        sel.appendChild(opt);
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+        div.innerHTML = `<strong>${esc(g.name)}</strong> — ${esc(g.description || "")}<br/>
+          <span class="mono" style="color:var(--muted)">${(g.member_ids || []).join(", ") || "no members"}</span><br/>
+          <button class="danger" data-gid="${g.id}" style="margin-top:6px">Delete</button>`;
+        list.appendChild(div);
+      });
+      list.querySelectorAll("[data-gid]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/groups/" + b.dataset.gid, { method: "DELETE" });
+          loadGroups();
+        };
+      });
+    }
+
+    document.getElementById("create-group").onclick = async () => {
+      const name = document.getElementById("group-name").value.trim();
+      const description = document.getElementById("group-desc").value.trim();
+      const member_ids = [...document.getElementById("group-members").selectedOptions].map((o) => o.value);
+      await api("/api/groups", { method: "POST", body: JSON.stringify({ name, description, member_ids }) });
+      document.getElementById("group-name").value = "";
+      loadGroups();
+    };
+
+    async function loadPackages() {
+      const pkgs = await api("/api/packages");
+      const body = document.getElementById("pkg-body");
+      const sel = document.getElementById("deploy-pkg");
+      body.innerHTML = "";
+      sel.innerHTML = "";
+      pkgs.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sel.appendChild(opt);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.id}</td><td>${esc(p.name)}</td><td class="mono">${esc(p.local_path)}</td>
+          <td class="mono">${esc(p.args || "")}</td>
+          <td><button class="danger" data-pid="${p.id}">Delete</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("[data-pid]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/packages/" + b.dataset.pid, { method: "DELETE" });
+          loadPackages();
+        };
+      });
+    }
+
+    document.getElementById("reg-pkg").onclick = async () => {
+      await api("/api/packages", {
+        method: "POST",
+        body: JSON.stringify({
+          name: document.getElementById("pkg-name").value.trim(),
+          local_path: document.getElementById("pkg-path").value.trim(),
+          args: document.getElementById("pkg-args").value,
+        }),
+      });
+      loadPackages();
+    };
+
+    document.getElementById("up-pkg").onclick = async () => {
+      const file = document.getElementById("up-file").files[0];
+      if (!file) return alert("Choose a file");
+      const fd = new FormData();
+      fd.append("file", file);
+      const name = document.getElementById("up-name").value.trim() || file.name;
+      const args = document.getElementById("up-args").value;
+      const res = await fetch(`/api/packages/upload?name=${encodeURIComponent(name)}&args=${encodeURIComponent(args)}`, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + state.token },
+        body: fd,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      loadPackages();
+    };
+
+    document.getElementById("deploy-btn").onclick = async () => {
+      const package_id = Number(document.getElementById("deploy-pkg").value);
+      const group_id = document.getElementById("deploy-group").value;
+      const agent_id = document.getElementById("deploy-agent").value;
+      const body = { package_id };
+      if (group_id) body.group_id = Number(group_id);
+      else if (agent_id) body.agent_id = agent_id;
+      else return alert("Select a group or agent");
+      const result = await api("/api/deploy", { method: "POST", body: JSON.stringify(body) });
+      alert("Deploy sent to: " + result.targets.join(", "));
+    };
+
+    document.getElementById("shell-run").onclick = async () => {
+      const out = document.getElementById("shell-out");
+      out.textContent = "Running...";
+      try {
+        const data = await api("/api/shell", {
+          method: "POST",
+          body: JSON.stringify({
+            agent_id: document.getElementById("shell-agent").value,
+            command: document.getElementById("shell-cmd").value,
+            shell: document.getElementById("shell-type").value,
+          }),
+        });
+        out.textContent = `exit ${data.exit_code}\n\n${data.output || ""}`;
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    function stopLive() {
+      if (state.liveWs) {
+        try {
+          state.liveWs.send(JSON.stringify({ v: 1, type: "stop_live", payload: {} }));
+          state.liveWs.close();
+        } catch {}
+        state.liveWs = null;
+      }
+      document.getElementById("live-start").disabled = false;
+      document.getElementById("live-stop").disabled = true;
+      document.getElementById("live-dot").classList.remove("active");
+      document.getElementById("live-status").textContent = "Idle";
+    }
+
+    document.getElementById("live-start").onclick = () => {
+      const agentId = document.getElementById("live-agent").value;
+      if (!agentId) return alert("Select an agent");
+      stopLive();
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${proto}://${location.host}/ws/live/${agentId}?token=${encodeURIComponent(state.token)}`);
+      state.liveWs = ws;
+      document.getElementById("live-start").disabled = true;
+      document.getElementById("live-stop").disabled = false;
+      document.getElementById("live-status").textContent = "Connecting… (banner visible on remote)";
+      ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "frame") {
+          document.getElementById("live-frame").src = "data:image/jpeg;base64," + msg.payload.data;
+          document.getElementById("live-dot").classList.add("active");
+          document.getElementById("live-status").textContent = "Live — remote banner is showing";
+        } else if (msg.type === "error" || msg.type === "stop_live") {
+          document.getElementById("live-status").textContent = msg.payload?.error || msg.payload?.reason || "Stopped";
+          stopLive();
+        }
+      };
+      ws.onclose = () => {
+        document.getElementById("live-dot").classList.remove("active");
+        document.getElementById("live-start").disabled = false;
+        document.getElementById("live-stop").disabled = true;
+      };
+    };
+    document.getElementById("live-stop").onclick = stopLive;
+
+    async function loadNetwork() {
+      const hosts = await api("/api/network");
+      const body = document.getElementById("net-body");
+      body.innerHTML = "";
+      hosts.forEach((h) => {
+        const st = h.last_status === "live"
+          ? '<span class="badge on">Live</span>'
+          : h.last_status === "dead"
+            ? '<span class="badge off">Dead</span>'
+            : '<span class="badge">Unknown</span>';
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${esc(h.label)}</td><td class="mono">${esc(h.host)}</td><td>${st}</td>
+          <td>${h.last_latency_ms != null ? h.last_latency_ms + " ms" : "—"}</td>
+          <td>${fmtTime(h.last_checked)}</td>
+          <td><button class="danger" data-nid="${h.id}">Delete</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("[data-nid]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/network/" + b.dataset.nid, { method: "DELETE" });
+          loadNetwork();
+        };
+      });
+    }
+
+    document.getElementById("net-add").onclick = async () => {
+      await api("/api/network", {
+        method: "POST",
+        body: JSON.stringify({
+          label: document.getElementById("net-label").value.trim(),
+          host: document.getElementById("net-host").value.trim(),
+        }),
+      });
+      document.getElementById("net-label").value = "";
+      document.getElementById("net-host").value = "";
+      loadNetwork();
+    };
+    document.getElementById("net-scan").onclick = async () => {
+      await api("/api/network/scan", { method: "POST" });
+      loadNetwork();
+    };
+
+    async function loadEnroll() {
+      const data = await api("/api/enrollment");
+      document.getElementById("enroll-token").value = data.token;
+      const base = location.origin;
+      document.getElementById("enroll-help").textContent =
+`1. Copy DiscloseRMM-Agent.exe to the remote PC
+2. Run as administrator:
+
+   DiscloseRMM-Agent.exe --server ${base} --token ${data.token}
+
+3. The PC appears under Remote PCs when connected.
+4. Change the enrollment token after rolling out agents.`;
+    }
+
+    document.getElementById("save-token").onclick = async () => {
+      await api("/api/enrollment", {
+        method: "POST",
+        body: JSON.stringify({ token: document.getElementById("enroll-token").value.trim() }),
+      });
+      alert("Token saved");
+      loadEnroll();
+    };
+
+    async function loadAudit() {
+      const rows = await api("/api/audit");
+      const body = document.getElementById("audit-body");
+      body.innerHTML = "";
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${fmtTime(r.created_at)}</td><td>${esc(r.admin_username)}</td>
+          <td>${esc(r.action)}</td><td class="mono">${esc(r.target || "")}</td>
+          <td>${esc(r.detail || "")}</td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    async function refreshAll() {
+      await Promise.all([loadAgents(), loadGroups(), loadPackages(), loadNetwork(), loadEnroll(), loadAudit()]);
+    }
+    document.getElementById("refresh-agents").onclick = loadAgents;
+    document.getElementById("refresh-audit").onclick = loadAudit;
+
+    (async () => {
+      if (!state.token) return;
+      try {
+        const me = await api("/api/me");
+        state.username = me.username;
+        showApp();
+      } catch {
+        logout(false);
+      }
+    })();
+  </script>
+</body>
+</html>
