@@ -1,0 +1,81 @@
+<Window x:Class="EnterpriseProcurement.Desktop.Views.Dashboard.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EPIMS — Enterprise Procurement &amp; Inventory Management"
+        Height="780" Width="1280"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgBrush}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="{StaticResource PrimaryBrush}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,16">
+                    <TextBlock Text="EPIMS" FontSize="24" FontWeight="Bold" Foreground="White" />
+                    <TextBlock Text="Procurement &amp; Inventory" Foreground="#9FBFCF" FontSize="11" Margin="0,4,0,0" />
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom" Margin="12,0,12,20">
+                    <TextBlock Text="{Binding UserDisplayName}" Foreground="White" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding RoleDisplay}" Foreground="#9FBFCF" FontSize="11" Margin="0,2,0,10" />
+                    <Button Content="Sign out" Style="{StaticResource GhostButton}"
+                            Foreground="White" BorderBrush="#3A6074"
+                            Command="{Binding LogoutCommand}" />
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Menus}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Title}"
+                                        Style="{StaticResource NavButton}"
+                                        Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding MenuKey}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Main -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="64" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="20,0">
+                <DockPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                        <TextBlock Text="Department" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedTextBrush}" />
+                        <ComboBox Width="180" ItemsSource="{Binding Departments}"
+                                  SelectedItem="{Binding SelectedDepartment}"
+                                  DisplayMemberPath="Name"
+                                  SelectionChanged="Department_OnSelectionChanged" />
+                        <Button Content="Switch" Style="{StaticResource GhostButton}" Margin="8,0,12,0"
+                                Command="{Binding SwitchDepartmentCommand}" />
+                        <Border Background="#EEF4F8" CornerRadius="12" Padding="10,4" VerticalAlignment="Center">
+                            <TextBlock>
+                                <Run Text="Alerts " /><Run Text="{Binding UnreadCount}" FontWeight="SemiBold" />
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource GhostButton}"
+                                Command="{Binding SearchCommand}" Margin="8,0,0,0" />
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center" Height="34" />
+                    </DockPanel>
+                </DockPanel>
+            </Border>
+
+            <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" Margin="20" />
+        </Grid>
+    </Grid>
+</Window>

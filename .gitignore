@@ -1,0 +1,46 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.nupkg
+**/packages/*
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## App runtime
+*.db
+*.db-shm
+*.db-wal
+Backups/
+Exports/
+Attachments/
+publish/
+dist/
+*.bak
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+## OS
+.DS_Store
+Thumbs.db

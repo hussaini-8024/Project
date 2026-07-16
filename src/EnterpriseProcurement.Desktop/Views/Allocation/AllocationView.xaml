@@ -1,0 +1,34 @@
+<UserControl x:Class="EnterpriseProcurement.Desktop.Views.Allocation.AllocationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+        <TextBlock Text="Allocations" Style="{StaticResource PageTitle}" />
+        <TextBlock Text="Allocate inventory to departments, employees, and locations." Style="{StaticResource PageSubtitle}" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <DataGrid Grid.Column="0" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" Margin="0,0,12,0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Number" Binding="{Binding AllocationNumber}" Width="130" />
+                    <DataGridTextColumn Header="Item" Binding="{Binding ItemName}" Width="*" />
+                    <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="120" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="110" />
+                </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Item" Margin="0,0,0,4" />
+                <ComboBox ItemsSource="{Binding AvailableItems}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Name" Margin="0,0,0,8" />
+                <TextBlock Text="Employee" Margin="0,0,0,4" /><TextBox Text="{Binding EmployeeName}" Margin="0,0,0,8" />
+                <TextBlock Text="Office" Margin="0,0,0,4" /><TextBox Text="{Binding Office}" Margin="0,0,0,12" />
+                <Button Content="Create Allocation" Style="{StaticResource PrimaryButton}" Command="{Binding CreateCommand}" Margin="0,0,0,8" />
+                <Button Content="Approve / Issue" Style="{StaticResource GhostButton}" Command="{Binding ApproveCommand}" Margin="0,0,0,8" />
+                <Button Content="Return" Style="{StaticResource GhostButton}" Command="{Binding ReturnCommand}" Margin="0,0,0,8" />
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="{StaticResource SuccessBrush}" />
+            </StackPanel>
+        </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

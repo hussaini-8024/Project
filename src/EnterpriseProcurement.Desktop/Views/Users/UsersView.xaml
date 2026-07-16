@@ -1,0 +1,35 @@
+<UserControl x:Class="EnterpriseProcurement.Desktop.Views.Users.UsersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+        <TextBlock Text="User Management" Style="{StaticResource PageTitle}" />
+        <TextBlock Text="Create users, assign departments, reset passwords, and manage access." Style="{StaticResource PageSubtitle}" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <DataGrid Grid.Column="0" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" Margin="0,0,12,0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="120" />
+                    <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*" />
+                    <DataGridTextColumn Header="Role" Binding="{Binding RoleName}" Width="140" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Username" Margin="0,0,0,4" /><TextBox Text="{Binding Username}" Margin="0,0,0,8" />
+                <TextBlock Text="Email" Margin="0,0,0,4" /><TextBox Text="{Binding Email}" Margin="0,0,0,8" />
+                <TextBlock Text="Full Name" Margin="0,0,0,4" /><TextBox Text="{Binding FullName}" Margin="0,0,0,8" />
+                <TextBlock Text="Primary Department" Margin="0,0,0,4" />
+                <ComboBox ItemsSource="{Binding AllDepartments}" SelectedItem="{Binding PrimaryDepartment}" DisplayMemberPath="Name" Margin="0,0,0,12" />
+                <Button Content="Create User" Style="{StaticResource PrimaryButton}" Command="{Binding CreateCommand}" Margin="0,0,0,8" />
+                <Button Content="Reset Password" Style="{StaticResource GhostButton}" Command="{Binding ResetPasswordCommand}" Margin="0,0,0,8" />
+                <Button Content="Toggle Active" Style="{StaticResource GhostButton}" Command="{Binding ToggleStatusCommand}" Margin="0,0,0,8" />
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="{StaticResource SuccessBrush}" />
+            </StackPanel>
+        </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
