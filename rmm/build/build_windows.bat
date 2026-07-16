@@ -1,7 +1,6 @@
 @echo off
-REM Build DiscloseRMM single-file Windows executables (run on Windows).
-REM Result: dist\DiscloseRMM-Server.exe and dist\DiscloseRMM-Agent.exe
-REM End users do NOT need Python — only these two .exe files.
+REM Build AU-Kamra IT Experts Remote Manager Windows executables.
+REM Result: dist\AU-Kamra-Remote-Manager-Server.exe and Agent.exe
 
 setlocal
 cd /d "%~dp0.."
@@ -30,19 +29,17 @@ pyinstaller --noconfirm build\agent.spec
 if errorlevel 1 exit /b 1
 
 if not exist bin mkdir bin
-copy /Y dist\DiscloseRMM-Agent.exe bin\DiscloseRMM-Agent.exe >nul
-copy /Y dist\DiscloseRMM-Server.exe bin\DiscloseRMM-Server.exe >nul
+copy /Y dist\AU-Kamra-Remote-Manager-Agent.exe bin\AU-Kamra-Remote-Manager-Agent.exe >nul
+copy /Y dist\AU-Kamra-Remote-Manager-Server.exe bin\AU-Kamra-Remote-Manager-Server.exe >nul
+REM Legacy aliases for older docs/scripts
+copy /Y dist\AU-Kamra-Remote-Manager-Agent.exe bin\DiscloseRMM-Agent.exe >nul
+copy /Y dist\AU-Kamra-Remote-Manager-Server.exe bin\DiscloseRMM-Server.exe >nul
 
 echo.
 echo ============================================
+echo  AU-Kamra IT Experts Remote Manager
 echo  Built:
-echo    dist\DiscloseRMM-Server.exe
-echo    dist\DiscloseRMM-Agent.exe
-echo  Also copied to bin\ for server push-install.
-echo.
-echo  On the management PC:
-echo    DiscloseRMM-Server.exe
-echo  On each remote PC (Run as Administrator once):
-echo    DiscloseRMM-Agent.exe
+echo    dist\AU-Kamra-Remote-Manager-Server.exe
+echo    dist\AU-Kamra-Remote-Manager-Agent.exe
 echo ============================================
 endlocal

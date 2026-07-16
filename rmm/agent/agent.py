@@ -197,7 +197,8 @@ class Agent:
             return "0.0.0.0"
 
     def run(self) -> None:
-        print(f"DiscloseRMM agent connecting to {self.server_url}")
+        print("AU-Kamra IT Experts Remote Manager — Agent")
+        print(f"Connecting to {self.server_url}")
         print("Live view will ALWAYS show a visible banner on this PC.")
         self._beacon.start()
         while not self._stop.is_set():
@@ -434,10 +435,10 @@ def _gui_install_wizard() -> tuple[str, str] | None:
     result: dict[str, str] = {}
 
     root = tk.Tk()
-    root.title("DiscloseRMM Agent Install")
-    root.geometry("460x260")
+    root.title("AU-Kamra Remote Manager — Agent Install")
+    root.geometry("480x280")
     root.resizable(False, False)
-    tk.Label(root, text="DiscloseRMM — Permanent Agent Install", font=("Segoe UI", 12, "bold")).pack(
+    tk.Label(root, text="AU-Kamra IT Experts Remote Manager", font=("Segoe UI", 12, "bold")).pack(
         pady=(16, 4)
     )
     tk.Label(
@@ -467,7 +468,7 @@ def _gui_install_wizard() -> tuple[str, str] | None:
     tk.Button(root, text="Install permanently", command=do_install).pack(pady=8)
     tk.Label(
         root,
-        text="Uninstall later: DiscloseRMM-Agent.exe --uninstall  (password from admin panel)",
+        text="Uninstall later: Agent.exe --uninstall  (password from admin panel)",
         fg="#555",
     ).pack()
     root.mainloop()
@@ -497,7 +498,7 @@ def main(argv: list[str] | None = None) -> None:
             password = getpass.getpass("Uninstall password (from server admin panel): ")
         try:
             uninstall_agent(password)
-            print("DiscloseRMM agent uninstalled.")
+            print("AU-Kamra agent uninstalled.")
         except PermissionError as exc:
             print(str(exc))
             sys.exit(2)

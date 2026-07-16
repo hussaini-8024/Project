@@ -12,9 +12,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-SERVICE_NAME = "DiscloseRMMAgent"
-TASK_NAME = "DiscloseRMM Agent"
-PRODUCT_DIR_NAME = "DiscloseRMM"
+SERVICE_NAME = "AUKamraRemoteManagerAgent"
+TASK_NAME = "AU-Kamra Remote Manager Agent"
+PRODUCT_DIR_NAME = "AUKamraRemoteManager"
 
 
 def is_windows() -> bool:

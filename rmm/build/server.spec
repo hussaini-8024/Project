@@ -34,7 +34,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='DiscloseRMM-Server',
+    name='AU-Kamra-Remote-Manager-Server',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

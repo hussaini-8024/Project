@@ -44,7 +44,7 @@ from agent.discovery import listen_udp_beacons, probe_host
 from agent.install_service import hash_uninstall_password
 
 db = Database()
-app = FastAPI(title="DiscloseRMM Server", version="1.0.0")
+app = FastAPI(title="AU-Kamra IT Experts Remote Manager", version="1.0.0")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 PACKAGES_DIR = ROOT / "data" / "packages"
@@ -273,7 +273,7 @@ async def agent_binary_status(admin: dict = Depends(require_admin)) -> dict[str,
         "available": bool(path),
         "path": str(path) if path else "",
         "download_url": "/api/agent-binary/download",
-        "hint": "Place DiscloseRMM-Agent.exe in rmm/dist or rmm/bin (or next to the server exe).",
+        "hint": "Place AU-Kamra-Remote-Manager-Agent.exe (or DiscloseRMM-Agent.exe) in rmm/dist or rmm/bin.",
     }
 
 
@@ -890,7 +890,8 @@ async def live_ws(websocket: WebSocket, agent_id: str) -> None:
 def main() -> None:
     host = os.environ.get("RMM_HOST", config.DEFAULT_SERVER_HOST)
     port = int(os.environ.get("RMM_PORT", config.DEFAULT_SERVER_PORT))
-    print(f"DiscloseRMM server listening on http://{host}:{port}")
+    print("AU-Kamra IT Experts Remote Manager")
+    print(f"Server listening on http://{host}:{port}")
     print("Live sessions ALWAYS display a visible banner on remote PCs.")
     print(f"Default admin: {os.environ.get('RMM_ADMIN_USER', config.DEFAULT_ADMIN_USER)}")
     uvicorn.run(app, host=host, port=port, log_level="info")

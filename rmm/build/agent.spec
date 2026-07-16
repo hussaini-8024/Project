@@ -28,7 +28,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='DiscloseRMM-Agent',
+    name='AU-Kamra-Remote-Manager-Agent',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

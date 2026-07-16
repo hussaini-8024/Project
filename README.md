@@ -1,13 +1,9 @@
-DiscloseRMM
-===========
+AU-Kamra IT Experts Remote Manager
+==================================
 
-Legitimate remote PC management delivered as **two Windows `.exe` files** (server + agent).
+Professional remote PC management (server + agent) with a polished admin dashboard,
+disclosed live sessions, group software deploy, discovery, and network monitoring.
 
-- Permanent agent install; uninstall requires an admin-managed password
-- LAN discovery + manual add by IP / username / password
-- Disclosed live sessions, remote shell, group software deploy, network live/dead monitor
-- **No Python on managed PCs** — build `.exe` once, then only run the executables
-
-See [rmm/README.md](rmm/README.md) for build and deployment steps.
+See [rmm/README.md](rmm/README.md) for Windows `.exe` build and deployment.
 
 **Not included:** hidden / stealth monitoring.
