@@ -39,13 +39,18 @@ import uvicorn
 from shared import config
 from shared import protocol as proto
 from server.database import Database
+from server.remote_push import find_agent_binary, push_agent_windows
+from agent.discovery import listen_udp_beacons, probe_host
+from agent.install_service import hash_uninstall_password
 
 db = Database()
 app = FastAPI(title="DiscloseRMM Server", version="1.0.0")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 PACKAGES_DIR = ROOT / "data" / "packages"
+BIN_DIR = ROOT / "bin"
 PACKAGES_DIR.mkdir(parents=True, exist_ok=True)
+BIN_DIR.mkdir(parents=True, exist_ok=True)
 
 # agent_id -> WebSocket
 agent_sockets: dict[str, WebSocket] = {}
@@ -60,12 +65,28 @@ def bootstrap() -> None:
     admin_pass = os.environ.get("RMM_ADMIN_PASSWORD", config.DEFAULT_ADMIN_PASSWORD)
     enroll = os.environ.get("RMM_ENROLLMENT_TOKEN", config.DEFAULT_ENROLLMENT_TOKEN)
     db.ensure_admin(admin_user, admin_pass)
-    # Always apply enrollment token from env when explicitly set; otherwise keep/create default
     if "RMM_ENROLLMENT_TOKEN" in os.environ or not db.get_setting("enrollment_token"):
         db.set_setting("enrollment_token", enroll)
+    if not db.get_setting("uninstall_password_hash"):
+        plain = os.environ.get("RMM_UNINSTALL_PASSWORD", config.DEFAULT_UNINSTALL_PASSWORD)
+        db.set_setting("uninstall_password_hash", hash_uninstall_password(plain))
+        db.set_setting("uninstall_password_hint", "Set in Admin → Uninstall password")
 
 
 bootstrap()
+
+
+def uninstall_hash() -> str:
+    return db.get_setting("uninstall_password_hash", hash_uninstall_password(config.DEFAULT_UNINSTALL_PASSWORD))
+
+
+async def push_uninstall_config_to_agents() -> None:
+    msg = proto.encode(proto.MSG_CONFIG, {"uninstall_password_hash": uninstall_hash()})
+    for ws in list(agent_sockets.values()):
+        try:
+            await ws.send_text(msg)
+        except Exception:
+            pass
 
 
 # ---------- Auth helpers ----------
@@ -121,6 +142,24 @@ class NetworkHostBody(BaseModel):
 
 class EnrollTokenBody(BaseModel):
     token: str
+
+
+class UninstallPasswordBody(BaseModel):
+    password: str
+
+
+class ManualPcBody(BaseModel):
+    ip_address: str
+    username: str
+    password: str
+
+
+class DiscoverBody(BaseModel):
+    subnet_cidr: str = ""  # e.g. 192.168.1.0/24 — optional active scan
+
+
+class RemoteUninstallBody(BaseModel):
+    password: str
 
 
 # ---------- HTTP: auth & dashboard ----------
@@ -194,6 +233,222 @@ async def set_enrollment(body: EnrollTokenBody, admin: dict = Depends(require_ad
     db.set_setting("enrollment_token", body.token)
     db.audit(admin["username"], "rotate_enrollment_token")
     return {"ok": "true"}
+
+
+@app.get("/api/public/agent-bootstrap")
+async def agent_bootstrap() -> dict[str, str]:
+    """Public bootstrap for agent installers (hash only — not the password)."""
+    return {
+        "uninstall_password_hash": uninstall_hash(),
+        "enrollment_required": "true",
+    }
+
+
+@app.get("/api/uninstall-password")
+async def get_uninstall_password_meta(admin: dict = Depends(require_admin)) -> dict[str, str]:
+    return {
+        "configured": "true" if db.get_setting("uninstall_password_hash") else "false",
+        "hint": db.get_setting("uninstall_password_hint", "Managed by administrator"),
+        "default_note": "Agents cannot be uninstalled without this password.",
+    }
+
+
+@app.post("/api/uninstall-password")
+async def set_uninstall_password(
+    body: UninstallPasswordBody, admin: dict = Depends(require_admin)
+) -> dict[str, str]:
+    if len(body.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    db.set_setting("uninstall_password_hash", hash_uninstall_password(body.password))
+    db.set_setting("uninstall_password_hint", "Updated by administrator")
+    await push_uninstall_config_to_agents()
+    db.audit(admin["username"], "set_uninstall_password", detail="Pushed hash to connected agents")
+    return {"ok": "true"}
+
+
+@app.get("/api/agent-binary")
+async def agent_binary_status(admin: dict = Depends(require_admin)) -> dict[str, Any]:
+    path = find_agent_binary()
+    return {
+        "available": bool(path),
+        "path": str(path) if path else "",
+        "download_url": "/api/agent-binary/download",
+        "hint": "Place DiscloseRMM-Agent.exe in rmm/dist or rmm/bin (or next to the server exe).",
+    }
+
+
+@app.get("/api/agent-binary/download")
+async def download_agent_binary(
+    token: str | None = Query(default=None),
+    authorization: str | None = Header(default=None),
+) -> FileResponse:
+    allowed = False
+    expected = db.get_setting("enrollment_token", config.DEFAULT_ENROLLMENT_TOKEN)
+    if token and secrets.compare_digest(str(token), str(expected)):
+        allowed = True
+    elif authorization and authorization.startswith("Bearer "):
+        if db.get_admin_by_session(authorization.removeprefix("Bearer ").strip()):
+            allowed = True
+    if not allowed:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    path = find_agent_binary()
+    if not path:
+        raise HTTPException(
+            status_code=404,
+            detail="Agent .exe not found on server. Build with build\\build_windows.bat and copy to bin/ or dist/.",
+        )
+    return FileResponse(path, filename=path.name)
+
+
+@app.get("/api/discovered")
+async def list_discovered(admin: dict = Depends(require_admin)) -> list[dict[str, Any]]:
+    return db.list_discovered()
+
+
+@app.post("/api/discover")
+async def discover_network(body: DiscoverBody, admin: dict = Depends(require_admin)) -> dict[str, Any]:
+    """Listen for agent UDP beacons and optionally probe a /24 subnet."""
+    beacons = await asyncio.to_thread(listen_udp_beacons, 4.0)
+    for b in beacons:
+        db.upsert_discovered(b)
+
+    probed: list[dict[str, Any]] = []
+    cidr = (body.subnet_cidr or "").strip()
+    if cidr.endswith("/24"):
+        base = cidr.split("/")[0].rsplit(".", 1)[0]
+
+        async def probe_one(i: int) -> None:
+            ip = f"{base}.{i}"
+            data = await asyncio.to_thread(probe_host, ip)
+            if data:
+                db.upsert_discovered(data)
+                probed.append(data)
+
+        await asyncio.gather(*[probe_one(i) for i in range(1, 255)])
+
+    # Also refresh from currently connected agents
+    for aid, _ws in agent_sockets.items():
+        agent = db.get_agent(aid)
+        if agent:
+            db.upsert_discovered(
+                {
+                    "agent_id": agent["id"],
+                    "hostname": agent["hostname"],
+                    "username": agent.get("username"),
+                    "os_info": agent.get("os_info"),
+                    "ip": agent.get("ip_address"),
+                    "installed": True,
+                }
+            )
+
+    db.audit(admin["username"], "discover_network", detail=cidr or "udp-beacons")
+    return {"discovered": db.list_discovered(), "beacon_count": len(beacons), "probed_count": len(probed)}
+
+
+@app.get("/api/pending-pcs")
+async def list_pending(admin: dict = Depends(require_admin)) -> list[dict[str, Any]]:
+    return db.list_pending_pcs()
+
+
+@app.post("/api/pending-pcs")
+async def add_manual_pc(body: ManualPcBody, admin: dict = Depends(require_admin)) -> dict[str, Any]:
+    """Manually add a remote PC by IP + Windows admin credentials and push-install the agent."""
+    ip = body.ip_address.strip()
+    if not ip:
+        raise HTTPException(status_code=400, detail="IP address required")
+    pending_id = db.add_pending_pc(ip, body.username.strip(), body.password)
+    db.audit(admin["username"], "add_manual_pc", target=ip, detail=body.username)
+
+    agent_exe = find_agent_binary()
+    enroll = db.get_setting("enrollment_token", config.DEFAULT_ENROLLMENT_TOKEN)
+    # Prefer a reachable public URL for agents
+    public = os.environ.get("RMM_PUBLIC_URL", "").rstrip("/")
+    server_url = public or f"http://{ _guess_server_ip()}:{os.environ.get('RMM_PORT', config.DEFAULT_SERVER_PORT)}"
+
+    if not agent_exe:
+        db.update_pending_pc(
+            pending_id,
+            "needs_binary",
+            "Agent .exe missing on server. Build DiscloseRMM-Agent.exe and place in bin/ or dist/.",
+        )
+        return {
+            "id": pending_id,
+            "status": "needs_binary",
+            "detail": "Place DiscloseRMM-Agent.exe on the server, then retry push.",
+        }
+
+    ok, detail = await asyncio.to_thread(
+        push_agent_windows,
+        ip,
+        body.username.strip(),
+        body.password,
+        server_url,
+        enroll,
+        agent_exe,
+    )
+    db.update_pending_pc(pending_id, "installed" if ok else "failed", detail)
+    db.audit(admin["username"], "push_install", target=ip, detail=detail)
+    return {"id": pending_id, "status": "installed" if ok else "failed", "detail": detail}
+
+
+@app.post("/api/pending-pcs/{pending_id}/retry")
+async def retry_pending(pending_id: int, admin: dict = Depends(require_admin)) -> dict[str, Any]:
+    row = db.get_pending_pc(pending_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    body = ManualPcBody(ip_address=row["ip_address"], username=row["username"], password=row["password"])
+    # Reuse add logic by calling push directly
+    agent_exe = find_agent_binary()
+    enroll = db.get_setting("enrollment_token", config.DEFAULT_ENROLLMENT_TOKEN)
+    public = os.environ.get("RMM_PUBLIC_URL", "").rstrip("/")
+    server_url = public or f"http://{_guess_server_ip()}:{os.environ.get('RMM_PORT', config.DEFAULT_SERVER_PORT)}"
+    if not agent_exe:
+        db.update_pending_pc(pending_id, "needs_binary", "Agent .exe missing on server")
+        raise HTTPException(status_code=400, detail="Agent .exe missing on server")
+    ok, detail = await asyncio.to_thread(
+        push_agent_windows,
+        body.ip_address,
+        body.username,
+        body.password,
+        server_url,
+        enroll,
+        agent_exe,
+    )
+    db.update_pending_pc(pending_id, "installed" if ok else "failed", detail)
+    db.audit(admin["username"], "retry_push_install", target=body.ip_address, detail=detail)
+    return {"status": "installed" if ok else "failed", "detail": detail}
+
+
+@app.delete("/api/pending-pcs/{pending_id}")
+async def delete_pending(pending_id: int, admin: dict = Depends(require_admin)) -> dict[str, str]:
+    db.delete_pending_pc(pending_id)
+    return {"ok": "true"}
+
+
+@app.post("/api/agents/{agent_id}/remote-uninstall")
+async def remote_uninstall(
+    agent_id: str, body: RemoteUninstallBody, admin: dict = Depends(require_admin)
+) -> dict[str, Any]:
+    expected = uninstall_hash()
+    if hash_uninstall_password(body.password) != expected:
+        raise HTTPException(status_code=403, detail="Incorrect uninstall password")
+    ws = agent_sockets.get(agent_id)
+    if not ws:
+        raise HTTPException(status_code=400, detail="Agent not connected")
+    await ws.send_text(proto.encode(proto.MSG_REMOTE_UNINSTALL, {"password": body.password}))
+    db.audit(admin["username"], "remote_uninstall", target=agent_id)
+    return {"ok": "true", "detail": "Uninstall command sent to agent"}
+
+
+def _guess_server_ip() -> str:
+    try:
+        s = __import__("socket").socket(__import__("socket").AF_INET, __import__("socket").SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
 
 
 # ---------- Groups ----------
@@ -500,7 +755,22 @@ async def agent_ws(websocket: WebSocket) -> None:
             ip_address=str(payload.get("ip_address", websocket.client.host if websocket.client else "")),
         )
         agent_sockets[agent_id] = websocket
-        await websocket.send_text(proto.encode(proto.MSG_ACK, {"agent_id": agent_id}))
+        db.upsert_discovered(
+            {
+                "agent_id": agent_id,
+                "hostname": payload.get("hostname"),
+                "username": payload.get("username"),
+                "os_info": payload.get("os_info"),
+                "ip": payload.get("ip_address"),
+                "installed": payload.get("installed", True),
+            }
+        )
+        await websocket.send_text(
+            proto.encode(
+                proto.MSG_ACK,
+                {"agent_id": agent_id, "uninstall_password_hash": uninstall_hash()},
+            )
+        )
         db.audit("system", "agent_connected", target=agent_id)
 
         while True:
@@ -508,6 +778,17 @@ async def agent_ws(websocket: WebSocket) -> None:
             msg_type, payload = proto.decode(raw)
             if msg_type == proto.MSG_HEARTBEAT:
                 db.touch_agent(agent_id, online=True)
+                if payload.get("ip") or payload.get("hostname"):
+                    db.upsert_discovered(
+                        {
+                            "agent_id": agent_id,
+                            "hostname": payload.get("hostname"),
+                            "username": payload.get("username"),
+                            "os_info": payload.get("os_info"),
+                            "ip": payload.get("ip") or payload.get("ip_address"),
+                            "installed": payload.get("installed", True),
+                        }
+                    )
             elif msg_type == proto.MSG_SHELL_RESULT:
                 job_id = payload.get("job_id")
                 fut = pending_results.pop(job_id, None) if job_id else None

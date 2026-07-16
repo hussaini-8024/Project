@@ -15,6 +15,7 @@ MSG_INSTALL_RESULT = "install_result"
 MSG_FRAME = "frame"
 MSG_PONG = "pong"
 MSG_STATUS = "status"
+MSG_DISCOVERY = "discovery"
 
 # Server -> Agent
 MSG_SHELL = "shell"
@@ -24,6 +25,8 @@ MSG_STOP_LIVE = "stop_live"
 MSG_PING = "ping"
 MSG_ACK = "ack"
 MSG_ERROR = "error"
+MSG_CONFIG = "config"  # push uninstall password hash, etc.
+MSG_REMOTE_UNINSTALL = "remote_uninstall"
 
 
 def encode(msg_type: str, payload: dict[str, Any] | None = None) -> str:

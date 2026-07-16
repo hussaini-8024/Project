@@ -20,3 +20,12 @@ LIVE_MAX_WIDTH = 1280
 # Visible on-screen indicator text (must remain shown during live sessions)
 MONITOR_BANNER_TEXT = "REMOTE SESSION ACTIVE — IT is viewing this screen"
 MONITOR_BANNER_SUBTEXT = "This session is audited. Contact your administrator if unexpected."
+
+# Permanent install / uninstall protection
+DEFAULT_UNINSTALL_PASSWORD = "UninstallMe!"
+
+# LAN discovery (agent beacon + server scan)
+DISCOVERY_MAGIC = "DiscloseRMM-v1"
+DISCOVERY_UDP_PORT = 38443
+DISCOVERY_TCP_PORT = 38444
+DISCOVERY_INTERVAL_SECONDS = 8

@@ -1,14 +1,17 @@
 """
-DiscloseRMM Agent — runs on managed company PCs.
+DiscloseRMM Agent — permanent install on managed company PCs.
 
 IMPORTANT: Live screen sharing ALWAYS shows a visible on-screen banner.
 Covert / hidden monitoring is intentionally not supported.
+
+End users run DiscloseRMM-Agent.exe (no Python required when built).
 """
 
 from __future__ import annotations
 
 import argparse
 import base64
+import getpass
 import io
 import os
 import platform
@@ -29,6 +32,17 @@ if str(ROOT) not in sys.path:
 import requests
 import websocket
 
+from agent.discovery import DiscoveryBeacon
+from agent.install_service import (
+    agent_id_path,
+    hash_uninstall_password,
+    install_agent,
+    is_installed,
+    load_config,
+    save_config,
+    set_uninstall_password_hash,
+    uninstall_agent,
+)
 from shared import config
 from shared import protocol as proto
 
@@ -71,7 +85,6 @@ class VisibleMonitorBanner:
         try:
             import tkinter as tk
         except Exception:
-            # Fallback: console notice if GUI unavailable
             print(f"\n*** {self.title} ***\n{self.subtitle}\n", flush=True)
             while not self._stop.wait(1.0):
                 pass
@@ -136,15 +149,14 @@ class Agent:
             config.MONITOR_BANNER_SUBTEXT,
         )
         self._stop = threading.Event()
+        self._beacon = DiscoveryBeacon(self._discovery_info)
 
     def _id_path(self) -> Path:
-        base = Path(os.environ.get("LOCALAPPDATA") or os.environ.get("HOME") or ".")
-        d = base / "DiscloseRMM"
-        d.mkdir(parents=True, exist_ok=True)
-        return d / "agent_id.txt"
+        return agent_id_path()
 
     def _load_or_create_id(self) -> str:
         path = self._id_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
         if path.is_file():
             return path.read_text(encoding="utf-8").strip()
         aid = uuid.uuid4().hex[:16]
@@ -159,6 +171,18 @@ class Agent:
             "username": os.environ.get("USERNAME") or os.environ.get("USER") or "",
             "os_info": f"{platform.system()} {platform.release()} {platform.machine()}",
             "ip_address": self._local_ip(),
+            "installed": is_installed(),
+        }
+
+    def _discovery_info(self) -> dict:
+        return {
+            "agent_id": self.agent_id,
+            "hostname": platform.node(),
+            "username": os.environ.get("USERNAME") or os.environ.get("USER") or "",
+            "os_info": f"{platform.system()} {platform.release()} {platform.machine()}",
+            "ip": self._local_ip(),
+            "server": self.server_url,
+            "installed": is_installed(),
         }
 
     @staticmethod
@@ -175,6 +199,7 @@ class Agent:
     def run(self) -> None:
         print(f"DiscloseRMM agent connecting to {self.server_url}")
         print("Live view will ALWAYS show a visible banner on this PC.")
+        self._beacon.start()
         while not self._stop.is_set():
             self.ws = websocket.WebSocketApp(
                 self.ws_url,
@@ -188,6 +213,7 @@ class Agent:
                 break
             print("Disconnected; reconnecting in 5s...")
             time.sleep(5)
+        self._beacon.stop()
 
     def _on_open(self, ws: websocket.WebSocketApp) -> None:
         ws.send(proto.encode(proto.MSG_REGISTER, self._host_info()))
@@ -196,7 +222,7 @@ class Agent:
     def _heartbeat_loop(self, ws: websocket.WebSocketApp) -> None:
         while not self._stop.is_set():
             try:
-                ws.send(proto.encode(proto.MSG_HEARTBEAT, {"ts": time.time()}))
+                ws.send(proto.encode(proto.MSG_HEARTBEAT, {"ts": time.time(), **self._discovery_info()}))
             except Exception:
                 break
             time.sleep(config.AGENT_HEARTBEAT_SECONDS)
@@ -208,7 +234,25 @@ class Agent:
             if assigned:
                 self.agent_id = str(assigned)
                 self._id_path().write_text(self.agent_id, encoding="utf-8")
+            # Sync uninstall password hash from server
+            uh = payload.get("uninstall_password_hash")
+            if uh:
+                set_uninstall_password_hash(str(uh))
             print(f"Registered as agent {self.agent_id}")
+        elif msg_type == proto.MSG_CONFIG:
+            uh = payload.get("uninstall_password_hash")
+            if uh:
+                set_uninstall_password_hash(str(uh))
+                print("Updated uninstall password from server administrator.")
+        elif msg_type == proto.MSG_REMOTE_UNINSTALL:
+            password = str(payload.get("password") or "")
+            try:
+                uninstall_agent(password)
+                ws.send(proto.encode(proto.MSG_STATUS, {"uninstalled": True}))
+                self._stop.set()
+                ws.close()
+            except Exception as exc:
+                ws.send(proto.encode(proto.MSG_STATUS, {"uninstalled": False, "error": str(exc)}))
         elif msg_type == proto.MSG_SHELL:
             threading.Thread(target=self._handle_shell, args=(ws, payload), daemon=True).start()
         elif msg_type == proto.MSG_INSTALL:
@@ -331,10 +375,7 @@ def run_shell(command: str, shell: str) -> tuple[str, int]:
     if shell == "powershell":
         cmd = ["powershell", "-NoProfile", "-NonInteractive", "-Command", command]
     elif shell == "bash":
-        if system == "windows":
-            cmd = ["bash", "-lc", command]
-        else:
-            cmd = ["bash", "-lc", command]
+        cmd = ["bash", "-lc", command]
     else:
         if system == "windows":
             cmd = ["cmd", "/c", command]
@@ -350,17 +391,14 @@ def build_install_command(path: Path, args: str) -> str:
     quoted = f'"{path}"'
     if suffix in (".msi",):
         return f'msiexec /i {quoted} {args} /qn'.strip()
-    if suffix in (".exe", ".bat", ".cmd", ".ps1", ".sh", ""):
-        if suffix == ".ps1":
-            return f'powershell -NoProfile -ExecutionPolicy Bypass -File {quoted} {args}'.strip()
-        if suffix == ".sh":
-            return f'bash {quoted} {args}'.strip()
-        return f"{quoted} {args}".strip()
+    if suffix == ".ps1":
+        return f'powershell -NoProfile -ExecutionPolicy Bypass -File {quoted} {args}'.strip()
+    if suffix == ".sh":
+        return f'bash {quoted} {args}'.strip()
     return f"{quoted} {args}".strip()
 
 
 def capture_frame(max_width: int, quality: int, burn_in_banner: bool = True) -> bytes | None:
-    """Capture screen; burn-in banner ensures disclosure even in the stream itself."""
     if mss is None or Image is None:
         return None
     with mss.mss() as sct:
@@ -385,17 +423,127 @@ def capture_frame(max_width: int, quality: int, burn_in_banner: bool = True) -> 
     return buf.getvalue()
 
 
-def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="DiscloseRMM Agent (visible remote sessions)")
-    p.add_argument("--server", required=True, help="Server base URL, e.g. http://192.168.1.10:8443")
-    p.add_argument("--token", required=True, help="Enrollment token from administrator")
+def _gui_install_wizard() -> tuple[str, str] | None:
+    """Simple Windows-friendly install dialog when exe is double-clicked."""
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+    except Exception:
+        return None
+
+    result: dict[str, str] = {}
+
+    root = tk.Tk()
+    root.title("DiscloseRMM Agent Install")
+    root.geometry("460x260")
+    root.resizable(False, False)
+    tk.Label(root, text="DiscloseRMM — Permanent Agent Install", font=("Segoe UI", 12, "bold")).pack(
+        pady=(16, 4)
+    )
+    tk.Label(
+        root,
+        text="Installs once and stays until removed with the admin uninstall password.",
+        wraplength=420,
+    ).pack()
+    frm = tk.Frame(root)
+    frm.pack(padx=20, pady=12, fill="x")
+    tk.Label(frm, text="Server URL").grid(row=0, column=0, sticky="w")
+    server_var = tk.StringVar(value="http://192.168.1.10:8443")
+    tk.Entry(frm, textvariable=server_var, width=40).grid(row=0, column=1, pady=4)
+    tk.Label(frm, text="Enrollment token").grid(row=1, column=0, sticky="w")
+    token_var = tk.StringVar(value="")
+    tk.Entry(frm, textvariable=token_var, width=40).grid(row=1, column=1, pady=4)
+
+    def do_install() -> None:
+        s = server_var.get().strip()
+        t = token_var.get().strip()
+        if not s or not t:
+            messagebox.showerror("Missing info", "Server URL and enrollment token are required.")
+            return
+        result["server"] = s
+        result["token"] = t
+        root.destroy()
+
+    tk.Button(root, text="Install permanently", command=do_install).pack(pady=8)
+    tk.Label(
+        root,
+        text="Uninstall later: DiscloseRMM-Agent.exe --uninstall  (password from admin panel)",
+        fg="#555",
+    ).pack()
+    root.mainloop()
+    if "server" in result:
+        return result["server"], result["token"]
+    return None
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="DiscloseRMM Agent (permanent install, visible sessions)")
+    p.add_argument("--server", default=None, help="Server base URL, e.g. http://192.168.1.10:8443")
+    p.add_argument("--token", default=None, help="Enrollment token from administrator")
     p.add_argument("--agent-id", default=None, help="Optional fixed agent id")
-    return p.parse_args()
+    p.add_argument("--install", action="store_true", help="Install permanently (autostart)")
+    p.add_argument("--uninstall", action="store_true", help="Uninstall (requires admin password)")
+    p.add_argument("--uninstall-password", default=None, help="Uninstall password (or prompt)")
+    p.add_argument("--run", action="store_true", help="Run agent service loop (used by autostart)")
+    return p.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
-    agent = Agent(args.server, args.token, args.agent_id)
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+
+    if args.uninstall:
+        password = args.uninstall_password
+        if not password:
+            password = getpass.getpass("Uninstall password (from server admin panel): ")
+        try:
+            uninstall_agent(password)
+            print("DiscloseRMM agent uninstalled.")
+        except PermissionError as exc:
+            print(str(exc))
+            sys.exit(2)
+        except Exception as exc:
+            print("Uninstall failed:", exc)
+            sys.exit(1)
+        return
+
+    # Resolve server/token from args, saved config, or GUI wizard
+    cfg = load_config()
+    server = args.server or cfg.get("server")
+    token = args.token or cfg.get("token")
+
+    if args.install or (not args.run and not server and not token):
+        if not server or not token:
+            wizard = _gui_install_wizard()
+            if not wizard:
+                # CLI fallback
+                server = server or input("Server URL: ").strip()
+                token = token or input("Enrollment token: ").strip()
+            else:
+                server, token = wizard
+        # Fetch uninstall hash from server public bootstrap endpoint if available
+        uninstall_hash = ""
+        try:
+            r = requests.get(f"{server.rstrip('/')}/api/public/agent-bootstrap", timeout=10)
+            if r.ok:
+                uninstall_hash = str(r.json().get("uninstall_password_hash") or "")
+        except Exception:
+            pass
+        if not uninstall_hash:
+            uninstall_hash = hash_uninstall_password(config.DEFAULT_UNINSTALL_PASSWORD)
+        exe = install_agent(server, token, uninstall_hash)
+        print(f"Installed permanently: {exe}")
+        print("Agent will start automatically. Uninstall requires the admin uninstall password.")
+        # Start running now as well
+        args.run = True
+
+    if not server or not token:
+        print("Missing --server and --token (or install first).")
+        sys.exit(1)
+
+    # Persist config when running with explicit args
+    save_config({"server": server.rstrip("/"), "token": token, "installed": is_installed()})
+
+    agent = Agent(server, token, args.agent_id)
     try:
         agent.run()
     except KeyboardInterrupt:

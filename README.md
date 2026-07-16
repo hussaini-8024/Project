@@ -1,9 +1,13 @@
 DiscloseRMM
 ===========
 
-Legitimate remote PC management (server + agent) with **disclosed** live sessions,
-group software deploy, remote shell, and network live/dead monitoring.
+Legitimate remote PC management delivered as **two Windows `.exe` files** (server + agent).
 
-See [rmm/README.md](rmm/README.md) for setup, Windows `.exe` build, and security notes.
+- Permanent agent install; uninstall requires an admin-managed password
+- LAN discovery + manual add by IP / username / password
+- Disclosed live sessions, remote shell, group software deploy, network live/dead monitor
+- **No Python on managed PCs** — build `.exe` once, then only run the executables
 
-**Not included (by design):** hidden / stealth monitoring of remote users.
+See [rmm/README.md](rmm/README.md) for build and deployment steps.
+
+**Not included:** hidden / stealth monitoring.

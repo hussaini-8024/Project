@@ -129,6 +129,28 @@ class Database:
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS discovered_agents (
+                    agent_id TEXT PRIMARY KEY,
+                    hostname TEXT,
+                    username TEXT,
+                    os_info TEXT,
+                    ip_address TEXT,
+                    enrolled INTEGER DEFAULT 0,
+                    last_seen REAL NOT NULL,
+                    raw_json TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS pending_pcs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ip_address TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    password TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    detail TEXT DEFAULT '',
+                    created_at REAL NOT NULL,
+                    updated_at REAL NOT NULL
+                );
                 """
             )
 
@@ -391,3 +413,88 @@ class Database:
                 "INSERT INTO settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (key, value),
             )
+
+    def upsert_discovered(self, data: dict[str, Any]) -> None:
+        agent_id = str(data.get("agent_id") or data.get("ip") or "")
+        if not agent_id:
+            return
+        now = time.time()
+        with self.connect() as conn:
+            enrolled = 1 if conn.execute("SELECT id FROM agents WHERE id = ?", (agent_id,)).fetchone() else 0
+            conn.execute(
+                """
+                INSERT INTO discovered_agents(agent_id, hostname, username, os_info, ip_address, enrolled, last_seen, raw_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(agent_id) DO UPDATE SET
+                    hostname=excluded.hostname,
+                    username=excluded.username,
+                    os_info=excluded.os_info,
+                    ip_address=excluded.ip_address,
+                    enrolled=excluded.enrolled,
+                    last_seen=excluded.last_seen,
+                    raw_json=excluded.raw_json
+                """,
+                (
+                    agent_id,
+                    str(data.get("hostname", "")),
+                    str(data.get("username", "")),
+                    str(data.get("os_info", "")),
+                    str(data.get("ip", data.get("ip_address", ""))),
+                    enrolled,
+                    now,
+                    json_dumps(data),
+                ),
+            )
+
+    def list_discovered(self, max_age_seconds: float = 120) -> list[dict[str, Any]]:
+        cutoff = time.time() - max_age_seconds
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM discovered_agents WHERE last_seen >= ? ORDER BY hostname COLLATE NOCASE",
+                (cutoff,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def add_pending_pc(self, ip: str, username: str, password: str) -> int:
+        now = time.time()
+        with self.connect() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO pending_pcs(ip_address, username, password, status, detail, created_at, updated_at)
+                VALUES (?, ?, ?, 'pending', '', ?, ?)
+                """,
+                (ip, username, password, now, now),
+            )
+            return int(cur.lastrowid)
+
+    def list_pending_pcs(self) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT * FROM pending_pcs ORDER BY created_at DESC").fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                d["password"] = "***"
+                out.append(d)
+            return out
+
+    def get_pending_pc(self, pending_id: int) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM pending_pcs WHERE id = ?", (pending_id,)).fetchone()
+            return dict(row) if row else None
+
+    def update_pending_pc(self, pending_id: int, status: str, detail: str = "") -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE pending_pcs SET status=?, detail=?, updated_at=? WHERE id=?",
+                (status, detail, time.time(), pending_id),
+            )
+
+    def delete_pending_pc(self, pending_id: int) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM pending_pcs WHERE id = ?", (pending_id,))
+
+
+def json_dumps(data: dict[str, Any]) -> str:
+    import json
+
+    return json.dumps(data)

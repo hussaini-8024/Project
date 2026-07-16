@@ -225,12 +225,13 @@
     <nav>
       <div class="brand">Disclose<span>RMM</span></div>
       <button class="nav-btn active" data-tab="pcs">Remote PCs</button>
+      <button class="nav-btn" data-tab="enroll">Add / Discover PC</button>
       <button class="nav-btn" data-tab="groups">Groups</button>
       <button class="nav-btn" data-tab="software">Software</button>
       <button class="nav-btn" data-tab="shell">Remote Shell</button>
       <button class="nav-btn" data-tab="live">Live Session</button>
       <button class="nav-btn" data-tab="network">Network Monitor</button>
-      <button class="nav-btn" data-tab="enroll">Add PC</button>
+      <button class="nav-btn" data-tab="settings">Settings</button>
       <button class="nav-btn" data-tab="audit">Audit Log</button>
       <div class="nav-foot">
         Signed in as <strong id="who"></strong><br />
@@ -245,9 +246,10 @@
 
       <section id="tab-pcs" class="tab">
         <h2>Remote PCs</h2>
-        <p class="sub">Agents enrolled with your token. Online = connected WebSocket.</p>
+        <p class="sub">Permanently installed agents. Online = connected. Uninstall requires the admin password.</p>
         <div class="toolbar">
           <button id="refresh-agents">Refresh</button>
+          <button id="discover-quick" class="secondary">Discover network</button>
         </div>
         <table>
           <thead>
@@ -368,16 +370,64 @@
       </section>
 
       <section id="tab-enroll" class="tab hidden">
-        <h2>Add remote PC</h2>
-        <p class="sub">Install the agent on the remote PC and enroll with this token.</p>
-        <div class="panel">
+        <h2>Add / Discover PC</h2>
+        <p class="sub">Auto-discover agents on the LAN, or push-install using IP + Windows admin credentials. No Python on remote PCs — only DiscloseRMM-Agent.exe.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>1) Network discovery</h3>
+            <label>Optional subnet scan (/24)</label>
+            <input id="discover-cidr" placeholder="192.168.1.0/24" />
+            <button id="discover-btn">Discover agents now</button>
+            <p class="sub" style="margin-top:10px">Listens for agent beacons and probes the subnet. Discovered PCs appear below and under Remote PCs when enrolled.</p>
+            <table style="margin-top:12px">
+              <thead><tr><th>Hostname</th><th>IP</th><th>User</th><th>Enrolled</th></tr></thead>
+              <tbody id="discovered-body"></tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <h3>2) Manual add (IP + credentials)</h3>
+            <label>Remote PC IP</label>
+            <input id="manual-ip" placeholder="192.168.1.50" />
+            <label>Windows admin username</label>
+            <input id="manual-user" placeholder="Administrator" />
+            <label>Windows admin password</label>
+            <input id="manual-pass" type="password" />
+            <button id="manual-add">Push-install agent</button>
+            <p class="sub" style="margin-top:10px">Requires Server .exe on Windows, admin shares, and DiscloseRMM-Agent.exe present on the server (bin/ or dist/).</p>
+            <h3 style="margin-top:16px">Pending / push jobs</h3>
+            <div id="pending-list"></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <h3>3) One-time local install (USB / copy)</h3>
           <label>Enrollment token</label>
           <div class="toolbar">
             <input id="enroll-token" class="mono" style="flex:1;min-width:220px" />
             <button id="save-token">Save token</button>
+            <a id="dl-agent" class="secondary" style="display:inline-block;padding:10px 16px;text-decoration:none;border:1px solid var(--border);background:var(--panel-2)">Download Agent.exe</a>
           </div>
-          <h3>Agent install (Windows)</h3>
           <pre class="mono" id="enroll-help" style="background:#0b0f14;padding:12px;border:1px solid var(--border)"></pre>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="tab hidden">
+        <h2>Settings</h2>
+        <p class="sub">Uninstall password is required to remove the agent from any PC. Managed only here; pushed to all connected agents.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Agent uninstall password</h3>
+            <p class="sub" id="uninstall-meta">—</p>
+            <label>New uninstall password</label>
+            <input id="uninstall-pass" type="password" placeholder="min 6 characters" />
+            <label>Confirm</label>
+            <input id="uninstall-pass2" type="password" />
+            <button id="save-uninstall">Save &amp; push to agents</button>
+          </div>
+          <div class="panel">
+            <h3>Agent binary on server</h3>
+            <p class="sub" id="binary-meta">—</p>
+            <p class="sub">End users only need the .exe files — no Python or pip on managed PCs.</p>
+          </div>
         </div>
       </section>
 
@@ -487,14 +537,32 @@
           <td>${esc(a.os_info || "")}</td>
           <td>${status}</td>
           <td>${live}</td>
-          <td><button class="danger" data-del="${a.id}">Remove</button></td>`;
+          <td>
+            <button class="danger" data-del="${a.id}">Remove from panel</button>
+            <button class="warn" data-uninst="${a.id}" ${a.connected ? "" : "disabled"}>Uninstall agent</button>
+          </td>`;
         body.appendChild(tr);
       });
       body.querySelectorAll("[data-del]").forEach((b) => {
         b.onclick = async () => {
-          if (!confirm("Remove this agent?")) return;
+          if (!confirm("Remove this agent from the panel only? (does not uninstall from the PC)")) return;
           await api("/api/agents/" + b.dataset.del, { method: "DELETE" });
           loadAgents();
+        };
+      });
+      body.querySelectorAll("[data-uninst]").forEach((b) => {
+        b.onclick = async () => {
+          const password = prompt("Enter agent uninstall password (from Settings):");
+          if (!password) return;
+          try {
+            await api("/api/agents/" + b.dataset.uninst + "/remote-uninstall", {
+              method: "POST",
+              body: JSON.stringify({ password }),
+            });
+            alert("Uninstall command sent to agent.");
+          } catch (e) {
+            alert(e.message);
+          }
         };
       });
     }
@@ -707,14 +775,118 @@
       document.getElementById("enroll-token").value = data.token;
       const base = location.origin;
       document.getElementById("enroll-help").textContent =
-`1. Copy DiscloseRMM-Agent.exe to the remote PC
-2. Run as administrator:
+`Windows (no Python needed):
 
-   DiscloseRMM-Agent.exe --server ${base} --token ${data.token}
+1. Download DiscloseRMM-Agent.exe (button above) or copy from server bin\\ folder
+2. On the remote PC, right-click → Run as administrator (first time):
 
-3. The PC appears under Remote PCs when connected.
-4. Change the enrollment token after rolling out agents.`;
+   DiscloseRMM-Agent.exe
+   (GUI asks for server + token)
+
+   Or silent:
+   DiscloseRMM-Agent.exe --install --server ${base} --token ${data.token}
+
+3. Agent installs permanently under ProgramData\\DiscloseRMM and auto-starts.
+4. PC appears here automatically (discovery + enrollment).
+5. To remove later (password from Settings):
+   DiscloseRMM-Agent.exe --uninstall
+
+Default uninstall password until you change it: UninstallMe!`;
+      document.getElementById("dl-agent").href = "/api/agent-binary/download";
+      document.getElementById("dl-agent").onclick = async (e) => {
+        e.preventDefault();
+        const res = await fetch("/api/agent-binary/download", {
+          headers: { Authorization: "Bearer " + state.token },
+        });
+        if (!res.ok) {
+          alert(await res.text());
+          return;
+        }
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "DiscloseRMM-Agent.exe";
+        a.click();
+      };
+      await loadDiscovered();
+      await loadPending();
     }
+
+    async function loadDiscovered() {
+      const rows = await api("/api/discovered");
+      const body = document.getElementById("discovered-body");
+      body.innerHTML = "";
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${esc(r.hostname || "")}</td><td class="mono">${esc(r.ip_address || "")}</td>
+          <td>${esc(r.username || "")}</td>
+          <td>${r.enrolled ? '<span class="badge on">Yes</span>' : '<span class="badge">Seen</span>'}</td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    async function loadPending() {
+      const rows = await api("/api/pending-pcs");
+      const el = document.getElementById("pending-list");
+      if (!rows.length) {
+        el.innerHTML = '<p class="sub">No manual push jobs yet.</p>';
+        return;
+      }
+      el.innerHTML = rows.map((r) =>
+        `<div style="margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
+          <strong class="mono">${esc(r.ip_address)}</strong> — ${esc(r.status)}
+          <div class="sub">${esc(r.detail || "")}</div>
+          <button class="secondary" data-retry="${r.id}">Retry</button>
+          <button class="danger" data-pendel="${r.id}">Delete</button>
+        </div>`
+      ).join("");
+      el.querySelectorAll("[data-retry]").forEach((b) => {
+        b.onclick = async () => {
+          try {
+            const r = await api("/api/pending-pcs/" + b.dataset.retry + "/retry", { method: "POST" });
+            alert(r.detail || r.status);
+          } catch (e) { alert(e.message); }
+          loadPending();
+        };
+      });
+      el.querySelectorAll("[data-pendel]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/pending-pcs/" + b.dataset.pendel, { method: "DELETE" });
+          loadPending();
+        };
+      });
+    }
+
+    async function runDiscover() {
+      const subnet_cidr = document.getElementById("discover-cidr")?.value.trim() || "";
+      const data = await api("/api/discover", {
+        method: "POST",
+        body: JSON.stringify({ subnet_cidr }),
+      });
+      await loadDiscovered();
+      await loadAgents();
+      alert(`Discovery done. Beacons: ${data.beacon_count}, probed hits: ${data.probed_count}`);
+    }
+
+    document.getElementById("discover-btn").onclick = () => runDiscover().catch((e) => alert(e.message));
+    document.getElementById("discover-quick").onclick = () => runDiscover().catch((e) => alert(e.message));
+
+    document.getElementById("manual-add").onclick = async () => {
+      try {
+        const data = await api("/api/pending-pcs", {
+          method: "POST",
+          body: JSON.stringify({
+            ip_address: document.getElementById("manual-ip").value.trim(),
+            username: document.getElementById("manual-user").value.trim(),
+            password: document.getElementById("manual-pass").value,
+          }),
+        });
+        alert((data.status || "") + ": " + (data.detail || ""));
+        loadPending();
+      } catch (e) {
+        alert(e.message);
+      }
+    };
 
     document.getElementById("save-token").onclick = async () => {
       await api("/api/enrollment", {
@@ -723,6 +895,31 @@
       });
       alert("Token saved");
       loadEnroll();
+    };
+
+    async function loadSettings() {
+      const meta = await api("/api/uninstall-password");
+      document.getElementById("uninstall-meta").textContent =
+        meta.default_note + " Hint: " + (meta.hint || "");
+      const bin = await api("/api/agent-binary");
+      document.getElementById("binary-meta").textContent = bin.available
+        ? ("Ready: " + bin.path)
+        : ("Missing. " + bin.hint);
+    }
+
+    document.getElementById("save-uninstall").onclick = async () => {
+      const p1 = document.getElementById("uninstall-pass").value;
+      const p2 = document.getElementById("uninstall-pass2").value;
+      if (p1 !== p2) return alert("Passwords do not match");
+      try {
+        await api("/api/uninstall-password", { method: "POST", body: JSON.stringify({ password: p1 }) });
+        alert("Uninstall password saved and pushed to connected agents.");
+        document.getElementById("uninstall-pass").value = "";
+        document.getElementById("uninstall-pass2").value = "";
+        loadSettings();
+      } catch (e) {
+        alert(e.message);
+      }
     };
 
     async function loadAudit() {
@@ -745,7 +942,10 @@
     }
 
     async function refreshAll() {
-      await Promise.all([loadAgents(), loadGroups(), loadPackages(), loadNetwork(), loadEnroll(), loadAudit()]);
+      await Promise.all([
+        loadAgents(), loadGroups(), loadPackages(), loadNetwork(),
+        loadEnroll(), loadSettings(), loadAudit(),
+      ]);
     }
     document.getElementById("refresh-agents").onclick = loadAgents;
     document.getElementById("refresh-audit").onclick = loadAudit;
