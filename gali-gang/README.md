@@ -8,10 +8,10 @@ Funny **Urdu–Hindi** neighbourhood cartoon series package.
 - **1 series setting key art** (Lalten Gali)
 - **10 episode teleplays** written for ~**20:00** runtime each
 - **10 promo videos** (MP4 trailers)
-- **Showcase website** with character gallery + storyboard player
-- Scripts to generate **~20 minute storyboard animatics** (still-frame timing reels)
+- **10 × 20-minute storyboard animatics** in `site/videos/long/`
+- **Showcase website** with character gallery + video player
 
-> Fully frame-by-frame animated 20-minute cartoons require a studio animation pipeline (layout, animation, cleanup, color, lip-sync, mix). This repo delivers the creative series bible, characters, scripts, promos, and animatic generator.
+> The 20-minute files are storyboard animatics (character stills + Urdu–Hindi dialogue timing), not fully frame-by-frame animated cartoons. Full animation still needs a studio pipeline.
 
 ## Quick start
 
