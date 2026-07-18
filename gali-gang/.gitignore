@@ -1,0 +1,4 @@
+site/videos/long/
+site/videos/_seg_*/
+__pycache__/
+*.pyc
