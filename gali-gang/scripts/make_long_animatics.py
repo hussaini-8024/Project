@@ -215,20 +215,19 @@ def render_episode(ep: int, seconds: int = 1200) -> Path:
             line_e = safe_text(line)[:85]
             cmd = [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-                "-loop", "1", "-t", f"{hold:.3f}", "-i", str(src),
-                "-f", "lavfi", "-i", f"sine=frequency={340 + (idx % 7) * 18}:sample_rate=44100:duration={hold:.3f}",
+                "-framerate", "2", "-loop", "1", "-t", f"{hold:.3f}", "-i", str(src),
+                "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
                 "-filter_complex",
                 (
-                    f"[0:v]scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,"
-                    f"drawbox=x=0:y=h-160:w=iw:h=160:color=0x0B1D36@0.72:t=fill,"
-                    f"drawtext=text='{title_e}':fontcolor=0xFFB703:fontsize=34:x=36:y=h-138,"
-                    f"drawtext=text='{line_e}':fontcolor=white:fontsize=24:x=36:y=h-88[v];"
-                    f"[1:a]volume=0.025,afade=t=in:st=0:d=0.15,"
-                    f"afade=t=out:st={max(0.2, hold - 0.25)}:d=0.2[a]"
+                    f"[0:v]scale=854:480:force_original_aspect_ratio=increase,crop=854:480,"
+                    f"drawbox=x=0:y=h-120:w=iw:h=120:color=0x0B1D36@0.72:t=fill,"
+                    f"drawtext=text='{title_e}':fontcolor=0xFFB703:fontsize=28:x=24:y=h-105,"
+                    f"drawtext=text='{line_e}':fontcolor=white:fontsize=20:x=24:y=h-68[v];"
+                    f"[1:a]atrim=0:{hold:.3f},asetpts=PTS-STARTPTS,volume=0.0[a]"
                 ),
                 "-map", "[v]", "-map", "[a]",
-                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24",
-                "-preset", "ultrafast", "-crf", "30",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "2",
+                "-preset", "ultrafast", "-crf", "32",
                 "-c:a", "aac", "-b:a", "64k",
                 "-t", f"{hold:.3f}",
                 str(seg),

@@ -105,6 +105,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Chacha ki machine meethas failati hai, gali chipak jati hai.",
       video: "videos/ep01-jalebi-jam.mp4",
+      longVideo: "videos/long/ep01-animatic-20min.mp4",
       scenes: [
         { img: "assets/billu-billi.png", title: "Billu Billi", line: "Assalamualaikum / Namaste! Aaj meethas itni hai ke ants bhi dance par hain!" },
         { img: "assets/chacha-jalebi.png", title: "Chacha Jalebi", line: "Aaj itni jalebi dunga… history books mein likha jayega!" },
@@ -129,6 +130,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Pinky ka 24-hour live challenge internet aur izzat dono hilata hai.",
       video: "videos/ep02-selfie-se-satyanash.mp4",
+      longVideo: "videos/long/ep02-animatic-20min.mp4",
       scenes: [
         { img: "assets/pinky.png", title: "Pinky", line: "No Phone No Life Challenge — teen phones ke saath!" },
         { img: "assets/inspector-bakra.png", title: "Inspector", line: "Filter ne mujhe bakra bana diya… case supernatural?" },
@@ -145,6 +147,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Trophy bat gayab — Bakra har cheez ko arrest karta hai.",
       video: "videos/ep03-inspector-ki-investigation.mp4",
+      longVideo: "videos/long/ep03-animatic-20min.mp4",
       scenes: [
         { img: "assets/inspector-bakra.png", title: "Bakra", line: "Yeh bat nahi… yeh izzat hai!" },
         { img: "assets/chacha-jalebi.png", title: "Clue?", line: "Sticky fingerprints on jalebi. Delicious evidence." },
@@ -160,6 +163,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Rickshaw rocket rooftops chaat’ta hai, saree parachute style.",
       video: "videos/ep04-nano-ka-rocket.mp4",
+      longVideo: "videos/long/ep04-animatic-20min.mp4",
       scenes: [
         { img: "assets/nano.png", title: "Nano", line: "Rickshaw Rocket ready… thoda explode ho sakta hai." },
         { img: "assets/rocky-rickshaw.png", title: "Rocky", line: "Mat chhed! …okay thoda chhed." },
@@ -175,6 +179,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Gossip diary gayab — gali weirdly nice ho jati hai.",
       video: "videos/ep05-begum-bubble-ka-secret.mp4",
+      longVideo: "videos/long/ep05-animatic-20min.mp4",
       scenes: [
         { img: "assets/begum-bubble.png", title: "Begum", line: "Diary gayab?! Ab secrets kis ke saath share karun?" },
         { img: "assets/motu-mama.png", title: "Motu", line: "Main food share kar raha hoon… pehle khaye baghair. Unnatural!" },
@@ -189,6 +194,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Free langar + onion fog monster = tearful comedy.",
       video: "videos/ep06-motu-mama-ka-langar.mp4",
+      longVideo: "videos/long/ep06-animatic-20min.mp4",
       scenes: [
         { img: "assets/motu-mama.png", title: "Motu", line: "Sabko khilaunga! Kitchen chhota hai, dil bada." },
         { img: "assets/professor-pappu.png", title: "Pappu", line: "Flavour multiplier… oh no, onion fog!" },
@@ -203,6 +209,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Concert vs silent hours — snore drop becomes hit single.",
       video: "videos/ep07-dj-dumroo-night.mp4",
+      longVideo: "videos/long/ep07-animatic-20min.mp4",
       scenes: [
         { img: "assets/dj-dumroo.png", title: "DJ", line: "Beat drop… gali shake!" },
         { img: "assets/inspector-bakra.png", title: "Bakra", line: "Shake after 10? Whistle says no." },
@@ -217,6 +224,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Clones multiply, chores finish, identity crisis begins.",
       video: "videos/ep08-professor-pappu-ka-clone.mp4",
+      longVideo: "videos/long/ep08-animatic-20min.mp4",
       scenes: [
         { img: "assets/professor-pappu.png", title: "Pappu", line: "Clone ready — main bhi pagal, official!" },
         { img: "assets/pinky.png", title: "Pinky", line: "Kaun sa Pappu content-worthy hai?!" },
@@ -232,6 +240,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Wedding baraat stuck; gang becomes dancing traffic signal.",
       video: "videos/ep09-rocky-vs-traffic.mp4",
+      longVideo: "videos/long/ep09-animatic-20min.mp4",
       scenes: [
         { img: "assets/rocky-rickshaw.png", title: "Rocky", line: "Rickshaw bol raha hai: chal pad!" },
         { img: "assets/inspector-bakra.png", title: "Bakra", line: "17 naye hand signals… ab ballet shuru." },
@@ -247,6 +256,7 @@ window.GALI = {
       runtime: "20:00",
       summary: "Season finale: rivalry, mix-up, and one giant friendship show.",
       video: "videos/ep10-lalten-gali-utsav.mp4",
+      longVideo: "videos/long/ep10-animatic-20min.mp4",
       scenes: [
         { img: "assets/billu-billi.png", title: "Billu", line: "Season final! Tissue rakho — hasi ke liye." },
         { img: "assets/pinky.png", title: "Pinky", line: "Solo stage chahiye… ya phir gang ke saath?" },

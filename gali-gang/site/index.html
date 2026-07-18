@@ -73,23 +73,23 @@
           <p>Promo reels for all 10 episodes, plus an interactive Urdu–Hindi storyboard player.</p>
         </div>
         <div class="note">
-          Promo videos are short trailers. Full ~20 minute storyboard animatics (still-frame timing reels with dialogue cards)
-          can be generated with <code>python3 gali-gang/scripts/make_long_animatics.py</code>.
-          Fully animated 20-minute cartoons need a traditional animation pipeline.
+          Each episode includes a <strong>20-minute storyboard animatic</strong> (character stills + Urdu–Hindi dialogue cards)
+          and a short promo trailer. Fully frame-by-frame animated masters still need a studio pipeline.
         </div>
         <div class="player" style="margin-top:1.25rem">
           <div>
             <video id="promoVideo" controls playsinline poster="assets/lalten-gali-hero.png" style="width:100%;border-radius:1.25rem;background:#06101d;box-shadow:var(--shadow)">
-              <source id="promoSource" src="videos/ep01-jalebi-jam.mp4" type="video/mp4" />
+              <source id="promoSource" src="videos/long/ep01-animatic-20min.mp4" type="video/mp4" />
             </video>
           </div>
           <div class="controls">
             <label>
-              Episode promo
+              Episode
               <select id="epSelect" style="width:100%;margin-top:0.35rem;padding:0.65rem;border-radius:0.75rem;border:0;font:inherit"></select>
             </label>
             <div class="cta-row">
-              <button class="btn btn-primary" id="playBtn" type="button">Play Storyboard</button>
+              <button class="btn btn-primary" id="modeBtn" type="button">Mode: 20-min Animatic</button>
+              <button class="btn btn-ghost" id="playBtn" type="button">Play Beat Reel</button>
               <button class="btn btn-ghost" id="stopBtn" type="button">Stop</button>
             </div>
             <div class="stage" id="stage" style="min-height:220px">

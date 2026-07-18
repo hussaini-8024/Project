@@ -19,10 +19,23 @@
   let sceneIndex = 0;
   let currentEp = episodes[0];
 
+  let useLong = true;
+
   function setPromo(ep) {
-    if (!promoVideo || !promoSource || !ep.video) return;
-    promoSource.src = ep.video;
+    if (!promoVideo || !promoSource) return;
+    const src = useLong && ep.longVideo ? ep.longVideo : ep.video;
+    if (!src) return;
+    promoSource.src = src;
     promoVideo.load();
+  }
+
+  const modeBtn = document.getElementById("modeBtn");
+  if (modeBtn) {
+    modeBtn.addEventListener("click", () => {
+      useLong = !useLong;
+      modeBtn.textContent = useLong ? "Mode: 20-min Animatic" : "Mode: Short Promo";
+      setPromo(currentEp);
+    });
   }
 
   function showCharacter(c) {
