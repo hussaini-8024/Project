@@ -1,0 +1,12 @@
+<Configuration>
+  <Add OfficeClientEdition="{{ office2016_edition }}" Channel="{{ office2016_channel }}">
+    <Product ID="{{ office2016_product_id }}">
+      <Language ID="{{ office2016_language }}" />
+    </Product>
+  </Add>
+  <Display Level="{{ office2016_display_level }}" AcceptEULA="{{ 'TRUE' if office2016_accept_eula else 'FALSE' }}" />
+{% if office2016_auto_activate %}
+  <Property Name="AUTOACTIVATE" Value="1" />
+{% endif %}
+  <Logging Level="Standard" Path="{{ office2016_staging_path }}" />
+</Configuration>

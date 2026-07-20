@@ -1,0 +1,16 @@
+---
+office2016_lan_source_path: "\\\\fileserver\\software\\Office2016"
+office2016_staging_path: "C:\\Temp\\Office2016"
+office2016_edition: "64"
+office2016_product_id: "ProPlusRetail"
+office2016_language: "en-us"
+office2016_channel: "Volume"
+office2016_display_level: "None"
+office2016_accept_eula: true
+office2016_auto_activate: true
+office2016_remove_existing: false
+office2016_reboot: "if_required"
+
+office2016_setup_exe: "setup.exe"
+office2016_config_file: "configuration.xml"
+office2016_install_timeout: 3600

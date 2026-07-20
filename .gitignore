@@ -1,0 +1,14 @@
+# Ansible
+*.retry
+.ansible/
+inventory/hosts.yml
+
+# Secrets
+*.vault
+.vault_pass
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

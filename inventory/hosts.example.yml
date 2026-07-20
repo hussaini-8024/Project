@@ -1,0 +1,21 @@
+---
+# Copy to inventory/hosts.yml and customize for your LAN.
+#
+# AWX: import this inventory or define the same groups/hosts in AWX UI.
+
+all:
+  children:
+    windows_lan:
+      vars:
+        ansible_connection: winrm
+        ansible_port: 5985
+        ansible_winrm_transport: ntlm
+        ansible_winrm_scheme: http
+        ansible_winrm_server_cert_validation: ignore
+      hosts:
+        win-pc01:
+          ansible_host: 192.168.1.101
+          ansible_user: Administrator
+        win-pc02:
+          ansible_host: 192.168.1.102
+          ansible_user: Administrator

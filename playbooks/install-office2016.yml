@@ -1,0 +1,14 @@
+---
+# Install Microsoft Office 2016 on Windows LAN hosts via AWX or ansible-playbook.
+#
+# Usage (local):
+#   ansible-playbook playbooks/install-office2016.yml
+#
+# AWX job template playbook path:
+#   playbooks/install-office2016.yml
+
+- name: Install Microsoft Office 2016 on Windows LAN systems
+  hosts: windows_lan
+  gather_facts: false
+  roles:
+    - role: office2016

@@ -1,0 +1,103 @@
+---
+- name: Check if Microsoft Office 2016 is already installed
+  ansible.windows.win_reg_stat:
+    path: HKLM:\SOFTWARE\Microsoft\Office\16.0\Common\InstallRoot
+    name: Path
+  register: office2016_reg
+  failed_when: false
+
+- name: Skip install when Office 2016 is already present
+  ansible.builtin.debug:
+    msg: "Office 2016 already installed at {{ office2016_reg.value | default('unknown') }}"
+  when: office2016_reg.exists | default(false)
+
+- name: Office 2016 deployment block
+  when: not (office2016_reg.exists | default(false))
+  block:
+    - name: Ensure Office staging directory exists
+      ansible.windows.win_file:
+        path: "{{ office2016_staging_path }}"
+        state: directory
+
+    - name: Verify LAN Office source path is reachable from target
+      ansible.windows.win_stat:
+        path: "{{ office2016_lan_source_path }}\\{{ office2016_setup_exe }}"
+      register: office2016_lan_setup
+      failed_when: not office2016_lan_setup.stat.exists
+
+    - name: Copy setup.exe from LAN share to staging
+      ansible.windows.win_copy:
+        src: "{{ office2016_lan_source_path }}\\{{ office2016_setup_exe }}"
+        dest: "{{ office2016_staging_path }}\\{{ office2016_setup_exe }}"
+        remote_src: true
+
+    - name: Check for configuration.xml on LAN share
+      ansible.windows.win_stat:
+        path: "{{ office2016_lan_source_path }}\\{{ office2016_config_file }}"
+      register: office2016_lan_config
+
+    - name: Copy configuration.xml from LAN share when provided
+      ansible.windows.win_copy:
+        src: "{{ office2016_lan_source_path }}\\{{ office2016_config_file }}"
+        dest: "{{ office2016_staging_path }}\\{{ office2016_config_file }}"
+        remote_src: true
+      when: office2016_lan_config.stat.exists
+
+    - name: Generate configuration.xml when not on LAN share
+      ansible.windows.win_template:
+        src: configuration.xml.j2
+        dest: "{{ office2016_staging_path }}\\{{ office2016_config_file }}"
+      when: not office2016_lan_config.stat.exists
+
+    - name: Copy Office source files from LAN share when present
+      ansible.windows.win_shell: |
+        $source = Join-Path -Path '{{ office2016_lan_source_path }}' -ChildPath 'Office'
+        $dest = Join-Path -Path '{{ office2016_staging_path }}' -ChildPath 'Office'
+        if (Test-Path -LiteralPath $source) {
+          if (-not (Test-Path -LiteralPath $dest)) {
+            New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          }
+          Copy-Item -Path (Join-Path $source '*') -Destination $dest -Recurse -Force
+        }
+      args:
+        executable: powershell
+      changed_when: false
+
+    - name: Remove existing Office installation when requested
+      ansible.windows.win_shell: |
+        & '{{ office2016_staging_path }}\{{ office2016_setup_exe }}' /configure '{{ office2016_staging_path }}\remove.xml'
+      args:
+        executable: powershell
+      when: office2016_remove_existing | bool
+      failed_when: false
+
+    - name: Install Microsoft Office 2016 silently via ODT
+      ansible.windows.win_shell: |
+        $setup = Join-Path -Path '{{ office2016_staging_path }}' -ChildPath '{{ office2016_setup_exe }}'
+        $config = Join-Path -Path '{{ office2016_staging_path }}' -ChildPath '{{ office2016_config_file }}'
+        $process = Start-Process -FilePath $setup -ArgumentList "/configure `"$config`"" -PassThru -Wait
+        exit $process.ExitCode
+      args:
+        executable: powershell
+      register: office2016_install
+      async: "{{ office2016_install_timeout }}"
+      poll: 30
+      failed_when: office2016_install.rc not in [0, 3010]
+
+    - name: Reboot when Office setup requires it (exit code 3010)
+      ansible.windows.win_reboot:
+        reboot_timeout: 900
+      when:
+        - office2016_reboot in ['always', 'if_required']
+        - office2016_install.rc == 3010
+
+    - name: Verify Office 2016 installation
+      ansible.windows.win_reg_stat:
+        path: HKLM:\SOFTWARE\Microsoft\Office\16.0\Common\InstallRoot
+        name: Path
+      register: office2016_verify
+      failed_when: not office2016_verify.exists
+
+    - name: Report successful installation
+      ansible.builtin.debug:
+        msg: "Office 2016 installed successfully at {{ office2016_verify.value }}"

@@ -1,0 +1,25 @@
+---
+# Office 2016 LAN deployment settings (override in AWX survey or credentials)
+
+# UNC path or local path on the Windows target reachable over LAN.
+# Example: \\fileserver\software\Office2016
+office2016_lan_source_path: "\\\\fileserver\\software\\Office2016"
+
+# Files expected under office2016_lan_source_path:
+#   setup.exe          - Office Deployment Tool or Office 2016 setup
+#   configuration.xml  - optional; generated from template if missing
+
+office2016_staging_path: "C:\\Temp\\Office2016"
+office2016_edition: "64"
+office2016_product_id: "ProPlusRetail"
+office2016_language: "en-us"
+office2016_channel: "Volume"
+office2016_display_level: "None"
+office2016_accept_eula: true
+office2016_auto_activate: true
+
+# Set true to remove existing Office before install (use with caution)
+office2016_remove_existing: false
+
+# Reboot behavior: never | always | if_required
+office2016_reboot: "if_required"
