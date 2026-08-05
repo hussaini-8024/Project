@@ -8,6 +8,12 @@ inventory/hosts.yml
 .vault_pass
 .env
 
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
 # OS / editor
 .DS_Store
 Thumbs.db
