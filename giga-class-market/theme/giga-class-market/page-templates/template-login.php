@@ -68,10 +68,10 @@ if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['gcm_login
 			if ( is_wp_error( $user ) ) {
 				$error = __( 'Invalid login details. Please check your student credentials and try again.', 'giga-class-market' );
 			} else {
-				if ( in_array( 'gcm_student', (array) $user->roles, true ) ) {
-					$target = $redirect_to ? $redirect_to : home_url( '/student-dashboard/' );
-				} elseif ( user_can( $user, 'manage_options' ) ) {
+				if ( user_can( $user, 'manage_options' ) ) {
 					$target = admin_url();
+				} elseif ( in_array( 'gcm_student', (array) $user->roles, true ) ) {
+					$target = $redirect_to ? $redirect_to : home_url( '/student-dashboard/' );
 				} else {
 					$target = home_url( '/' );
 				}

@@ -388,15 +388,15 @@ class GCM_Frontend {
 			return $redirect_to;
 		}
 
+		if ( user_can( $user, 'manage_options' ) ) {
+			return admin_url();
+		}
+
 		if ( in_array( 'gcm_student', (array) $user->roles, true ) ) {
 			if ( $requested && false === strpos( $requested, 'wp-admin' ) ) {
 				return $requested;
 			}
 			return home_url( '/student-dashboard/' );
-		}
-
-		if ( user_can( $user, 'manage_options' ) ) {
-			return admin_url();
 		}
 
 		return $redirect_to;
