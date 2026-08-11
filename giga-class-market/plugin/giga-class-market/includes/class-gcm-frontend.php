@@ -270,7 +270,14 @@ class GCM_Frontend {
 	 */
 	public function protect_student_pages() {
 		if ( $this->is_student_page() && ! is_user_logged_in() ) {
-			wp_safe_redirect( add_query_arg( 'redirect_to', rawurlencode( get_permalink() ), home_url( '/login/' ) ) );
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/student-dashboard/';
+			$target      = home_url( wp_parse_url( $request_uri, PHP_URL_PATH ) );
+			$query       = wp_parse_url( $request_uri, PHP_URL_QUERY );
+			if ( $query ) {
+				parse_str( $query, $params );
+				$target = add_query_arg( array_map( 'sanitize_text_field', $params ), $target );
+			}
+			wp_safe_redirect( add_query_arg( 'redirect_to', rawurlencode( $target ), home_url( '/login/' ) ) );
 			exit;
 		}
 
