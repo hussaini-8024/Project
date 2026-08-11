@@ -343,7 +343,7 @@ class GCM_Post_Types {
 	private static function enforce_featured_limit( $current_id ) {
 		$settings = GCM_Settings_Service::get_settings();
 		$limit    = isset( $settings['course']['featured_count'] ) ? absint( $settings['course']['featured_count'] ) : 3;
-		$limit    = max( 1, $limit );
+		$limit    = min( 3, max( 1, $limit ) );
 
 		$query = new WP_Query(
 			array(

@@ -471,6 +471,6 @@ class GCM_Frontend {
 	 * @return bool
 	 */
 	private function is_student_page() {
-		return is_page( array( 'student-dashboard', 'payment-verification' ) );
+		return is_page( array( 'student-dashboard' ) );
 	}
 }

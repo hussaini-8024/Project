@@ -198,7 +198,7 @@ class GCM_Settings_Service {
 		}
 
 		if ( isset( $settings['course'] ) && is_array( $settings['course'] ) ) {
-			$clean['course']['featured_count']   = max( 1, absint( $settings['course']['featured_count'] ?? 3 ) );
+			$clean['course']['featured_count']   = min( 3, max( 1, absint( $settings['course']['featured_count'] ?? 3 ) ) );
 			$clean['course']['default_duration'] = sanitize_text_field( $settings['course']['default_duration'] ?? '' );
 			$clean['course']['default_rating']   = (string) min( 5, max( 0, (float) ( $settings['course']['default_rating'] ?? 5 ) ) );
 		}
