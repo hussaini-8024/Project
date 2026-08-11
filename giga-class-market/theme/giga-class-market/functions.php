@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.2.0' );
+define( 'GCM_THEME_VERSION', '1.2.1' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -381,8 +381,15 @@ function gcm_course_purchase_url( $course_id ) {
  *
  * @return string
  */
-function gcm_student_login_url() {
-	return home_url( '/login/' );
+function gcm_student_login_url( $redirect = '' ) {
+	if ( class_exists( 'GCM_Frontend' ) ) {
+		return GCM_Frontend::get_student_login_url( $redirect );
+	}
+	$url = home_url( '/login/' );
+	if ( $redirect ) {
+		$url = add_query_arg( 'redirect_to', $redirect, $url );
+	}
+	return $url;
 }
 
 /**

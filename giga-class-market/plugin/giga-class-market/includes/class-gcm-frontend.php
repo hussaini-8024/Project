@@ -192,7 +192,7 @@ class GCM_Frontend {
 	}
 
 	/**
-	 * Login form shortcode.
+	 * Login form shortcode — link to branded student login (never wp-login.php UI).
 	 *
 	 * @return string
 	 */
@@ -201,15 +201,8 @@ class GCM_Frontend {
 			return '<p><a class="gcm-button" href="' . esc_url( home_url( '/student-dashboard/' ) ) . '">' . esc_html__( 'Go to dashboard', 'giga-class-market' ) . '</a></p>';
 		}
 
-		ob_start();
-		wp_login_form(
-			array(
-				'redirect' => home_url( '/student-dashboard/' ),
-				'label_username' => __( 'Email or Username', 'giga-class-market' ),
-				'label_password' => __( 'Password', 'giga-class-market' ),
-			)
-		);
-		return ob_get_clean();
+		$url = self::get_student_login_url( home_url( '/student-dashboard/' ) );
+		return '<p><a class="gcm-button" href="' . esc_url( $url ) . '">' . esc_html__( 'Student Login', 'giga-class-market' ) . '</a></p>';
 	}
 
 	/**
@@ -383,19 +376,92 @@ class GCM_Frontend {
 	}
 
 	/**
-	 * Redirect student logins to dashboard.
+	 * Redirect student logins to dashboard (admins to wp-admin).
 	 *
-	 * @param string  $redirect_to Redirect URL.
-	 * @param string  $requested Requested URL.
-	 * @param WP_User $user User.
+	 * @param string           $redirect_to Redirect URL.
+	 * @param string           $requested Requested URL.
+	 * @param WP_User|WP_Error $user User.
 	 * @return string
 	 */
 	public function login_redirect( $redirect_to, $requested, $user ) {
-		if ( $user instanceof WP_User && in_array( 'gcm_student', (array) $user->roles, true ) ) {
+		if ( ! ( $user instanceof WP_User ) ) {
+			return $redirect_to;
+		}
+
+		if ( in_array( 'gcm_student', (array) $user->roles, true ) ) {
+			if ( $requested && false === strpos( $requested, 'wp-admin' ) ) {
+				return $requested;
+			}
 			return home_url( '/student-dashboard/' );
 		}
 
+		if ( user_can( $user, 'manage_options' ) ) {
+			return admin_url();
+		}
+
 		return $redirect_to;
+	}
+
+	/**
+	 * Force public login URLs to the branded /login/ page.
+	 *
+	 * @param string $login_url Login URL.
+	 * @param string $redirect Redirect target.
+	 * @param bool   $force_reauth Force reauth.
+	 * @return string
+	 */
+	public function filter_login_url( $login_url, $redirect = '', $force_reauth = false ) {
+		unset( $force_reauth );
+		return self::get_student_login_url( $redirect );
+	}
+
+	/**
+	 * Branded student login URL helper.
+	 *
+	 * @param string $redirect Optional redirect_to target.
+	 * @return string
+	 */
+	public static function get_student_login_url( $redirect = '' ) {
+		$url = home_url( '/login/' );
+		if ( $redirect ) {
+			$url = add_query_arg( 'redirect_to', $redirect, $url );
+		}
+		return $url;
+	}
+
+	/**
+	 * Send visitors away from core wp-login.php UI to /login/.
+	 * Keeps logout and admin postpass working on wp-login.php.
+	 *
+	 * @return void
+	 */
+	public function redirect_wp_login_to_branded() {
+		if ( 'GET' !== ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) {
+			return;
+		}
+
+		$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : 'login';
+		if ( in_array( $action, array( 'logout', 'postpass' ), true ) ) {
+			return;
+		}
+
+		// Allow password-reset key links to continue on wp-login (email deep links).
+		if ( in_array( $action, array( 'rp', 'resetpass' ), true ) && ! empty( $_GET['key'] ) ) {
+			return;
+		}
+
+		$redirect = '';
+		if ( ! empty( $_REQUEST['redirect_to'] ) ) {
+			$redirect = esc_url_raw( wp_unslash( $_REQUEST['redirect_to'] ) );
+		}
+
+		$target = self::get_student_login_url( $redirect );
+		if ( in_array( $action, array( 'lostpassword', 'retrievepassword' ), true ) ) {
+			$target = add_query_arg( 'action', 'lostpassword', $target );
+		}
+
+		wp_safe_redirect( $target );
+		exit;
 	}
 
 	/**

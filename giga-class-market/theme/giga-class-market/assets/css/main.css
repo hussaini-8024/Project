@@ -1297,6 +1297,25 @@ textarea {
 	text-align: center;
 }
 
+.gcm-auth-card .gcm-form-message {
+	margin: 0 0 1rem;
+	padding: 0.75rem 1rem;
+	border-radius: 10px;
+	font-weight: 600;
+}
+
+.gcm-auth-card .gcm-form-message--error {
+	background: color-mix(in srgb, #b42318 12%, white);
+	color: #8a1c14;
+	border: 1px solid color-mix(in srgb, #b42318 28%, white);
+}
+
+.gcm-auth-card .gcm-form-message--success {
+	background: color-mix(in srgb, #067647 12%, white);
+	color: #05603a;
+	border: 1px solid color-mix(in srgb, #067647 28%, white);
+}
+
 .gcm-payment-card__info {
 	margin-block: 1.5rem;
 	padding: 1.25rem;

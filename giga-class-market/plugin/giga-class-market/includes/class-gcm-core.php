@@ -37,6 +37,8 @@ class GCM_Core {
 		add_filter( 'wp_robots', array( $frontend, 'noindex_student_pages' ) );
 		add_action( 'wp_head', array( $frontend, 'print_course_schema' ) );
 		add_filter( 'login_redirect', array( $frontend, 'login_redirect' ), 10, 3 );
+		add_filter( 'login_url', array( $frontend, 'filter_login_url' ), 10, 3 );
+		add_action( 'login_init', array( $frontend, 'redirect_wp_login_to_branded' ) );
 		add_action( 'admin_init', array( $frontend, 'redirect_students_from_admin' ) );
 
 		add_action( 'add_meta_boxes', array( $post_types, 'register_meta_boxes' ) );

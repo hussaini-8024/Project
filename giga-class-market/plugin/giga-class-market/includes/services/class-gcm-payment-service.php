@@ -313,7 +313,7 @@ class GCM_Payment_Service {
 			wp_set_password( $password, $user->ID );
 		}
 
-		$login_url = wp_login_url( home_url( '/student-dashboard/' ) );
+		$login_url = GCM_Frontend::get_student_login_url( home_url( '/student-dashboard/' ) );
 		$message   = sprintf(
 			/* translators: 1: login URL, 2: username, 3: temporary password */
 			__( 'Your Giga Class Market student account is ready.<br>Login: %1$s<br>Username: %2$s<br>Temporary password: %3$s<br>Please change this password after logging in.', 'giga-class-market' ),
