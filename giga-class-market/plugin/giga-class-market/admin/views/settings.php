@@ -27,7 +27,8 @@ $methods = $settings['payment']['methods'];
 		<section id="gcm-tab-company" class="gcm-tab active">
 			<h2><?php esc_html_e( 'Company Information', 'giga-class-market' ); ?></h2>
 			<label><?php esc_html_e( 'Company name', 'giga-class-market' ); ?><input type="text" name="settings[company][name]" value="<?php echo esc_attr( $settings['company']['name'] ); ?>" /></label>
-			<label><?php esc_html_e( 'Email', 'giga-class-market' ); ?><input type="email" name="settings[company][email]" value="<?php echo esc_attr( $settings['company']['email'] ); ?>" /></label>
+			<label><?php esc_html_e( 'Email (outgoing From address)', 'giga-class-market' ); ?><input type="email" name="settings[company][email]" value="<?php echo esc_attr( $settings['company']['email'] ); ?>" placeholder="Official@gigaclassmarket.com" /></label>
+			<p class="description"><?php esc_html_e( 'Used as the From / Reply-To address for student and admin emails (instead of wordpress@…).', 'giga-class-market' ); ?></p>
 			<label><?php esc_html_e( 'Phone', 'giga-class-market' ); ?><input type="text" name="settings[company][phone]" value="<?php echo esc_attr( $settings['company']['phone'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Address', 'giga-class-market' ); ?><textarea name="settings[company][address]" rows="3"><?php echo esc_textarea( $settings['company']['address'] ); ?></textarea></label>
 			<label><?php esc_html_e( 'Business hours', 'giga-class-market' ); ?><input type="text" name="settings[company][hours]" value="<?php echo esc_attr( $settings['company']['hours'] ?? '' ); ?>" /></label>

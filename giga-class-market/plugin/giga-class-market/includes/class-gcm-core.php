@@ -41,6 +41,10 @@ class GCM_Core {
 		add_action( 'login_init', array( $frontend, 'redirect_wp_login_to_branded' ) );
 		add_action( 'admin_init', array( $frontend, 'redirect_students_from_admin' ) );
 
+		// Force branded From address (replaces wordpress@domain default).
+		add_filter( 'wp_mail_from', array( 'GCM_Notification_Service', 'filter_mail_from' ) );
+		add_filter( 'wp_mail_from_name', array( 'GCM_Notification_Service', 'filter_mail_from_name' ) );
+
 		add_action( 'add_meta_boxes', array( $post_types, 'register_meta_boxes' ) );
 		add_action( 'save_post_gcm_course', array( $post_types, 'save_course_meta' ), 10, 2 );
 

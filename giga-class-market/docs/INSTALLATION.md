@@ -40,7 +40,7 @@ If you already have a live WordPress host with admin access, deploy the plugin a
 3. In **WP Admin → Plugins**, activate **Giga Class Market**.
 4. In **Appearance → Themes**, activate **Giga Class Market**.
 5. Go to **Settings → Permalinks**, choose **Post name**, save (flushes rewrites).
-6. Open **Giga Class Market → Settings** and configure company, payment accounts, and WhatsApp number.
+6. Open **Giga Class Market → Settings** and configure company, payment accounts, and WhatsApp number. Set **Email (outgoing From address)** to `Official@gigaclassmarket.com` so messages are not sent as `wordpress@…`.
 7. Create courses under **Courses** (`gcm_course`), mark up to **3** as featured.
 8. Add modules/lessons via course curriculum tools / database curriculum service (course edit + curriculum AJAX), or seed script for demos.
 

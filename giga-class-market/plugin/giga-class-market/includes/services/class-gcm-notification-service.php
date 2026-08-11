@@ -56,9 +56,15 @@ class GCM_Notification_Service {
 		$status          = 'failed';
 
 		if ( is_email( $email ) ) {
-			$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-			$sent    = wp_mail( $email, $title, wpautop( $message ), $headers );
-			$status  = $sent ? 'sent' : 'failed';
+			$from_email = GCM_Settings_Service::get_from_email();
+			$from_name  = GCM_Settings_Service::get_from_name();
+			$headers    = array(
+				'Content-Type: text/html; charset=UTF-8',
+				sprintf( 'From: %s <%s>', $from_name, $from_email ),
+				sprintf( 'Reply-To: %s <%s>', $from_name, $from_email ),
+			);
+			$sent       = wp_mail( $email, $title, wpautop( $message ), $headers );
+			$status     = $sent ? 'sent' : 'failed';
 		}
 
 		if ( $notification_id ) {
@@ -72,6 +78,28 @@ class GCM_Notification_Service {
 		}
 
 		return $notification_id ? $notification_id : false;
+	}
+
+	/**
+	 * Filter WordPress default From email (wordpress@host).
+	 *
+	 * @param string $email Current from email.
+	 * @return string
+	 */
+	public static function filter_mail_from( $email ) {
+		$from = GCM_Settings_Service::get_from_email();
+		return is_email( $from ) ? $from : $email;
+	}
+
+	/**
+	 * Filter WordPress default From name.
+	 *
+	 * @param string $name Current from name.
+	 * @return string
+	 */
+	public static function filter_mail_from_name( $name ) {
+		$from_name = GCM_Settings_Service::get_from_name();
+		return $from_name ? $from_name : $name;
 	}
 
 	/**

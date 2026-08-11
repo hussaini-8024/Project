@@ -184,7 +184,7 @@ class GCM_Installer {
 			array(
 				'company'  => array(
 					'name'     => 'Giga Class Market',
-					'email'    => get_option( 'admin_email' ),
+					'email'    => 'Official@gigaclassmarket.com',
 					'phone'    => '+966509136037',
 					'whatsapp' => '+966509136037',
 					'address'  => '',
@@ -252,10 +252,10 @@ class GCM_Installer {
 
 		// Business sender WhatsApp used for student messages and public contact links.
 		$settings['company']['whatsapp'] = '+966509136037';
-		if ( empty( $settings['company']['phone'] ) ) {
-			$settings['company']['phone'] = '+966509136037';
-		} else {
-			$settings['company']['phone'] = '+966509136037';
+		$settings['company']['phone']    = '+966509136037';
+		$settings['company']['email']    = 'Official@gigaclassmarket.com';
+		if ( empty( $settings['company']['name'] ) ) {
+			$settings['company']['name'] = 'Giga Class Market';
 		}
 
 		update_option( 'gcm_settings', $settings, false );

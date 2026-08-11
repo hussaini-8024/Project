@@ -23,7 +23,7 @@ class GCM_Settings_Service {
 		return array(
 			'company'  => array(
 				'name'      => 'Giga Class Market',
-				'email'     => get_option( 'admin_email' ),
+				'email'     => 'Official@gigaclassmarket.com',
 				'phone'     => '+966509136037',
 				'whatsapp'  => '+966509136037',
 				'address'   => '',
@@ -160,6 +160,31 @@ class GCM_Settings_Service {
 	public static function get_company_whatsapp() {
 		$settings = self::get_settings();
 		return isset( $settings['company']['whatsapp'] ) ? (string) $settings['company']['whatsapp'] : '';
+	}
+
+	/**
+	 * Outgoing From email address for site mail.
+	 *
+	 * @return string
+	 */
+	public static function get_from_email() {
+		$settings = self::get_settings();
+		$email    = isset( $settings['company']['email'] ) ? sanitize_email( $settings['company']['email'] ) : '';
+		if ( ! is_email( $email ) ) {
+			$email = 'Official@gigaclassmarket.com';
+		}
+		return $email;
+	}
+
+	/**
+	 * Outgoing From display name for site mail.
+	 *
+	 * @return string
+	 */
+	public static function get_from_name() {
+		$settings = self::get_settings();
+		$name     = isset( $settings['company']['name'] ) ? sanitize_text_field( $settings['company']['name'] ) : '';
+		return $name ? $name : 'Giga Class Market';
 	}
 
 	/**
