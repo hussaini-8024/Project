@@ -1,0 +1,476 @@
+<?php
+/**
+ * Frontend functionality.
+ *
+ * @package GigaClassMarket
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Frontend shortcodes, page guards, and SEO helpers.
+ */
+class GCM_Frontend {
+
+	/**
+	 * Register rewrites/query handlers.
+	 *
+	 * @return void
+	 */
+	public function register_rewrites() {
+		add_rewrite_endpoint( 'gcm-payment-screenshot', EP_ROOT );
+	}
+
+	/**
+	 * Register shortcodes.
+	 *
+	 * @return void
+	 */
+	public function register_shortcodes() {
+		add_shortcode( 'gcm_courses', array( $this, 'courses_shortcode' ) );
+		add_shortcode( 'gcm_payment_form', array( $this, 'payment_form_shortcode' ) );
+		add_shortcode( 'gcm_payment_verification', array( $this, 'payment_verification_shortcode' ) );
+		add_shortcode( 'gcm_contact_form', array( $this, 'contact_form_shortcode' ) );
+		add_shortcode( 'gcm_login_form', array( $this, 'login_form_shortcode' ) );
+		add_shortcode( 'gcm_student_dashboard', array( $this, 'student_dashboard_shortcode' ) );
+	}
+
+	/**
+	 * Enqueue public assets.
+	 *
+	 * @return void
+	 */
+	public function enqueue_assets() {
+		wp_enqueue_style( 'gcm-public', GCM_PLUGIN_URL . 'public/css/gcm-public.css', array(), GCM_VERSION );
+		wp_enqueue_script( 'gcm-public', GCM_PLUGIN_URL . 'public/js/gcm-public.js', array(), GCM_VERSION, true );
+		wp_localize_script(
+			'gcm-public',
+			'gcmPublic',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'gcm_ajax_nonce' ),
+				'paymentUrl' => home_url( '/payment/' ),
+			)
+		);
+	}
+
+	/**
+	 * Course listing shortcode.
+	 *
+	 * @param array $atts Attributes.
+	 * @return string
+	 */
+	public function courses_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'featured' => '',
+				'limit'    => 12,
+			),
+			$atts,
+			'gcm_courses'
+		);
+
+		$courses = '' !== $atts['featured'] ? GCM_Course_Service::get_featured( min( 3, absint( $atts['limit'] ) ) ) : GCM_Course_Service::search( array( 'limit' => absint( $atts['limit'] ) ) );
+		$terms   = get_terms( array( 'taxonomy' => 'gcm_category', 'hide_empty' => false ) );
+
+		ob_start();
+		?>
+		<div class="gcm-courses" data-nonce="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
+			<form class="gcm-course-search">
+				<input type="search" name="search" placeholder="<?php esc_attr_e( 'Search courses', 'giga-class-market' ); ?>" />
+				<select name="category">
+					<option value=""><?php esc_html_e( 'All categories', 'giga-class-market' ); ?></option>
+					<?php foreach ( $terms as $term ) : ?>
+						<option value="<?php echo esc_attr( $term->slug ); ?>"><?php echo esc_html( $term->name ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<button type="submit"><?php esc_html_e( 'Search', 'giga-class-market' ); ?></button>
+			</form>
+			<div class="gcm-course-grid">
+				<?php echo wp_kses_post( $this->render_course_cards( $courses ) ); ?>
+			</div>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Payment form shortcode.
+	 *
+	 * @param array $atts Attributes.
+	 * @return string
+	 */
+	public function payment_form_shortcode( $atts ) {
+		$atts      = shortcode_atts( array( 'course_id' => 0 ), $atts, 'gcm_payment_form' );
+		$course_id = absint( $atts['course_id'] );
+		if ( ! $course_id && isset( $_GET['course_id'] ) ) {
+			$course_id = absint( $_GET['course_id'] );
+		}
+		$course  = $course_id ? GCM_Course_Service::get( $course_id ) : null;
+		$courses = GCM_Course_Service::search( array( 'limit' => 100 ) );
+		$methods = GCM_Settings_Service::get_payment_methods();
+
+		ob_start();
+		?>
+		<form class="gcm-ajax-form gcm-payment-form" enctype="multipart/form-data" data-action="gcm_payment_submit">
+			<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+			<label>
+				<?php esc_html_e( 'Course', 'giga-class-market' ); ?>
+				<select name="course_id" required>
+					<option value=""><?php esc_html_e( 'Select course', 'giga-class-market' ); ?></option>
+					<?php foreach ( $courses as $item ) : ?>
+						<option value="<?php echo esc_attr( $item['id'] ); ?>" <?php selected( $course_id, $item['id'] ); ?>>
+							<?php echo esc_html( $item['title'] . ' - ' . number_format_i18n( $item['price'], 2 ) ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			</label>
+			<?php if ( $course ) : ?>
+				<p class="gcm-payment-price"><?php echo esc_html( sprintf( __( 'Amount due: %s', 'giga-class-market' ), number_format_i18n( $course['price'], 2 ) ) ); ?></p>
+			<?php endif; ?>
+			<label><?php esc_html_e( 'Full name', 'giga-class-market' ); ?><input type="text" name="full_name" required /></label>
+			<label><?php esc_html_e( 'Email', 'giga-class-market' ); ?><input type="email" name="email" required /></label>
+			<label><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?><input type="text" name="whatsapp" required /></label>
+			<label><?php esc_html_e( 'Address', 'giga-class-market' ); ?><textarea name="address" rows="3"></textarea></label>
+			<label>
+				<?php esc_html_e( 'Payment method', 'giga-class-market' ); ?>
+				<select name="payment_method" required>
+					<?php foreach ( $methods as $name => $method ) : ?>
+						<option value="<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $name ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</label>
+			<div class="gcm-payment-methods">
+				<?php foreach ( $methods as $name => $method ) : ?>
+					<div class="gcm-payment-method">
+						<strong><?php echo esc_html( $name ); ?></strong>
+						<p><?php echo esc_html( $method['account_name'] ); ?> <?php echo esc_html( $method['account_no'] ); ?></p>
+						<p><?php echo esc_html( $method['instructions'] ); ?></p>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<label><?php esc_html_e( 'Transaction ID', 'giga-class-market' ); ?><input type="text" name="transaction_id" required /></label>
+			<label><?php esc_html_e( 'Payment screenshot/receipt', 'giga-class-market' ); ?><input type="file" name="screenshot" accept=".jpg,.jpeg,.png,.pdf" required /></label>
+			<button type="submit"><?php esc_html_e( 'Submit for verification', 'giga-class-market' ); ?></button>
+			<div class="gcm-form-message" aria-live="polite"></div>
+		</form>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Payment verification shortcode.
+	 *
+	 * @return string
+	 */
+	public function payment_verification_shortcode() {
+		return '<div class="gcm-card"><h2>' . esc_html__( 'Payment Verification', 'giga-class-market' ) . '</h2><p>' . esc_html__( 'After submitting payment, our team reviews it and sends login details after approval.', 'giga-class-market' ) . '</p></div>';
+	}
+
+	/**
+	 * Contact form shortcode.
+	 *
+	 * @return string
+	 */
+	public function contact_form_shortcode() {
+		ob_start();
+		?>
+		<form class="gcm-ajax-form gcm-contact-form" data-action="gcm_contact_submit">
+			<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+			<label><?php esc_html_e( 'Full name', 'giga-class-market' ); ?><input type="text" name="full_name" required /></label>
+			<label><?php esc_html_e( 'Email', 'giga-class-market' ); ?><input type="email" name="email" required /></label>
+			<label><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?><input type="text" name="whatsapp" /></label>
+			<label><?php esc_html_e( 'Subject', 'giga-class-market' ); ?><input type="text" name="subject" required /></label>
+			<label><?php esc_html_e( 'Message', 'giga-class-market' ); ?><textarea name="message" rows="5" required></textarea></label>
+			<button type="submit"><?php esc_html_e( 'Send message', 'giga-class-market' ); ?></button>
+			<div class="gcm-form-message" aria-live="polite"></div>
+		</form>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Login form shortcode.
+	 *
+	 * @return string
+	 */
+	public function login_form_shortcode() {
+		if ( is_user_logged_in() ) {
+			return '<p><a class="gcm-button" href="' . esc_url( home_url( '/student-dashboard/' ) ) . '">' . esc_html__( 'Go to dashboard', 'giga-class-market' ) . '</a></p>';
+		}
+
+		ob_start();
+		wp_login_form(
+			array(
+				'redirect' => home_url( '/student-dashboard/' ),
+				'label_username' => __( 'Email or Username', 'giga-class-market' ),
+				'label_password' => __( 'Password', 'giga-class-market' ),
+			)
+		);
+		return ob_get_clean();
+	}
+
+	/**
+	 * Student dashboard shortcode.
+	 *
+	 * @return string
+	 */
+	public function student_dashboard_shortcode() {
+		if ( ! is_user_logged_in() ) {
+			return '<p>' . esc_html__( 'Please log in to access your dashboard.', 'giga-class-market' ) . '</p>' . $this->login_form_shortcode();
+		}
+
+		if ( ! current_user_can( 'gcm_access_dashboard' ) && ! current_user_can( 'manage_options' ) ) {
+			return '<p>' . esc_html__( 'Your account does not have student dashboard access.', 'giga-class-market' ) . '</p>';
+		}
+
+		$user    = wp_get_current_user();
+		$courses = GCM_Enrollment_Service::get_student_courses( $user->ID );
+
+		ob_start();
+		?>
+		<div class="gcm-student-dashboard" data-nonce="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
+			<section class="gcm-card">
+				<h2><?php echo esc_html( sprintf( __( 'Welcome, %s', 'giga-class-market' ), $user->display_name ) ); ?></h2>
+				<form class="gcm-ajax-form gcm-profile-form" data-action="gcm_update_profile">
+					<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+					<label><?php esc_html_e( 'Full name', 'giga-class-market' ); ?><input type="text" name="full_name" value="<?php echo esc_attr( $user->display_name ); ?>" /></label>
+					<label><?php esc_html_e( 'Email', 'giga-class-market' ); ?><input type="email" name="email" value="<?php echo esc_attr( $user->user_email ); ?>" /></label>
+					<label><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?><input type="text" name="whatsapp" value="<?php echo esc_attr( get_user_meta( $user->ID, 'gcm_whatsapp', true ) ); ?>" /></label>
+					<label><?php esc_html_e( 'Address', 'giga-class-market' ); ?><textarea name="address" rows="3"><?php echo esc_textarea( get_user_meta( $user->ID, 'gcm_address', true ) ); ?></textarea></label>
+					<button type="submit"><?php esc_html_e( 'Update profile', 'giga-class-market' ); ?></button>
+					<div class="gcm-form-message"></div>
+				</form>
+			</section>
+
+			<section class="gcm-card">
+				<h2><?php esc_html_e( 'My Courses', 'giga-class-market' ); ?></h2>
+				<?php if ( empty( $courses ) ) : ?>
+					<p><?php esc_html_e( 'No courses enrolled yet.', 'giga-class-market' ); ?></p>
+				<?php endif; ?>
+				<?php foreach ( $courses as $course ) : ?>
+					<article class="gcm-dashboard-course">
+						<h3><?php echo esc_html( $course['title'] ); ?></h3>
+						<p><?php echo esc_html( sprintf( __( '%d%% complete', 'giga-class-market' ), $course['progress'] ) ); ?></p>
+						<?php echo wp_kses_post( $this->render_curriculum_for_student( $user->ID, $course['id'] ) ); ?>
+					</article>
+				<?php endforeach; ?>
+			</section>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Protect student dashboard pages.
+	 *
+	 * @return void
+	 */
+	public function protect_student_pages() {
+		if ( $this->is_student_page() && ! is_user_logged_in() ) {
+			wp_safe_redirect( wp_login_url( get_permalink() ) );
+			exit;
+		}
+	}
+
+	/**
+	 * Serve private screenshot by authenticated endpoint.
+	 *
+	 * @return void
+	 */
+	public function serve_private_screenshot() {
+		if ( empty( $_GET['gcm_private_screenshot'] ) ) {
+			return;
+		}
+
+		$payment_id = absint( $_GET['gcm_private_screenshot'] );
+		$nonce      = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+
+		if ( ! is_user_logged_in() || ! wp_verify_nonce( $nonce, 'gcm_private_screenshot_' . $payment_id ) ) {
+			status_header( 403 );
+			exit;
+		}
+
+		$payment = GCM_Payment_Service::get( $payment_id );
+		if ( ! $payment ) {
+			status_header( 404 );
+			exit;
+		}
+
+		$allowed = current_user_can( 'gcm_manage_payments' ) || ( (int) $payment->user_id === get_current_user_id() );
+		if ( ! $allowed ) {
+			status_header( 403 );
+			exit;
+		}
+
+		$file = get_post_meta( (int) $payment->screenshot_id, '_gcm_private_file', true );
+		if ( ! $file || ! file_exists( $file ) ) {
+			status_header( 404 );
+			exit;
+		}
+
+		$mime = get_post_mime_type( (int) $payment->screenshot_id );
+		nocache_headers();
+		header( 'Content-Type: ' . ( $mime ? $mime : 'application/octet-stream' ) );
+		header( 'Content-Disposition: inline; filename="' . basename( $file ) . '"' );
+		header( 'Content-Length: ' . filesize( $file ) );
+		readfile( $file );
+		exit;
+	}
+
+	/**
+	 * Add noindex to student pages.
+	 *
+	 * @param array $robots Robots directives.
+	 * @return array
+	 */
+	public function noindex_student_pages( $robots ) {
+		if ( $this->is_student_page() ) {
+			$robots['noindex']  = true;
+			$robots['nofollow'] = true;
+		}
+
+		return $robots;
+	}
+
+	/**
+	 * Print Course schema JSON-LD on single course pages.
+	 *
+	 * @return void
+	 */
+	public function print_course_schema() {
+		if ( ! is_singular( 'gcm_course' ) ) {
+			return;
+		}
+
+		$course = GCM_Course_Service::get( get_the_ID() );
+		if ( ! $course ) {
+			return;
+		}
+
+		$schema = array(
+			'@context'    => 'https://schema.org',
+			'@type'       => 'Course',
+			'name'        => $course['title'],
+			'description' => wp_strip_all_tags( $course['excerpt'] ? $course['excerpt'] : wp_trim_words( wp_strip_all_tags( $course['content'] ), 40 ) ),
+			'provider'    => array(
+				'@type' => 'Organization',
+				'name'  => GCM_Settings_Service::get_settings()['company']['name'],
+			),
+			'offers'      => array(
+				'@type'         => 'Offer',
+				'price'         => (string) $course['price'],
+				'priceCurrency' => 'PKR',
+				'availability'  => 'https://schema.org/InStock',
+				'url'           => $course['permalink'],
+			),
+		);
+
+		echo '<script type="application/ld+json">' . wp_json_encode( $schema ) . '</script>' . "\n";
+	}
+
+	/**
+	 * Redirect student logins to dashboard.
+	 *
+	 * @param string  $redirect_to Redirect URL.
+	 * @param string  $requested Requested URL.
+	 * @param WP_User $user User.
+	 * @return string
+	 */
+	public function login_redirect( $redirect_to, $requested, $user ) {
+		if ( $user instanceof WP_User && in_array( 'gcm_student', (array) $user->roles, true ) ) {
+			return home_url( '/student-dashboard/' );
+		}
+
+		return $redirect_to;
+	}
+
+	/**
+	 * Redirect students away from wp-admin.
+	 *
+	 * @return void
+	 */
+	public function redirect_students_from_admin() {
+		if ( wp_doing_ajax() || current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		if ( current_user_can( 'gcm_access_dashboard' ) ) {
+			wp_safe_redirect( home_url( '/student-dashboard/' ) );
+			exit;
+		}
+	}
+
+	/**
+	 * Render course cards.
+	 *
+	 * @param array $courses Courses.
+	 * @return string
+	 */
+	private function render_course_cards( $courses ) {
+		if ( empty( $courses ) ) {
+			return '<p>' . esc_html__( 'No courses found.', 'giga-class-market' ) . '</p>';
+		}
+
+		ob_start();
+		foreach ( $courses as $course ) :
+			?>
+			<article class="gcm-course-card">
+				<?php if ( $course['thumbnail'] ) : ?>
+					<img src="<?php echo esc_url( $course['thumbnail'] ); ?>" alt="<?php echo esc_attr( $course['title'] ); ?>" />
+				<?php endif; ?>
+				<h3><a href="<?php echo esc_url( $course['permalink'] ); ?>"><?php echo esc_html( $course['title'] ); ?></a></h3>
+				<p><?php echo esc_html( $course['excerpt'] ); ?></p>
+				<p class="gcm-price"><?php echo esc_html( number_format_i18n( $course['price'], 2 ) ); ?></p>
+				<a class="gcm-button" href="<?php echo esc_url( add_query_arg( 'course_id', $course['id'], home_url( '/payment/' ) ) ); ?>"><?php esc_html_e( 'Enroll now', 'giga-class-market' ); ?></a>
+			</article>
+			<?php
+		endforeach;
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render curriculum for a student with server-side access checks.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $course_id Course ID.
+	 * @return string
+	 */
+	private function render_curriculum_for_student( $user_id, $course_id ) {
+		if ( ! GCM_Enrollment_Service::has_access( $user_id, $course_id ) ) {
+			return '<p>' . esc_html__( 'This course is not currently active.', 'giga-class-market' ) . '</p>';
+		}
+
+		$modules = GCM_Curriculum_Service::get_course_curriculum( $course_id );
+		ob_start();
+		foreach ( $modules as $module ) :
+			?>
+			<div class="gcm-module">
+				<h4><?php echo esc_html( $module['title'] ); ?></h4>
+				<?php foreach ( $module['lessons'] as $lesson ) : ?>
+					<div class="gcm-lesson">
+						<strong><?php echo esc_html( $lesson['title'] ); ?></strong>
+						<?php if ( ! empty( $lesson['video_url'] ) ) : ?>
+							<p><a href="<?php echo esc_url( $lesson['video_url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open lesson video', 'giga-class-market' ); ?></a></p>
+						<?php endif; ?>
+						<div><?php echo wp_kses_post( wpautop( $lesson['content'] ) ); ?></div>
+						<button type="button" class="gcm-complete-lesson" data-lesson-id="<?php echo esc_attr( $lesson['id'] ); ?>"><?php esc_html_e( 'Mark complete', 'giga-class-market' ); ?></button>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<?php
+		endforeach;
+		return ob_get_clean();
+	}
+
+	/**
+	 * Determine if current page is a student/dashboard private page.
+	 *
+	 * @return bool
+	 */
+	private function is_student_page() {
+		return is_page( array( 'student-dashboard', 'payment-verification' ) );
+	}
+}
