@@ -60,10 +60,10 @@ $socials  = array(
 		</div>
 
 		<div class="gcm-footer__legal">
-			<h2><?php esc_html_e( 'Legal', 'giga-class-market' ); ?></h2>
+			<h2><?php esc_html_e( 'Support', 'giga-class-market' ); ?></h2>
 			<ul>
-				<li><a href="<?php echo esc_url( home_url( '/privacy/' ) ); ?>"><?php esc_html_e( 'Privacy', 'giga-class-market' ); ?></a></li>
-				<li><a href="<?php echo esc_url( home_url( '/terms/' ) ); ?>"><?php esc_html_e( 'Terms', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php esc_html_e( 'Contact Support', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>"><?php esc_html_e( 'Privacy Policy', 'giga-class-market' ); ?></a></li>
 			</ul>
 		</div>
 	</div>

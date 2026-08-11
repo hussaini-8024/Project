@@ -48,9 +48,12 @@ get_template_part( 'template-parts/home/hero-slider' );
 			<h2><?php esc_html_e( 'A refined path from curiosity to capability', 'giga-class-market' ); ?></h2>
 		</div>
 		<div class="gcm-benefit-grid">
-			<?php foreach ( gcm_get_benefits() as $benefit ) : ?>
+			<?php
+			$benefit_icons = array( '01', '02', '03', '04', '05', '06' );
+			foreach ( array_values( gcm_get_benefits() ) as $index => $benefit ) :
+				?>
 				<article class="gcm-benefit-card gcm-animate">
-					<span aria-hidden="true"></span>
+					<span class="gcm-benefit-card__icon" aria-hidden="true"><?php echo esc_html( $benefit_icons[ $index ] ?? '•' ); ?></span>
 					<h3><?php echo esc_html( $benefit['title'] ?? '' ); ?></h3>
 					<p><?php echo esc_html( $benefit['text'] ?? '' ); ?></p>
 				</article>
@@ -82,17 +85,37 @@ get_template_part( 'template-parts/home/hero-slider' );
 				wp_reset_postdata();
 			else :
 				$defaults = array(
-					__( 'The learning experience feels polished, clear, and genuinely premium. I knew exactly what to study next.', 'giga-class-market' ),
-					__( 'Giga Class Market helped me build practical confidence with elegant lessons and real project direction.', 'giga-class-market' ),
-					__( 'The course structure made advanced concepts approachable without feeling watered down.', 'giga-class-market' ),
+					array(
+						'name'  => __( 'Ayesha Khan', 'giga-class-market' ),
+						'role'  => __( 'Networking Student', 'giga-class-market' ),
+						'quote' => __( 'The learning experience feels polished, clear, and genuinely premium. I knew exactly what to study next.', 'giga-class-market' ),
+					),
+					array(
+						'name'  => __( 'Omar Farooq', 'giga-class-market' ),
+						'role'  => __( 'Cyber Security Learner', 'giga-class-market' ),
+						'quote' => __( 'Giga Class Market helped me build practical confidence with elegant lessons and real project direction.', 'giga-class-market' ),
+					),
+					array(
+						'name'  => __( 'Sara Ali', 'giga-class-market' ),
+						'role'  => __( 'Web Development Student', 'giga-class-market' ),
+						'quote' => __( 'The course structure made advanced concepts approachable without feeling watered down.', 'giga-class-market' ),
+					),
 				);
-				foreach ( $defaults as $index => $quote ) :
+				foreach ( $defaults as $item ) :
+					$initials = '';
+					foreach ( explode( ' ', $item['name'] ) as $part ) {
+						$initials .= mb_substr( $part, 0, 1 );
+					}
 					?>
 					<article class="gcm-testimonial-card gcm-animate">
 						<div class="gcm-testimonial-card__stars" aria-label="<?php esc_attr_e( 'Five star review', 'giga-class-market' ); ?>">★★★★★</div>
-						<blockquote><?php echo esc_html( $quote ); ?></blockquote>
+						<blockquote><?php echo esc_html( $item['quote'] ); ?></blockquote>
 						<div class="gcm-testimonial-card__person">
-							<div><strong><?php echo esc_html( sprintf( __( 'Student %d', 'giga-class-market' ), $index + 1 ) ); ?></strong><span><?php esc_html_e( 'GCM Learner', 'giga-class-market' ); ?></span></div>
+							<span class="gcm-avatar-placeholder" aria-hidden="true"><?php echo esc_html( $initials ); ?></span>
+							<div>
+								<strong><?php echo esc_html( $item['name'] ); ?></strong>
+								<span><?php echo esc_html( $item['role'] ); ?></span>
+							</div>
 						</div>
 					</article>
 					<?php

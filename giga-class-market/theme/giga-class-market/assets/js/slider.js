@@ -31,9 +31,13 @@
 
 		function start() {
 			stop();
+			var interval = parseInt(root.getAttribute('data-gcm-slider-interval') || '5000', 10);
+			if (!interval || interval < 1000) {
+				interval = 5000;
+			}
 			timer = window.setInterval(function () {
 				show(current + 1);
-			}, 3000);
+			}, interval);
 		}
 
 		if (prev) {

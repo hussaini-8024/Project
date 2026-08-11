@@ -22,8 +22,24 @@
 			<?php if ( has_custom_logo() ) : ?>
 				<?php the_custom_logo(); ?>
 			<?php else : ?>
-				<span class="gcm-brand__mark" aria-hidden="true">G</span>
-				<span class="gcm-brand__text">Giga Class Market</span>
+				<span class="gcm-brand__logo" aria-hidden="true">
+					<svg viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<defs>
+							<linearGradient id="gcmLogoGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+								<stop stop-color="#E8D48B"/>
+								<stop offset="0.55" stop-color="#C9A227"/>
+								<stop offset="1" stop-color="#8C6B12"/>
+							</linearGradient>
+						</defs>
+						<rect x="2" y="2" width="44" height="44" rx="14" fill="#0B1B33"/>
+						<path d="M14 30.5V17.5h9.2c3.7 0 6.1 2.1 6.1 5.2 0 3.2-2.4 5.3-6.1 5.3H19.2V30.5H14zm5.2-7.3h3.7c1.5 0 2.4-.8 2.4-2.1s-.9-2.1-2.4-2.1h-3.7v4.2z" fill="url(#gcmLogoGrad)"/>
+						<path d="M33.8 17.5l-4.2 13h-3.9l4.2-13h3.9z" fill="url(#gcmLogoGrad)"/>
+					</svg>
+				</span>
+				<span class="gcm-brand__text">
+					<span class="gcm-brand__name">Giga Class Market</span>
+					<span class="gcm-brand__tag"><?php esc_html_e( 'Premium Learning', 'giga-class-market' ); ?></span>
+				</span>
 			<?php endif; ?>
 		</a>
 
@@ -33,40 +49,19 @@
 		</button>
 
 		<nav id="gcm-primary-nav" class="gcm-primary-nav" aria-label="<?php esc_attr_e( 'Primary menu', 'giga-class-market' ); ?>">
-			<?php
-			if ( has_nav_menu( 'primary' ) ) {
-				wp_nav_menu(
-					array(
-						'theme_location' => 'primary',
-						'container'      => false,
-						'menu_class'     => 'gcm-menu',
-						'fallback_cb'    => false,
-					)
-				);
-			} else {
-				?>
-				<ul class="gcm-menu">
-					<li><a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php esc_html_e( 'Home', 'giga-class-market' ); ?></a></li>
-					<li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php esc_html_e( 'About', 'giga-class-market' ); ?></a></li>
-					<li><a href="<?php echo esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ); ?>"><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></a></li>
-					<li><a href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php esc_html_e( 'Contact', 'giga-class-market' ); ?></a></li>
-				</ul>
-				<?php
-			}
-			?>
+			<ul class="gcm-menu">
+				<li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php esc_html_e( 'About', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ); ?>"><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php esc_html_e( 'Contact', 'giga-class-market' ); ?></a></li>
+			</ul>
 		</nav>
 
 		<div class="gcm-header__actions">
-			<?php if ( is_user_logged_in() ) : ?>
-				<a class="gcm-login-link" href="<?php echo esc_url( home_url( '/student-dashboard/' ) ); ?>"><?php esc_html_e( 'Dashboard', 'giga-class-market' ); ?></a>
-				<a class="gcm-login-link" href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>"><?php esc_html_e( 'Logout', 'giga-class-market' ); ?></a>
+			<?php if ( is_user_logged_in() && ( current_user_can( 'gcm_access_dashboard' ) || current_user_can( 'manage_options' ) ) ) : ?>
+				<a class="gcm-login-link" href="<?php echo esc_url( home_url( '/student-dashboard/' ) ); ?>"><?php esc_html_e( 'My Courses', 'giga-class-market' ); ?></a>
 			<?php else : ?>
 				<a class="gcm-login-link" href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Login', 'giga-class-market' ); ?></a>
 			<?php endif; ?>
-			<button class="gcm-theme-toggle" type="button" data-gcm-theme-toggle aria-pressed="false" aria-label="<?php esc_attr_e( 'Toggle dark mode', 'giga-class-market' ); ?>">
-				<span class="gcm-theme-toggle__sun" aria-hidden="true"></span>
-				<span class="gcm-theme-toggle__moon" aria-hidden="true"></span>
-			</button>
 		</div>
 	</div>
 </header>
