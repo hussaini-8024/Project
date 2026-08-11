@@ -19,10 +19,14 @@
 <header class="gcm-site-header" data-gcm-header>
 	<div class="gcm-container gcm-header__inner">
 		<a class="gcm-brand" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="<?php esc_attr_e( 'Giga Class Market home', 'giga-class-market' ); ?>">
-			<?php if ( has_custom_logo() ) : ?>
-				<?php the_custom_logo(); ?>
-			<?php else : ?>
-				<span class="gcm-brand__logo" aria-hidden="true">
+			<span class="gcm-brand__logo" aria-hidden="true">
+				<?php
+				$custom_logo_id = (int) get_theme_mod( 'custom_logo' );
+				$custom_logo    = $custom_logo_id ? wp_get_attachment_image_url( $custom_logo_id, 'full' ) : '';
+				if ( $custom_logo ) :
+					?>
+					<img class="gcm-brand__logo-img" src="<?php echo esc_url( $custom_logo ); ?>" alt="<?php esc_attr_e( 'Giga Class Market', 'giga-class-market' ); ?>" width="42" height="42">
+				<?php else : ?>
 					<svg viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<defs>
 							<linearGradient id="gcmLogoGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
@@ -35,12 +39,12 @@
 						<path d="M14 30.5V17.5h9.2c3.7 0 6.1 2.1 6.1 5.2 0 3.2-2.4 5.3-6.1 5.3H19.2V30.5H14zm5.2-7.3h3.7c1.5 0 2.4-.8 2.4-2.1s-.9-2.1-2.4-2.1h-3.7v4.2z" fill="url(#gcmLogoGrad)"/>
 						<path d="M33.8 17.5l-4.2 13h-3.9l4.2-13h3.9z" fill="url(#gcmLogoGrad)"/>
 					</svg>
-				</span>
-				<span class="gcm-brand__text">
-					<span class="gcm-brand__name">Giga Class Market</span>
-					<span class="gcm-brand__tag"><?php esc_html_e( 'Premium Learning', 'giga-class-market' ); ?></span>
-				</span>
-			<?php endif; ?>
+				<?php endif; ?>
+			</span>
+			<span class="gcm-brand__text">
+				<span class="gcm-brand__name">Giga Class Market</span>
+				<span class="gcm-brand__tag"><?php esc_html_e( 'Premium Learning', 'giga-class-market' ); ?></span>
+			</span>
 		</a>
 
 		<button class="gcm-nav-toggle" type="button" aria-controls="gcm-primary-nav" aria-expanded="false">

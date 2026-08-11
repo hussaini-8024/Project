@@ -133,9 +133,13 @@ textarea {
 	filter: drop-shadow(0 10px 24px rgba(201,162,39,0.28));
 }
 
-.gcm-brand__logo svg {
+.gcm-brand__logo-img {
 	display: block;
+	width: 42px;
+	height: 42px;
+	object-fit: contain;
 	border-radius: 14px;
+	background: #0B1B33;
 }
 
 .gcm-brand__mark {

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.1.0-preview' );
+define( 'GCM_THEME_VERSION', '1.1.1-preview' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -393,16 +393,13 @@ function gcm_student_login_url() {
 function gcm_get_benefits() {
 	$defaults = array(
 		array( 'title' => __( 'Practical Skills', 'giga-class-market' ), 'text' => __( 'Learn high-value skills through concise lessons built for real outcomes.', 'giga-class-market' ) ),
-		array( 'title' => __( 'Industry Knowledge', 'giga-class-market' ), 'text' => __( 'Stay aligned with modern tools, expert workflows, and market needs.', 'giga-class-market' ) ),
 		array( 'title' => __( 'Hands-on Learning', 'giga-class-market' ), 'text' => __( 'Practice as you learn with guided exercises and polished resources.', 'giga-class-market' ) ),
-		array( 'title' => __( 'Real Projects', 'giga-class-market' ), 'text' => __( 'Build portfolio-ready work that shows your capability clearly.', 'giga-class-market' ) ),
 		array( 'title' => __( 'Career Development', 'giga-class-market' ), 'text' => __( 'Sharpen your path with lessons designed around professional growth.', 'giga-class-market' ) ),
-		array( 'title' => __( 'Certification', 'giga-class-market' ), 'text' => __( 'Complete structured tracks and showcase your achievement with confidence.', 'giga-class-market' ) ),
 	);
 
 	$custom = gcm_setting( 'gcm_benefits', array() );
 	if ( is_array( $custom ) && ! empty( $custom ) ) {
-		return array_slice( $custom, 0, 6 );
+		return array_slice( $custom, 0, 3 );
 	}
 
 	return $defaults;

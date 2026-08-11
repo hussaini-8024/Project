@@ -49,7 +49,7 @@ get_template_part( 'template-parts/home/hero-slider' );
 		</div>
 		<div class="gcm-benefit-grid">
 			<?php
-			$benefit_icons = array( '01', '02', '03', '04', '05', '06' );
+			$benefit_icons = array( '01', '02', '03' );
 			foreach ( array_values( gcm_get_benefits() ) as $index => $benefit ) :
 				?>
 				<article class="gcm-benefit-card gcm-animate">
