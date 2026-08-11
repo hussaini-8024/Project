@@ -39,6 +39,9 @@
 		$.post(gcmAdmin.ajaxUrl, payload)
 			.done(function (response) {
 				showNotice(response.data && response.data.message ? response.data.message : 'Done.', response.success);
+				if (response.success && response.data && response.data.whatsapp_url) {
+					window.open(response.data.whatsapp_url, '_blank', 'noopener');
+				}
 				if (response.success) {
 					window.setTimeout(function () {
 						window.location.reload();

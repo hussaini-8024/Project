@@ -156,19 +156,15 @@ class GCM_Admin {
 		global $wpdb;
 
 		return array(
-			'courses'     => (int) wp_count_posts( 'gcm_course' )->publish,
-			'students'    => (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(DISTINCT user_id) FROM {$wpdb->prefix}gcm_enrollments WHERE status IN (%s, %s, %s)",
-					'active',
-					'frozen',
-					'completed'
-				)
-			),
-			'pending'     => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'under_review' ) ),
-			'contacts'    => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_contacts WHERE status = %s", 'new' ) ),
-			'enrollments' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_enrollments" ),
-			'revenue'     => (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount), 0) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'approved' ) ),
+			'courses'          => (int) wp_count_posts( 'gcm_course' )->publish,
+			'students'         => count( get_users( array( 'role' => 'gcm_student', 'fields' => 'ID' ) ) ),
+			'active_students'  => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT user_id) FROM {$wpdb->prefix}gcm_enrollments WHERE status = %s", 'active' ) ),
+			'pending'          => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_payments WHERE status IN (%s, %s)", 'pending', 'under_review' ) ),
+			'approved'         => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'approved' ) ),
+			'rejected'         => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'rejected' ) ),
+			'contacts'         => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_contacts WHERE status = %s", 'new' ) ),
+			'enrollments'      => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_enrollments" ),
+			'revenue'          => (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount), 0) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'approved' ) ),
 		);
 	}
 }

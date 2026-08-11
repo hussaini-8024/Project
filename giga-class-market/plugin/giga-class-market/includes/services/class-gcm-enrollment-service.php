@@ -97,6 +97,28 @@ class GCM_Enrollment_Service {
 	}
 
 	/**
+	 * Theme-compatible access alias.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $course_id Course ID.
+	 * @return bool
+	 */
+	public static function user_has_access( $user_id, $course_id ) {
+		return self::has_access( $user_id, $course_id );
+	}
+
+	/**
+	 * Theme-compatible enrollment alias.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $course_id Course ID.
+	 * @return bool
+	 */
+	public static function is_enrolled( $user_id, $course_id ) {
+		return (bool) self::get_enrollment( $user_id, $course_id );
+	}
+
+	/**
 	 * Get student courses.
 	 *
 	 * @param int $user_id User ID.

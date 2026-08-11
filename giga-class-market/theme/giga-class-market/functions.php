@@ -116,35 +116,82 @@ function gcm_enqueue_assets() {
 add_action( 'wp_enqueue_scripts', 'gcm_enqueue_assets' );
 
 /**
+ * Theme customizer for About / CEO content.
+ *
+ * @param WP_Customize_Manager $wp_customize Customizer.
+ */
+function gcm_customize_register( $wp_customize ) {
+	$wp_customize->add_section(
+		'gcm_about_ceo',
+		array(
+			'title'    => __( 'GCM About / CEO', 'giga-class-market' ),
+			'priority' => 35,
+		)
+	);
+
+	$fields = array(
+		'gcm_ceo_name'        => __( 'CEO name', 'giga-class-market' ),
+		'gcm_ceo_designation' => __( 'CEO designation', 'giga-class-market' ),
+		'gcm_ceo_title'        => __( 'CEO message title', 'giga-class-market' ),
+		'gcm_ceo_message'     => __( 'CEO message', 'giga-class-market' ),
+		'gcm_ceo_photo'       => __( 'CEO photo URL', 'giga-class-market' ),
+		'about_mission'       => __( 'Mission text', 'giga-class-market' ),
+		'about_vision'        => __( 'Vision text', 'giga-class-market' ),
+	);
+
+	foreach ( $fields as $id => $label ) {
+		$wp_customize->add_setting( $id, array( 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ) );
+		$wp_customize->add_control(
+			$id,
+			array(
+				'label'   => $label,
+				'section' => 'gcm_about_ceo',
+				'type'    => false !== strpos( $id, 'message' ) || false !== strpos( $id, 'mission' ) || false !== strpos( $id, 'vision' ) ? 'textarea' : 'text',
+			)
+		);
+	}
+}
+add_action( 'customize_register', 'gcm_customize_register' );
+
+/**
  * Read plugin settings, if available.
  *
  * @return array
  */
 function gcm_get_settings() {
-	$settings = get_option( 'gcm_settings', array() );
-
-	if ( function_exists( 'gcm_plugin_get_settings' ) ) {
-		$plugin_settings = gcm_plugin_get_settings();
-		if ( is_array( $plugin_settings ) ) {
-			$settings = array_merge( $settings, $plugin_settings );
-		}
-	}
+	$settings = array();
 
 	if ( class_exists( 'GCM_Settings_Service' ) ) {
-		try {
-			$service = new GCM_Settings_Service();
-			if ( method_exists( $service, 'get_settings' ) ) {
-				$service_settings = $service->get_settings();
-				if ( is_array( $service_settings ) ) {
-					$settings = array_merge( $settings, $service_settings );
-				}
-			}
-		} catch ( Exception $exception ) {
-			// Plugin settings are optional; the theme remains functional without them.
+		$raw = GCM_Settings_Service::get_settings();
+		if ( is_array( $raw ) ) {
+			$settings = $raw;
+		}
+	} else {
+		$option = get_option( 'gcm_settings', array() );
+		if ( is_array( $option ) ) {
+			$settings = $option;
 		}
 	}
 
-	return is_array( $settings ) ? $settings : array();
+	// Flatten nested settings for theme convenience.
+	$flat = $settings;
+	if ( ! empty( $settings['company'] ) && is_array( $settings['company'] ) ) {
+		$flat['company_name']     = $settings['company']['name'] ?? '';
+		$flat['contact_email']    = $settings['company']['email'] ?? '';
+		$flat['contact_phone']    = $settings['company']['phone'] ?? '';
+		$flat['whatsapp_number']  = $settings['company']['whatsapp'] ?? '';
+		$flat['company_address']  = $settings['company']['address'] ?? '';
+		$flat['business_hours']   = $settings['company']['hours'] ?? ( $flat['business_hours'] ?? '' );
+		$flat['social_facebook']  = $settings['company']['facebook'] ?? ( $flat['social_facebook'] ?? '' );
+		$flat['social_instagram'] = $settings['company']['instagram'] ?? ( $flat['social_instagram'] ?? '' );
+		$flat['social_linkedin']  = $settings['company']['linkedin'] ?? ( $flat['social_linkedin'] ?? '' );
+		$flat['social_youtube']   = $settings['company']['youtube'] ?? ( $flat['social_youtube'] ?? '' );
+	}
+	if ( ! empty( $settings['website'] ) && is_array( $settings['website'] ) ) {
+		$flat['currency_symbol'] = $settings['website']['currency_symbol'] ?? ( $flat['currency_symbol'] ?? 'PKR ' );
+	}
+
+	return $flat;
 }
 
 /**
@@ -207,19 +254,20 @@ add_filter( 'body_class', 'gcm_body_classes' );
  * @return mixed
  */
 function gcm_course_meta( $post_id, $key, $default = '' ) {
-	if ( function_exists( 'gcm_plugin_get_course_meta' ) ) {
-		$plugin_value = gcm_plugin_get_course_meta( $post_id, $key );
-		if ( '' !== $plugin_value && null !== $plugin_value ) {
-			return $plugin_value;
+	$candidates = array(
+		'_gcm_' . $key,
+		'gcm_' . $key,
+		$key,
+	);
+
+	foreach ( $candidates as $meta_key ) {
+		$value = get_post_meta( $post_id, $meta_key, true );
+		if ( '' !== $value && null !== $value ) {
+			return $value;
 		}
 	}
 
-	$value = get_post_meta( $post_id, 'gcm_' . $key, true );
-	if ( '' === $value ) {
-		$value = get_post_meta( $post_id, $key, true );
-	}
-
-	return '' !== $value ? $value : $default;
+	return $default;
 }
 
 /**
@@ -229,7 +277,7 @@ function gcm_course_meta( $post_id, $key, $default = '' ) {
  * @return string
  */
 function gcm_course_category_label( $post_id ) {
-	$taxonomies = array( 'gcm_course_category', 'course_category', 'category' );
+	$taxonomies = array( 'gcm_category', 'gcm_course_category', 'category' );
 
 	foreach ( $taxonomies as $taxonomy ) {
 		$terms = get_the_terms( $post_id, $taxonomy );
@@ -238,7 +286,7 @@ function gcm_course_category_label( $post_id ) {
 		}
 	}
 
-	return __( 'Featured Course', 'giga-class-market' );
+	return __( 'Course', 'giga-class-market' );
 }
 
 /**
@@ -267,40 +315,26 @@ function gcm_format_price( $price ) {
  * @return WP_Query
  */
 function gcm_get_featured_courses_query( $limit = 3 ) {
-	if ( function_exists( 'gcm_get_featured_courses' ) ) {
-		$courses = gcm_get_featured_courses( $limit );
-		if ( ! empty( $courses ) ) {
-			$ids = wp_list_pluck( $courses, 'ID' );
-			return new WP_Query(
-				array(
-					'post_type'      => 'gcm_course',
-					'post__in'       => array_slice( array_map( 'absint', $ids ), 0, $limit ),
-					'orderby'        => 'post__in',
-					'posts_per_page' => $limit,
-				)
-			);
-		}
-	}
+	$limit = max( 1, min( 3, absint( $limit ) ) );
 
 	if ( class_exists( 'GCM_Course_Service' ) ) {
-		try {
-			$service = new GCM_Course_Service();
-			if ( method_exists( $service, 'get_featured_courses' ) ) {
-				$courses = $service->get_featured_courses( $limit );
-				if ( ! empty( $courses ) ) {
-					$ids = wp_list_pluck( $courses, 'ID' );
-					return new WP_Query(
-						array(
-							'post_type'      => 'gcm_course',
-							'post__in'       => array_slice( array_map( 'absint', $ids ), 0, $limit ),
-							'orderby'        => 'post__in',
-							'posts_per_page' => $limit,
-						)
-					);
-				}
+		$courses = GCM_Course_Service::get_featured( $limit );
+		if ( ! empty( $courses ) ) {
+			$ids = array();
+			foreach ( $courses as $course ) {
+				$ids[] = absint( is_array( $course ) ? ( $course['id'] ?? 0 ) : ( $course->ID ?? 0 ) );
 			}
-		} catch ( Exception $exception ) {
-			// Fall through to WP_Query if the plugin service is unavailable.
+			$ids = array_values( array_filter( $ids ) );
+			if ( $ids ) {
+				return new WP_Query(
+					array(
+						'post_type'      => 'gcm_course',
+						'post__in'       => $ids,
+						'orderby'        => 'post__in',
+						'posts_per_page' => $limit,
+					)
+				);
+			}
 		}
 	}
 
@@ -308,14 +342,14 @@ function gcm_get_featured_courses_query( $limit = 3 ) {
 		array(
 			'post_type'      => 'gcm_course',
 			'posts_per_page' => $limit,
-			'meta_key'       => 'gcm_featured_priority',
+			'meta_key'       => '_gcm_featured_priority',
 			'orderby'        => array(
-				'meta_value_num' => 'ASC',
+				'meta_value_num' => 'DESC',
 				'date'           => 'DESC',
 			),
 			'meta_query'     => array(
 				array(
-					'key'     => 'gcm_featured',
+					'key'     => '_gcm_featured',
 					'value'   => '1',
 					'compare' => '=',
 				),
@@ -348,14 +382,7 @@ function gcm_course_purchase_url( $course_id ) {
  * @return string
  */
 function gcm_student_login_url() {
-	if ( function_exists( 'gcm_get_student_login_url' ) ) {
-		$url = gcm_get_student_login_url();
-		if ( $url ) {
-			return $url;
-		}
-	}
-
-	return gcm_setting( 'student_login_url', home_url( '/student-login/' ) );
+	return home_url( '/login/' );
 }
 
 /**
@@ -453,20 +480,15 @@ add_action( 'wp_head', 'gcm_open_graph_meta', 5 );
  * @return mixed
  */
 function gcm_service_call( $class, $method, $args = array(), $fallback = null ) {
-	if ( ! class_exists( $class ) ) {
+	if ( ! class_exists( $class ) || ! method_exists( $class, $method ) ) {
 		return $fallback;
 	}
 
 	try {
-		$service = new $class();
-		if ( method_exists( $service, $method ) ) {
-			return call_user_func_array( array( $service, $method ), $args );
-		}
+		return call_user_func_array( array( $class, $method ), $args );
 	} catch ( Exception $exception ) {
 		return $fallback;
 	}
-
-	return $fallback;
 }
 
 /**

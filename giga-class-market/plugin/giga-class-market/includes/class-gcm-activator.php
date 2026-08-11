@@ -42,61 +42,80 @@ class GCM_Activator {
 		$pages = array(
 			'home'                 => array(
 				'title'    => __( 'Home', 'giga-class-market' ),
-				'content'  => '[gcm_courses featured="1"]',
-				'template' => 'templates/gcm-home.php',
+				'content'  => '',
+				'template' => '',
 			),
 			'about'                => array(
 				'title'    => __( 'About', 'giga-class-market' ),
 				'content'  => '',
-				'template' => 'templates/gcm-about.php',
+				'template' => 'page-templates/template-about.php',
 			),
 			'contact'              => array(
 				'title'    => __( 'Contact', 'giga-class-market' ),
-				'content'  => '[gcm_contact_form]',
-				'template' => 'templates/gcm-contact.php',
+				'content'  => '',
+				'template' => 'page-templates/template-contact.php',
 			),
 			'courses'              => array(
 				'title'    => __( 'Courses', 'giga-class-market' ),
-				'content'  => '[gcm_courses]',
-				'template' => 'templates/gcm-courses.php',
+				'content'  => '',
+				'template' => '',
+				'skip'     => true, // CPT archive owns /courses/
 			),
 			'login'                => array(
 				'title'    => __( 'Login', 'giga-class-market' ),
-				'content'  => '[gcm_login_form]',
-				'template' => 'templates/gcm-login.php',
+				'content'  => '',
+				'template' => 'page-templates/template-login.php',
 			),
 			'student-dashboard'    => array(
 				'title'    => __( 'Student Dashboard', 'giga-class-market' ),
-				'content'  => '[gcm_student_dashboard]',
-				'template' => 'templates/gcm-student-dashboard.php',
+				'content'  => '',
+				'template' => 'page-templates/template-student-dashboard.php',
+			),
+			'course-learn'         => array(
+				'title'    => __( 'Course Learn', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-course-learn.php',
 			),
 			'payment'              => array(
 				'title'    => __( 'Payment', 'giga-class-market' ),
-				'content'  => '[gcm_payment_form]',
-				'template' => 'templates/gcm-payment.php',
+				'content'  => '',
+				'template' => 'page-templates/template-payment.php',
 			),
 			'payment-verification' => array(
 				'title'    => __( 'Payment Verification', 'giga-class-market' ),
-				'content'  => '[gcm_payment_verification]',
-				'template' => 'templates/gcm-payment-verification.php',
+				'content'  => '',
+				'template' => 'page-templates/template-payment-verify.php',
 			),
 			'privacy-policy'       => array(
 				'title'    => __( 'Privacy Policy', 'giga-class-market' ),
 				'content'  => '',
-				'template' => 'templates/gcm-privacy.php',
+				'template' => 'page-templates/template-privacy.php',
 			),
 			'terms'                => array(
-				'title'    => __( 'Terms', 'giga-class-market' ),
+				'title'    => __( 'Terms & Conditions', 'giga-class-market' ),
 				'content'  => '',
-				'template' => 'templates/gcm-terms.php',
+				'template' => 'page-templates/template-terms.php',
 			),
 		);
 
 		foreach ( $pages as $slug => $page ) {
+			if ( ! empty( $page['skip'] ) ) {
+				continue;
+			}
+
 			$existing = get_page_by_path( $slug );
 
 			if ( $existing ) {
-				update_post_meta( $existing->ID, '_wp_page_template', $page['template'] );
+				if ( ! empty( $page['template'] ) ) {
+					update_post_meta( $existing->ID, '_wp_page_template', $page['template'] );
+				}
+				if ( 'home' === $slug ) {
+					update_option( 'show_on_front', 'page' );
+					update_option( 'page_on_front', (int) $existing->ID );
+				}
+				if ( 'courses' === $slug ) {
+					update_option( 'gcm_courses_page_id', (int) $existing->ID );
+				}
 				continue;
 			}
 
@@ -111,11 +130,16 @@ class GCM_Activator {
 			);
 
 			if ( ! is_wp_error( $page_id ) && $page_id ) {
-				update_post_meta( $page_id, '_wp_page_template', $page['template'] );
+				if ( ! empty( $page['template'] ) ) {
+					update_post_meta( $page_id, '_wp_page_template', $page['template'] );
+				}
 
 				if ( 'home' === $slug ) {
 					update_option( 'show_on_front', 'page' );
 					update_option( 'page_on_front', (int) $page_id );
+				}
+				if ( 'courses' === $slug ) {
+					update_option( 'gcm_courses_page_id', (int) $page_id );
 				}
 			}
 		}

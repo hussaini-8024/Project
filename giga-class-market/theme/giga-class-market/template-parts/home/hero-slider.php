@@ -5,26 +5,51 @@
  * @package GigaClassMarket
  */
 
-$slides = gcm_setting(
-	'hero_slides',
+$slides_query = new WP_Query(
 	array(
-		array(
-			'eyebrow' => __( 'Luxury-tech learning marketplace', 'giga-class-market' ),
-			'title'   => __( 'Master premium skills with Giga Class Market', 'giga-class-market' ),
-			'text'    => __( 'Discover polished courses built for ambitious learners, creative professionals, and future-ready teams.', 'giga-class-market' ),
-		),
-		array(
-			'eyebrow' => __( 'Structured paths. Real momentum.', 'giga-class-market' ),
-			'title'   => __( 'Learn from focused courses that move careers forward', 'giga-class-market' ),
-			'text'    => __( 'Every track blends expert insight, applied projects, and elegant study experiences.', 'giga-class-market' ),
-		),
-		array(
-			'eyebrow' => __( 'From first lesson to certification', 'giga-class-market' ),
-			'title'   => __( 'Build confidence with a marketplace made for growth', 'giga-class-market' ),
-			'text'    => __( 'Choose your course, continue at your pace, and showcase measurable progress.', 'giga-class-market' ),
-		),
+		'post_type'      => 'gcm_slide',
+		'posts_per_page' => 5,
+		'post_status'    => 'publish',
+		'orderby'        => 'menu_order date',
+		'order'          => 'ASC',
 	)
 );
+
+$slides = array();
+if ( $slides_query->have_posts() ) {
+	while ( $slides_query->have_posts() ) {
+		$slides_query->the_post();
+		$slides[] = array(
+			'eyebrow' => __( 'Giga Class Market', 'giga-class-market' ),
+			'title'   => get_the_title(),
+			'text'    => has_excerpt() ? get_the_excerpt() : wp_trim_words( wp_strip_all_tags( get_the_content() ), 28 ),
+		);
+	}
+	wp_reset_postdata();
+}
+
+if ( empty( $slides ) ) {
+	$slides = gcm_setting(
+		'hero_slides',
+		array(
+			array(
+				'eyebrow' => __( 'Luxury-tech learning marketplace', 'giga-class-market' ),
+				'title'   => __( 'Master premium skills with Giga Class Market', 'giga-class-market' ),
+				'text'    => __( 'Discover polished courses built for ambitious learners, creative professionals, and future-ready teams.', 'giga-class-market' ),
+			),
+			array(
+				'eyebrow' => __( 'Structured paths. Real momentum.', 'giga-class-market' ),
+				'title'   => __( 'Learn from focused courses that move careers forward', 'giga-class-market' ),
+				'text'    => __( 'Every track blends expert insight, applied projects, and elegant study experiences.', 'giga-class-market' ),
+			),
+			array(
+				'eyebrow' => __( 'From first lesson to certification', 'giga-class-market' ),
+				'title'   => __( 'Build confidence with a marketplace made for growth', 'giga-class-market' ),
+				'text'    => __( 'Choose your course, continue at your pace, and showcase measurable progress.', 'giga-class-market' ),
+			),
+		)
+	);
+}
 
 if ( ! is_array( $slides ) || empty( $slides ) ) {
 	return;

@@ -103,7 +103,7 @@ class GCM_Ajax {
 			$file
 		);
 
-		$this->send_service_response( $result, __( 'Payment submitted for review.', 'giga-class-market' ) );
+		$this->send_service_response( $result, __( 'Your payment verification request has been submitted. After verification, you will receive your account/course access details.', 'giga-class-market' ) );
 	}
 
 	/**
@@ -376,11 +376,23 @@ class GCM_Ajax {
 			wp_send_json_error( array( 'message' => __( 'The request could not be completed.', 'giga-class-market' ) ), 400 );
 		}
 
-		wp_send_json_success(
-			array(
-				'message' => $success_message,
-				'id'      => is_numeric( $result ) ? (int) $result : 0,
-			)
+		$data = array(
+			'message' => $success_message,
+			'id'      => is_numeric( $result ) ? (int) $result : 0,
 		);
+
+		if ( is_array( $result ) ) {
+			if ( ! empty( $result['message'] ) ) {
+				$data['message'] = $result['message'];
+			}
+			if ( ! empty( $result['whatsapp_url'] ) ) {
+				$data['whatsapp_url'] = esc_url_raw( $result['whatsapp_url'] );
+			}
+			if ( ! empty( $result['user_id'] ) ) {
+				$data['id'] = (int) $result['user_id'];
+			}
+		}
+
+		wp_send_json_success( $data );
 	}
 }

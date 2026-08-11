@@ -57,8 +57,13 @@
 		</nav>
 
 		<div class="gcm-header__actions">
-			<a class="gcm-login-link" href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Login', 'giga-class-market' ); ?></a>
-			<button class="gcm-theme-toggle" type="button" data-gcm-theme-toggle aria-label="<?php esc_attr_e( 'Toggle dark mode', 'giga-class-market' ); ?>">
+			<?php if ( is_user_logged_in() ) : ?>
+				<a class="gcm-login-link" href="<?php echo esc_url( home_url( '/student-dashboard/' ) ); ?>"><?php esc_html_e( 'Dashboard', 'giga-class-market' ); ?></a>
+				<a class="gcm-login-link" href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>"><?php esc_html_e( 'Logout', 'giga-class-market' ); ?></a>
+			<?php else : ?>
+				<a class="gcm-login-link" href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Login', 'giga-class-market' ); ?></a>
+			<?php endif; ?>
+			<button class="gcm-theme-toggle" type="button" data-gcm-theme-toggle aria-pressed="false" aria-label="<?php esc_attr_e( 'Toggle dark mode', 'giga-class-market' ); ?>">
 				<span class="gcm-theme-toggle__sun" aria-hidden="true"></span>
 				<span class="gcm-theme-toggle__moon" aria-hidden="true"></span>
 			</button>

@@ -30,6 +30,11 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Email', 'giga-class-market' ); ?><input type="email" name="settings[company][email]" value="<?php echo esc_attr( $settings['company']['email'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Phone', 'giga-class-market' ); ?><input type="text" name="settings[company][phone]" value="<?php echo esc_attr( $settings['company']['phone'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Address', 'giga-class-market' ); ?><textarea name="settings[company][address]" rows="3"><?php echo esc_textarea( $settings['company']['address'] ); ?></textarea></label>
+			<label><?php esc_html_e( 'Business hours', 'giga-class-market' ); ?><input type="text" name="settings[company][hours]" value="<?php echo esc_attr( $settings['company']['hours'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Facebook URL', 'giga-class-market' ); ?><input type="url" name="settings[company][facebook]" value="<?php echo esc_attr( $settings['company']['facebook'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Instagram URL', 'giga-class-market' ); ?><input type="url" name="settings[company][instagram]" value="<?php echo esc_attr( $settings['company']['instagram'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'LinkedIn URL', 'giga-class-market' ); ?><input type="url" name="settings[company][linkedin]" value="<?php echo esc_attr( $settings['company']['linkedin'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'YouTube URL', 'giga-class-market' ); ?><input type="url" name="settings[company][youtube]" value="<?php echo esc_attr( $settings['company']['youtube'] ?? '' ); ?>" /></label>
 		</section>
 
 		<section id="gcm-tab-payment" class="gcm-tab">

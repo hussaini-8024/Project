@@ -331,6 +331,24 @@ class GCM_Payment_Service {
 			array( 'payment_id' => absint( $payment_id ) )
 		);
 
+		$whatsapp_message = sprintf(
+			"Hello %s,\n\nYour Giga Class Market account is ready.\nLogin: %s\nUsername: %s\nTemporary password: %s\n\nPlease change your password after login.",
+			$user->display_name,
+			$login_url,
+			$user->user_login,
+			$password
+		);
+		$student_whatsapp = get_user_meta( $user->ID, 'gcm_whatsapp', true );
+		GCM_Notification_Service::queue_whatsapp(
+			$user->ID,
+			'student_credentials',
+			__( 'Student credentials', 'giga-class-market' ),
+			$whatsapp_message,
+			$student_whatsapp,
+			array( 'payment_id' => absint( $payment_id ) )
+		);
+		$whatsapp_url = GCM_Notification_Service::build_whatsapp_url( $student_whatsapp, $whatsapp_message );
+
 		if ( $payment_id ) {
 			$wpdb->update(
 				$wpdb->prefix . 'gcm_payments',
@@ -342,7 +360,11 @@ class GCM_Payment_Service {
 		}
 
 		GCM_Audit_Service::log( 'credentials_sent', 'user', $user->ID, array( 'payment_id' => absint( $payment_id ) ) );
-		return true;
+		return array(
+			'success'      => true,
+			'whatsapp_url' => $whatsapp_url,
+			'message'      => __( 'Account details prepared. Email queued and WhatsApp fallback link is ready.', 'giga-class-market' ),
+		);
 	}
 
 	/**

@@ -115,6 +115,22 @@ class GCM_Course_Service {
 	 * @param int $limit Limit.
 	 * @return array
 	 */
+	/**
+	 * Theme-compatible featured courses alias.
+	 *
+	 * @param int $limit Limit.
+	 * @return array
+	 */
+	public static function get_featured_courses( $limit = 3 ) {
+		return self::get_featured( $limit );
+	}
+
+	/**
+	 * Get featured courses (max 3 by default).
+	 *
+	 * @param int $limit Limit.
+	 * @return array
+	 */
 	public static function get_featured( $limit = 3 ) {
 		global $wpdb;
 

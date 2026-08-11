@@ -87,6 +87,24 @@ class GCM_Progress_Service {
 	 * @param int $course_id Course ID.
 	 * @return int
 	 */
+	/**
+	 * Alias used by theme templates.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $course_id Course ID.
+	 * @return int
+	 */
+	public static function get_course_progress( $user_id, $course_id ) {
+		return self::get_percentage( $user_id, $course_id );
+	}
+
+	/**
+	 * Get course completion percentage.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $course_id Course ID.
+	 * @return int
+	 */
 	public static function get_percentage( $user_id, $course_id ) {
 		global $wpdb;
 

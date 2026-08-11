@@ -270,8 +270,12 @@ class GCM_Frontend {
 	 */
 	public function protect_student_pages() {
 		if ( $this->is_student_page() && ! is_user_logged_in() ) {
-			wp_safe_redirect( wp_login_url( get_permalink() ) );
+			wp_safe_redirect( add_query_arg( 'redirect_to', rawurlencode( get_permalink() ), home_url( '/login/' ) ) );
 			exit;
+		}
+
+		if ( $this->is_student_page() && is_user_logged_in() && ! current_user_can( 'gcm_access_dashboard' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have access to this course.', 'giga-class-market' ), esc_html__( 'Access denied', 'giga-class-market' ), array( 'response' => 403 ) );
 		}
 	}
 
@@ -471,6 +475,6 @@ class GCM_Frontend {
 	 * @return bool
 	 */
 	private function is_student_page() {
-		return is_page( array( 'student-dashboard' ) );
+		return is_page( array( 'student-dashboard', 'course-learn' ) );
 	}
 }

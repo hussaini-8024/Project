@@ -7,21 +7,24 @@
 
 $search   = isset( $_GET['course_search'] ) ? sanitize_text_field( wp_unslash( $_GET['course_search'] ) ) : '';
 $category = isset( $_GET['course_category'] ) ? sanitize_text_field( wp_unslash( $_GET['course_category'] ) ) : '';
-$sort     = isset( $_GET['sort'] ) ? sanitize_key( wp_unslash( $_GET['sort'] ) ) : 'featured';
-$paged    = max( 1, get_query_var( 'paged' ) );
+$sort     = isset( $_GET['sort'] ) ? sanitize_key( wp_unslash( $_GET['sort'] ) ) : 'newest';
+$paged    = max( 1, (int) get_query_var( 'paged' ), isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1 );
 
 $args = array(
 	'post_type'      => 'gcm_course',
 	'post_status'    => 'publish',
 	'posts_per_page' => 9,
 	'paged'          => $paged,
-	's'              => $search,
 );
+
+if ( $search ) {
+	$args['s'] = $search;
+}
 
 if ( $category ) {
 	$args['tax_query'] = array(
 		array(
-			'taxonomy' => 'gcm_course_category',
+			'taxonomy' => 'gcm_category',
 			'field'    => 'slug',
 			'terms'    => $category,
 		),
@@ -30,41 +33,36 @@ if ( $category ) {
 
 switch ( $sort ) {
 	case 'price-low':
-		$args['meta_key'] = 'gcm_price';
+		$args['meta_key'] = '_gcm_price';
 		$args['orderby']  = 'meta_value_num';
 		$args['order']    = 'ASC';
 		break;
 	case 'price-high':
-		$args['meta_key'] = 'gcm_price';
+		$args['meta_key'] = '_gcm_price';
 		$args['orderby']  = 'meta_value_num';
 		$args['order']    = 'DESC';
 		break;
 	case 'rating':
-		$args['meta_key'] = 'gcm_rating';
+		$args['meta_key'] = '_gcm_rating';
 		$args['orderby']  = 'meta_value_num';
 		$args['order']    = 'DESC';
 		break;
+	case 'featured':
+		$args['meta_key'] = '_gcm_featured_priority';
+		$args['orderby']  = 'meta_value_num';
+		$args['order']    = 'DESC';
+		$args['meta_query'] = array(
+			array(
+				'key'   => '_gcm_featured',
+				'value' => '1',
+			),
+		);
+		break;
 	case 'newest':
+	default:
 		$args['orderby'] = 'date';
 		$args['order']   = 'DESC';
 		break;
-	default:
-		$args['meta_key'] = 'gcm_featured_priority';
-		$args['orderby']  = array(
-			'meta_value_num' => 'ASC',
-			'date'           => 'DESC',
-		);
-		$args['meta_query'] = array(
-			'relation' => 'OR',
-			array(
-				'key'     => 'gcm_featured_priority',
-				'compare' => 'EXISTS',
-			),
-			array(
-				'key'     => 'gcm_featured_priority',
-				'compare' => 'NOT EXISTS',
-			),
-		);
 }
 
 $courses = new WP_Query( $args );
@@ -93,8 +91,8 @@ get_header();
 					<?php
 					$terms = get_terms(
 						array(
-							'taxonomy'   => 'gcm_course_category',
-							'hide_empty' => true,
+							'taxonomy'   => 'gcm_category',
+							'hide_empty' => false,
 						)
 					);
 					if ( ! is_wp_error( $terms ) ) :
@@ -110,8 +108,8 @@ get_header();
 			<label>
 				<span><?php esc_html_e( 'Sort', 'giga-class-market' ); ?></span>
 				<select name="sort">
-					<option value="featured" <?php selected( $sort, 'featured' ); ?>><?php esc_html_e( 'Featured', 'giga-class-market' ); ?></option>
 					<option value="newest" <?php selected( $sort, 'newest' ); ?>><?php esc_html_e( 'Newest', 'giga-class-market' ); ?></option>
+					<option value="featured" <?php selected( $sort, 'featured' ); ?>><?php esc_html_e( 'Featured', 'giga-class-market' ); ?></option>
 					<option value="rating" <?php selected( $sort, 'rating' ); ?>><?php esc_html_e( 'Top rated', 'giga-class-market' ); ?></option>
 					<option value="price-low" <?php selected( $sort, 'price-low' ); ?>><?php esc_html_e( 'Price: low to high', 'giga-class-market' ); ?></option>
 					<option value="price-high" <?php selected( $sort, 'price-high' ); ?>><?php esc_html_e( 'Price: high to low', 'giga-class-market' ); ?></option>
@@ -129,7 +127,7 @@ get_header();
 				<?php wp_reset_postdata(); ?>
 			<?php else : ?>
 				<div class="gcm-empty-state">
-					<h2><?php esc_html_e( 'No courses found', 'giga-class-market' ); ?></h2>
+					<h2><?php esc_html_e( 'No courses available yet.', 'giga-class-market' ); ?></h2>
 					<p><?php esc_html_e( 'Try another search or check back as new premium courses are added.', 'giga-class-market' ); ?></p>
 				</div>
 			<?php endif; ?>

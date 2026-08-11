@@ -22,31 +22,36 @@ class GCM_Settings_Service {
 	public static function defaults() {
 		return array(
 			'company'  => array(
-				'name'     => 'Giga Class Market',
-				'email'    => get_option( 'admin_email' ),
-				'phone'    => '',
-				'whatsapp' => '',
-				'address'  => '',
+				'name'      => 'Giga Class Market',
+				'email'     => get_option( 'admin_email' ),
+				'phone'     => '',
+				'whatsapp'  => '',
+				'address'   => '',
+				'hours'     => 'Mon–Sat, 9:00 AM – 6:00 PM',
+				'facebook'  => '',
+				'instagram' => '',
+				'linkedin'  => '',
+				'youtube'   => '',
 			),
 			'payment'  => array(
 				'methods' => array(
 					'Bank'     => array(
 						'enabled'      => 1,
-						'account_name' => '',
+						'account_name' => 'Giga Class Market',
 						'account_no'   => '',
-						'instructions' => '',
+						'instructions' => 'Transfer the exact course fee and keep your transaction ID.',
 					),
 					'JazzCash' => array(
 						'enabled'      => 1,
-						'account_name' => '',
+						'account_name' => 'Giga Class Market',
 						'account_no'   => '',
-						'instructions' => '',
+						'instructions' => 'Send payment via JazzCash and note the transaction ID.',
 					),
 					'Easypaisa' => array(
 						'enabled'      => 1,
-						'account_name' => '',
+						'account_name' => 'Giga Class Market',
 						'account_no'   => '',
-						'instructions' => '',
+						'instructions' => 'Send payment via Easypaisa and note the transaction ID.',
 					),
 				),
 			),
@@ -54,6 +59,7 @@ class GCM_Settings_Service {
 				'theme_color'       => '#0b1f3a',
 				'accent_color'      => '#d4af37',
 				'student_page_slug' => 'student-dashboard',
+				'currency_symbol'   => 'PKR ',
 			),
 			'course'   => array(
 				'featured_count'   => 3,
@@ -165,11 +171,16 @@ class GCM_Settings_Service {
 		$clean    = self::defaults();
 
 		if ( isset( $settings['company'] ) && is_array( $settings['company'] ) ) {
-			$clean['company']['name']     = sanitize_text_field( $settings['company']['name'] ?? $clean['company']['name'] );
-			$clean['company']['email']    = sanitize_email( $settings['company']['email'] ?? $clean['company']['email'] );
-			$clean['company']['phone']    = sanitize_text_field( $settings['company']['phone'] ?? '' );
-			$clean['company']['whatsapp'] = sanitize_text_field( $settings['company']['whatsapp'] ?? '' );
-			$clean['company']['address']  = sanitize_textarea_field( $settings['company']['address'] ?? '' );
+			$clean['company']['name']      = sanitize_text_field( $settings['company']['name'] ?? $clean['company']['name'] );
+			$clean['company']['email']     = sanitize_email( $settings['company']['email'] ?? $clean['company']['email'] );
+			$clean['company']['phone']     = sanitize_text_field( $settings['company']['phone'] ?? '' );
+			$clean['company']['whatsapp']  = sanitize_text_field( $settings['company']['whatsapp'] ?? '' );
+			$clean['company']['address']   = sanitize_textarea_field( $settings['company']['address'] ?? '' );
+			$clean['company']['hours']     = sanitize_text_field( $settings['company']['hours'] ?? ( $clean['company']['hours'] ?? '' ) );
+			$clean['company']['facebook']  = esc_url_raw( $settings['company']['facebook'] ?? '' );
+			$clean['company']['instagram'] = esc_url_raw( $settings['company']['instagram'] ?? '' );
+			$clean['company']['linkedin']  = esc_url_raw( $settings['company']['linkedin'] ?? '' );
+			$clean['company']['youtube']   = esc_url_raw( $settings['company']['youtube'] ?? '' );
 		}
 
 		if ( isset( $settings['payment']['methods'] ) && is_array( $settings['payment']['methods'] ) ) {
@@ -195,6 +206,7 @@ class GCM_Settings_Service {
 			$clean['website']['theme_color']       = sanitize_hex_color( $settings['website']['theme_color'] ?? '' ) ?: '#0b1f3a';
 			$clean['website']['accent_color']      = sanitize_hex_color( $settings['website']['accent_color'] ?? '' ) ?: '#d4af37';
 			$clean['website']['student_page_slug'] = sanitize_title( $settings['website']['student_page_slug'] ?? 'student-dashboard' );
+			$clean['website']['currency_symbol']   = sanitize_text_field( $settings['website']['currency_symbol'] ?? ( $clean['website']['currency_symbol'] ?? 'PKR ' ) );
 		}
 
 		if ( isset( $settings['course'] ) && is_array( $settings['course'] ) ) {
