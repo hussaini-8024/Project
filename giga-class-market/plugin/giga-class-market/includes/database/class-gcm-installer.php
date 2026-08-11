@@ -258,6 +258,18 @@ class GCM_Installer {
 			$settings['company']['name'] = 'Giga Class Market';
 		}
 
+		// Normalize existing students to GCM-only identity (not Subscriber + Student).
+		$students = get_users(
+			array(
+				'role'   => 'gcm_student',
+				'fields' => array( 'ID' ),
+				'number' => 500,
+			)
+		);
+		foreach ( $students as $student ) {
+			GCM_Roles::assign_student_identity( (int) $student->ID );
+		}
+
 		update_option( 'gcm_settings', $settings, false );
 		update_option( 'gcm_plugin_version', GCM_VERSION, false );
 	}

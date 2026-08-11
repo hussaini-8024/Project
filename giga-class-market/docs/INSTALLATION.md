@@ -116,6 +116,17 @@ Role: `gcm_student`
 
 ---
 
+## Student accounts
+
+Students are **GCM Students**, not normal WordPress staff users:
+
+- They log in only at `/login/` and use the student dashboard.
+- They are hidden from **Users → All Users** by default.
+- Manage them under **Giga Class Market → Students**.
+- WordPress still stores the account securely in the background (required for passwords/sessions), but the role is `GCM Student` only — not Administrator/Editor/Author.
+
+---
+
 ## WhatsApp delivery
 
 - Configure **Business WhatsApp number (sender)** in **Giga Class Market → Settings → WhatsApp** (example: `+966509136037`).

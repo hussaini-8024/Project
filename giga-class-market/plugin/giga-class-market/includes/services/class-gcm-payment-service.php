@@ -556,7 +556,13 @@ class GCM_Payment_Service {
 		$user = get_user_by( 'email', $payment->email );
 
 		if ( $user ) {
-			$user->add_role( 'gcm_student' );
+			GCM_Roles::assign_student_identity( $user );
+			if ( ! empty( $payment->whatsapp ) && ! get_user_meta( $user->ID, 'gcm_whatsapp', true ) ) {
+				update_user_meta( $user->ID, 'gcm_whatsapp', sanitize_text_field( $payment->whatsapp ) );
+			}
+			if ( ! empty( $payment->address ) && ! get_user_meta( $user->ID, 'gcm_address', true ) ) {
+				update_user_meta( $user->ID, 'gcm_address', sanitize_textarea_field( $payment->address ) );
+			}
 			return array(
 				'user_id' => (int) $user->ID,
 				'created' => false,
@@ -565,23 +571,31 @@ class GCM_Payment_Service {
 
 		$username = self::generate_username( $payment->email, $payment->full_name );
 		$password = GCM_Settings_Service::get_default_password();
-		$user_id  = wp_create_user( $username, $password, $payment->email );
 
-		if ( is_wp_error( $user_id ) ) {
-			return $user_id;
-		}
-
-		wp_update_user(
+		// Avoid default WP “Subscriber” identity — create then force GCM Student only.
+		$user_id = wp_insert_user(
 			array(
-				'ID'           => $user_id,
+				'user_login'   => $username,
+				'user_pass'    => $password,
+				'user_email'   => sanitize_email( $payment->email ),
 				'display_name' => sanitize_text_field( $payment->full_name ),
 				'first_name'   => sanitize_text_field( $payment->full_name ),
 				'role'         => 'gcm_student',
 			)
 		);
+
+		if ( is_wp_error( $user_id ) ) {
+			return $user_id;
+		}
+
+		GCM_Roles::assign_student_identity( $user_id );
 		wp_set_password( $password, $user_id );
 		update_user_meta( $user_id, 'gcm_whatsapp', sanitize_text_field( $payment->whatsapp ) );
 		update_user_meta( $user_id, 'gcm_address', sanitize_textarea_field( $payment->address ) );
+
+		// Suppress default WP new-user emails; GCM sends its own credentials message.
+		remove_action( 'register_new_user', 'wp_send_new_user_notifications' );
+		remove_action( 'edit_user_created_user', 'wp_send_new_user_notifications' );
 
 		return array(
 			'user_id' => (int) $user_id,

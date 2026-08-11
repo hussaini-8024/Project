@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="wrap gcm-admin-wrap">
 	<h1><?php esc_html_e( 'Students', 'giga-class-market' ); ?></h1>
-	<p><?php esc_html_e( 'Each student and the courses attached to their account (added automatically when a payment is approved).', 'giga-class-market' ); ?></p>
+	<p><?php esc_html_e( 'GCM students are separate from normal WordPress users. They only use the student dashboard/login — manage them here (not under Users → All Users).', 'giga-class-market' ); ?></p>
 	<form method="get" class="gcm-admin-search">
 		<input type="hidden" name="page" value="gcm-students" />
 		<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Search students', 'giga-class-market' ); ?>" />
