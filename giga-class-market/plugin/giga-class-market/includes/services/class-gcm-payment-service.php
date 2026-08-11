@@ -98,7 +98,24 @@ class GCM_Payment_Service {
 		}
 
 		if ( 'approved' === $payment->status ) {
-			return (int) $payment->user_id;
+			// Still ensure the course is attached to the student account.
+			$user_id = absint( $payment->user_id );
+			if ( ! $user_id ) {
+				$user_result = self::create_or_get_student_user( $payment );
+				if ( is_wp_error( $user_result ) ) {
+					return $user_result;
+				}
+				$user_id = (int) $user_result['user_id'];
+				$wpdb->update(
+					$wpdb->prefix . 'gcm_payments',
+					array( 'user_id' => $user_id ),
+					array( 'id' => absint( $payment->id ) ),
+					array( '%d' ),
+					array( '%d' )
+				);
+			}
+			GCM_Enrollment_Service::enroll( $user_id, $payment->course_id, $payment->id, 'active' );
+			return $user_id;
 		}
 
 		$user_result = self::create_or_get_student_user( $payment );
@@ -225,6 +242,153 @@ class GCM_Payment_Service {
 	}
 
 	/**
+	 * Payments for a student (by user id and/or email).
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $email Email fallback.
+	 * @return array
+	 */
+	public static function get_for_user( $user_id, $email = '' ) {
+		global $wpdb;
+
+		$user_id = absint( $user_id );
+		$email   = sanitize_email( $email );
+		$where   = array();
+		$params  = array();
+
+		if ( $user_id ) {
+			$where[]  = 'user_id = %d';
+			$params[] = $user_id;
+		}
+		if ( $email ) {
+			$where[]  = 'email = %s';
+			$params[] = $email;
+		}
+		if ( empty( $where ) ) {
+			return array();
+		}
+
+		$sql = 'SELECT * FROM ' . $wpdb->prefix . 'gcm_payments WHERE (' . implode( ' OR ', $where ) . ') ORDER BY submitted_at DESC';
+		return $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+	}
+
+	/**
+	 * Latest payment row for a user+course pair.
+	 *
+	 * @param int    $user_id User ID.
+	 * @param int    $course_id Course ID.
+	 * @param string $email Email fallback.
+	 * @return object|null
+	 */
+	public static function get_latest_for_user_course( $user_id, $course_id, $email = '' ) {
+		global $wpdb;
+
+		$user_id   = absint( $user_id );
+		$course_id = absint( $course_id );
+		$email     = sanitize_email( $email );
+		if ( ! $course_id ) {
+			return null;
+		}
+
+		if ( $user_id && $email ) {
+			return $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}gcm_payments
+					WHERE course_id = %d AND (user_id = %d OR email = %s)
+					ORDER BY submitted_at DESC LIMIT 1",
+					$course_id,
+					$user_id,
+					$email
+				)
+			);
+		}
+		if ( $user_id ) {
+			return $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}gcm_payments
+					WHERE course_id = %d AND user_id = %d
+					ORDER BY submitted_at DESC LIMIT 1",
+					$course_id,
+					$user_id
+				)
+			);
+		}
+		if ( $email ) {
+			return $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}gcm_payments
+					WHERE course_id = %d AND email = %s
+					ORDER BY submitted_at DESC LIMIT 1",
+					$course_id,
+					$email
+				)
+			);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Access/purchase status for a course for the current student.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $course_id Course ID.
+	 * @return array{state:string,label:string,url:string,progress:int}
+	 */
+	public static function get_course_access_state( $user_id, $course_id ) {
+		$user_id   = absint( $user_id );
+		$course_id = absint( $course_id );
+		$user      = $user_id ? get_userdata( $user_id ) : null;
+		$email     = $user ? $user->user_email : '';
+
+		$enrollment = $user_id ? GCM_Enrollment_Service::get_enrollment( $user_id, $course_id ) : null;
+		if ( $enrollment && in_array( $enrollment->status, array( 'active', 'completed' ), true ) ) {
+			$progress = GCM_Progress_Service::get_percentage( $user_id, $course_id );
+			return array(
+				'state'    => 'enrolled',
+				'label'    => 'completed' === $enrollment->status
+					? __( 'Completed', 'giga-class-market' )
+					: __( 'Enrolled', 'giga-class-market' ),
+				'url'      => add_query_arg( 'course_id', $course_id, home_url( '/course-learn/' ) ),
+				'progress' => (int) $progress,
+			);
+		}
+		if ( $enrollment && 'frozen' === $enrollment->status ) {
+			return array(
+				'state'    => 'frozen',
+				'label'    => __( 'Access frozen', 'giga-class-market' ),
+				'url'      => home_url( '/student-dashboard/' ),
+				'progress' => (int) GCM_Progress_Service::get_percentage( $user_id, $course_id ),
+			);
+		}
+
+		$payment = self::get_latest_for_user_course( $user_id, $course_id, $email );
+		if ( $payment && 'under_review' === $payment->status ) {
+			return array(
+				'state'    => 'under_review',
+				'label'    => __( 'Payment under review', 'giga-class-market' ),
+				'url'      => home_url( '/student-dashboard/' ),
+				'progress' => 0,
+			);
+		}
+		if ( $payment && 'rejected' === $payment->status ) {
+			return array(
+				'state'    => 'rejected',
+				'label'    => __( 'Payment rejected — buy again', 'giga-class-market' ),
+				'url'      => add_query_arg( 'course_id', $course_id, home_url( '/payment/' ) ),
+				'progress' => 0,
+			);
+		}
+
+		return array(
+			'state'    => 'buy',
+			'label'    => __( 'Buy Course', 'giga-class-market' ),
+			'url'      => add_query_arg( 'course_id', $course_id, home_url( '/payment/' ) ),
+			'progress' => 0,
+		);
+	}
+
+	/**
 	 * Get payments by status.
 	 *
 	 * @param string $status Status.
@@ -277,10 +441,17 @@ class GCM_Payment_Service {
 			return $result;
 		}
 
+		$user_id = (int) $result['user_id'];
+
+		// Attach the paid course immediately when creating/linking the account.
+		if ( ! empty( $payment->course_id ) ) {
+			GCM_Enrollment_Service::enroll( $user_id, $payment->course_id, $payment->id, 'active' );
+		}
+
 		$wpdb->update(
 			$wpdb->prefix . 'gcm_payments',
 			array(
-				'user_id'         => (int) $result['user_id'],
+				'user_id'         => $user_id,
 				'account_created' => ! empty( $result['created'] ) ? 1 : 0,
 			),
 			array( 'id' => absint( $payment_id ) ),
@@ -288,8 +459,8 @@ class GCM_Payment_Service {
 			array( '%d' )
 		);
 
-		GCM_Audit_Service::log( 'student_account_created', 'payment', $payment_id, array( 'user_id' => (int) $result['user_id'] ) );
-		return (int) $result['user_id'];
+		GCM_Audit_Service::log( 'student_account_created', 'payment', $payment_id, array( 'user_id' => $user_id, 'course_id' => absint( $payment->course_id ) ) );
+		return $user_id;
 	}
 
 	/**
@@ -311,6 +482,14 @@ class GCM_Payment_Service {
 		$password = GCM_Settings_Service::get_default_password();
 		if ( $reset_password ) {
 			wp_set_password( $password, $user->ID );
+		}
+
+		// If credentials are tied to a payment, ensure that course is enrolled.
+		if ( $payment_id ) {
+			$payment = self::get( $payment_id );
+			if ( $payment && ! empty( $payment->course_id ) ) {
+				GCM_Enrollment_Service::enroll( $user->ID, $payment->course_id, $payment->id, 'active' );
+			}
 		}
 
 		$login_url = GCM_Frontend::get_student_login_url( home_url( '/student-dashboard/' ) );

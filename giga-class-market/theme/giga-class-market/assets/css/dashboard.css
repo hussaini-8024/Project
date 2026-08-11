@@ -102,6 +102,57 @@
 	background: rgba(255,255,255,0.16);
 }
 
+.gcm-status {
+	display: inline-block;
+	padding: 0.15rem 0.55rem;
+	border-radius: 999px;
+	font-size: 0.78rem;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	background: color-mix(in srgb, var(--gcm-navy) 10%, white);
+	color: var(--gcm-navy);
+}
+
+.gcm-status-active,
+.gcm-status-completed {
+	background: color-mix(in srgb, #067647 14%, white);
+	color: #05603a;
+}
+
+.gcm-status-frozen {
+	background: color-mix(in srgb, #b42318 14%, white);
+	color: #8a1c14;
+}
+
+.gcm-status-under_review {
+	background: color-mix(in srgb, var(--gcm-gold) 22%, white);
+	color: #7a5a10;
+}
+
+.gcm-dashboard-pending-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.gcm-dashboard-pending-list li {
+	display: grid;
+	gap: 0.25rem;
+	padding: 0.85rem 1rem;
+	border: 1px solid var(--gcm-border);
+	border-radius: var(--gcm-radius);
+	background: color-mix(in srgb, var(--gcm-gold) 8%, white);
+}
+
+.gcm-course-card__status {
+	margin: 0.35rem 0 0.75rem;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--gcm-muted);
+}
+
 @media (max-width: 1024px) {
 	.gcm-dashboard__grid {
 		grid-template-columns: 1fr;

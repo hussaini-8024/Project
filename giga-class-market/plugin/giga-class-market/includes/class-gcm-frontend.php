@@ -481,6 +481,33 @@ class GCM_Frontend {
 	}
 
 	/**
+	 * Hide the WordPress admin bar for students (keep it for admins).
+	 *
+	 * @param bool $show Whether to show the admin bar.
+	 * @return bool
+	 */
+	public function maybe_hide_admin_bar( $show ) {
+		if ( ! is_user_logged_in() ) {
+			return $show;
+		}
+
+		if ( current_user_can( 'manage_options' ) ) {
+			return $show;
+		}
+
+		$user = wp_get_current_user();
+		if ( $user && in_array( 'gcm_student', (array) $user->roles, true ) ) {
+			return false;
+		}
+
+		if ( current_user_can( 'gcm_access_dashboard' ) && ! current_user_can( 'edit_posts' ) ) {
+			return false;
+		}
+
+		return $show;
+	}
+
+	/**
 	 * Render course cards.
 	 *
 	 * @param array $courses Courses.

@@ -158,3 +158,40 @@
 	font-weight: 600;
 	margin-bottom: 6px;
 }
+
+.gcm-student-courses {
+	margin: 0;
+	padding-left: 1.1rem;
+}
+
+.gcm-student-courses li {
+	margin-bottom: 0.45rem;
+}
+
+.gcm-status {
+	display: inline-block;
+	margin-left: 0.35rem;
+	padding: 0.1rem 0.45rem;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	background: #eef2f7;
+	color: #0b1f3a;
+}
+
+.gcm-status-active,
+.gcm-status-completed {
+	background: #e8f6ee;
+	color: #0f6b3c;
+}
+
+.gcm-status-frozen,
+.gcm-status-rejected {
+	background: #fdecec;
+	color: #9b1c1c;
+}
+
+.gcm-status-under_review {
+	background: #fff6df;
+	color: #8a6d1d;
+}

@@ -20,6 +20,22 @@ get_header();
 	$curriculum = class_exists( 'GCM_Curriculum_Service' ) ? GCM_Curriculum_Service::get_course_curriculum( $course_id ) : array();
 	$learn_items = array_filter( array_map( 'trim', preg_split( "/\r\n|\n|\r/", (string) $learn ) ) );
 	$req_items   = array_filter( array_map( 'trim', preg_split( "/\r\n|\n|\r/", (string) $require ) ) );
+	$cta_label   = __( 'Buy Now', 'giga-class-market' );
+	$cta_url     = gcm_course_purchase_url( $course_id );
+	$cta_note    = __( 'Access after payment verification', 'giga-class-market' );
+	if ( is_user_logged_in() && class_exists( 'GCM_Payment_Service' ) ) {
+		$state     = GCM_Payment_Service::get_course_access_state( get_current_user_id(), $course_id );
+		$cta_url   = $state['url'];
+		$cta_label = $state['label'];
+		if ( 'enrolled' === $state['state'] ) {
+			$cta_label = (int) $state['progress'] > 0 ? __( 'Continue Learning', 'giga-class-market' ) : __( 'Start Learning', 'giga-class-market' );
+			$cta_note  = sprintf( __( 'You are enrolled · %d%% complete', 'giga-class-market' ), (int) $state['progress'] );
+		} elseif ( 'under_review' === $state['state'] ) {
+			$cta_note = __( 'Your payment for this course is under review.', 'giga-class-market' );
+		} elseif ( 'frozen' === $state['state'] ) {
+			$cta_note = __( 'Access is currently frozen. Contact support.', 'giga-class-market' );
+		}
+	}
 	?>
 	<article <?php post_class( 'gcm-course-single' ); ?>>
 		<section class="gcm-course-hero">
@@ -40,11 +56,11 @@ get_header();
 					<?php endif; ?>
 					<div class="gcm-course-buy-card__body">
 						<strong><?php echo esc_html( gcm_format_price( $price ) ); ?></strong>
-						<a class="gcm-button gcm-button--gold gcm-button--full" href="<?php echo esc_url( gcm_course_purchase_url( $course_id ) ); ?>"><?php esc_html_e( 'Buy Now', 'giga-class-market' ); ?></a>
+						<a class="gcm-button gcm-button--gold gcm-button--full" href="<?php echo esc_url( $cta_url ); ?>"><?php echo esc_html( $cta_label ); ?></a>
 						<ul>
 							<li><?php echo esc_html( sprintf( __( 'Instructor: %s', 'giga-class-market' ), $instructor ) ); ?></li>
 							<li><?php echo esc_html( sprintf( __( 'Duration: %s', 'giga-class-market' ), $duration ) ); ?></li>
-							<li><?php esc_html_e( 'Access after payment verification', 'giga-class-market' ); ?></li>
+							<li><?php echo esc_html( $cta_note ); ?></li>
 						</ul>
 					</div>
 				</aside>

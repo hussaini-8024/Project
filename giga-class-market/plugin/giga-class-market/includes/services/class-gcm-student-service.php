@@ -133,9 +133,33 @@ class GCM_Student_Service {
 		foreach ( $users as $user ) {
 			$user->whatsapp = get_user_meta( $user->ID, 'gcm_whatsapp', true );
 			$user->address  = get_user_meta( $user->ID, 'gcm_address', true );
+			$user->courses  = self::get_student_course_summaries( (int) $user->ID );
 		}
 
 		return $users;
+	}
+
+	/**
+	 * Course titles, status, and progress for one student (admin panel).
+	 *
+	 * @param int $user_id User ID.
+	 * @return array
+	 */
+	public static function get_student_course_summaries( $user_id ) {
+		$courses   = GCM_Enrollment_Service::get_student_courses( absint( $user_id ) );
+		$summaries = array();
+
+		foreach ( $courses as $course ) {
+			$enrollment = isset( $course['enrollment'] ) ? $course['enrollment'] : null;
+			$summaries[] = array(
+				'id'       => (int) $course['id'],
+				'title'    => (string) $course['title'],
+				'status'   => $enrollment ? sanitize_key( $enrollment->status ) : 'active',
+				'progress' => isset( $course['progress'] ) ? (int) $course['progress'] : 0,
+			);
+		}
+
+		return $summaries;
 	}
 
 	/**
