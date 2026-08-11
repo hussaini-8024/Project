@@ -24,8 +24,8 @@ class GCM_Settings_Service {
 			'company'  => array(
 				'name'      => 'Giga Class Market',
 				'email'     => get_option( 'admin_email' ),
-				'phone'     => '',
-				'whatsapp'  => '',
+				'phone'     => '+966509136037',
+				'whatsapp'  => '+966509136037',
 				'address'   => '',
 				'hours'     => 'Mon–Sat, 9:00 AM – 6:00 PM',
 				'facebook'  => '',
@@ -106,7 +106,9 @@ class GCM_Settings_Service {
 	 */
 	public static function update_settings( $settings ) {
 		$settings = self::sanitize_settings( $settings );
-		return update_option( 'gcm_settings', self::recursive_parse_args( $settings, self::defaults() ), false );
+		$settings = self::recursive_parse_args( $settings, self::defaults() );
+		update_option( 'gcm_settings', $settings, false );
+		return true;
 	}
 
 	/**

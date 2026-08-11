@@ -20,6 +20,8 @@ class GCM_Core {
 	 * @return void
 	 */
 	public function run() {
+		GCM_Installer::maybe_upgrade();
+
 		$roles      = new GCM_Roles();
 		$post_types = new GCM_Post_Types();
 		$ajax       = new GCM_Ajax();

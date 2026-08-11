@@ -88,8 +88,9 @@ class GCM_Notification_Service {
 	public static function queue_whatsapp( $user_id, $type, $title, $message, $recipient_number = '', $meta = array() ) {
 		global $wpdb;
 
-		$url   = self::build_whatsapp_url( $recipient_number, $message );
-		$table = $wpdb->prefix . 'gcm_notifications';
+		$url    = self::build_whatsapp_url( $recipient_number, $message );
+		$sender = GCM_Settings_Service::get_company_whatsapp();
+		$table  = $wpdb->prefix . 'gcm_notifications';
 
 		$wpdb->insert(
 			$table,
@@ -100,7 +101,16 @@ class GCM_Notification_Service {
 				'message'    => wp_kses_post( $message ),
 				'channel'    => 'whatsapp',
 				'status'     => $url ? 'ready' : 'failed',
-				'meta'       => wp_json_encode( array_merge( $meta, array( 'url' => $url ) ) ),
+				'meta'       => wp_json_encode(
+					array_merge(
+						$meta,
+						array(
+							'url'             => $url,
+							'sender_whatsapp' => $sender,
+							'to_whatsapp'     => $recipient_number,
+						)
+					)
+				),
 				'created_at' => current_time( 'mysql' ),
 			),
 			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )

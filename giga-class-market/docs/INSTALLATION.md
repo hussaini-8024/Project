@@ -118,9 +118,10 @@ Role: `gcm_student`
 
 ## WhatsApp delivery
 
-- Configure **Company WhatsApp Number** in settings.
-- **Send Account Details** queues email and opens a prefilled `wa.me` fallback for the admin when API credentials are not configured.
-- Architecture stores notification rows for future official WhatsApp Business API integration.
+- Configure **Business WhatsApp number (sender)** in **Giga Class Market → Settings → WhatsApp** (example: `+966509136037`).
+- This number is shown on the site contact/WhatsApp buttons and is recorded as the sender for student messages.
+- **Send Account Details** queues email and opens a prefilled `wa.me` chat **to the student**. Open that chat while logged into WhatsApp as the business number above.
+- Architecture stores notification rows (including sender/to numbers) for future official WhatsApp Business API integration.
 
 ---
 

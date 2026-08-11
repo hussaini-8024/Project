@@ -53,8 +53,8 @@ $methods = $settings['payment']['methods'];
 
 		<section id="gcm-tab-whatsapp" class="gcm-tab">
 			<h2><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?></h2>
-			<label><?php esc_html_e( 'Company WhatsApp number', 'giga-class-market' ); ?><input type="text" name="settings[company][whatsapp]" value="<?php echo esc_attr( $settings['company']['whatsapp'] ); ?>" /></label>
-			<p><?php esc_html_e( 'Used for WhatsApp fallback URLs. Include country code for best results.', 'giga-class-market' ); ?></p>
+			<label><?php esc_html_e( 'Business WhatsApp number (sender)', 'giga-class-market' ); ?><input type="text" name="settings[company][whatsapp]" value="<?php echo esc_attr( $settings['company']['whatsapp'] ); ?>" placeholder="+966509136037" /></label>
+			<p><?php esc_html_e( 'This is the Giga Class Market number used to message students (credentials, updates, and site WhatsApp buttons). Include country code, e.g. +966509136037. When sending account details, open the chat from this WhatsApp account.', 'giga-class-market' ); ?></p>
 		</section>
 
 		<section id="gcm-tab-website" class="gcm-tab">
