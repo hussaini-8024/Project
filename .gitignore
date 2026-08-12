@@ -12,3 +12,20 @@ inventory/hosts.yml
 .DS_Store
 Thumbs.db
 *.swp
+
+# Flutter
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/*.iml
+**/.idea/
+apps/**/android/.gradle/
+apps/**/android/local.properties
+apps/**/android/app/debug/
+apps/**/android/app/profile/
+apps/**/android/app/release/
+*.apk
+*.aab
+*.ipa
