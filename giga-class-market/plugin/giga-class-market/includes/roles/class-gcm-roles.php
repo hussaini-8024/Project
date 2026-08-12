@@ -82,7 +82,7 @@ class GCM_Roles {
 	}
 
 	/**
-	 * Assign GCM Student as the only role (unless the account is a site admin).
+	 * Assign GCM Student as the only role (never alter site administrators).
 	 *
 	 * @param int|WP_User $user User ID or object.
 	 * @return WP_User|false
@@ -95,12 +95,15 @@ class GCM_Roles {
 			return false;
 		}
 
-		if ( user_can( $user, 'manage_options' ) ) {
-			$user->add_role( 'gcm_student' );
-		} else {
-			$user->set_role( 'gcm_student' );
+		// Administrators must stay normal WP admins — do not attach student role.
+		if ( user_can( $user, 'manage_options' ) || in_array( 'administrator', (array) $user->roles, true ) ) {
+			$user->remove_role( 'gcm_student' );
+			delete_user_meta( $user->ID, 'gcm_is_student' );
+			delete_user_meta( $user->ID, 'gcm_account_type' );
+			return $user;
 		}
 
+		$user->set_role( 'gcm_student' );
 		update_user_meta( $user->ID, 'gcm_is_student', 1 );
 		update_user_meta( $user->ID, 'gcm_account_type', 'student' );
 
@@ -128,6 +131,7 @@ class GCM_Roles {
 
 	/**
 	 * Hide GCM students from the default WordPress Users list.
+	 * Never hide administrators (even if they were wrongly given the student role).
 	 *
 	 * @param WP_User_Query $query Query.
 	 * @return void
@@ -137,23 +141,41 @@ class GCM_Roles {
 			return;
 		}
 
-		// Allow explicit role filter / GCM screens to see students.
+		// Prevent recursion when we call get_users() below.
+		static $running = false;
+		if ( $running ) {
+			return;
+		}
+
+		// Allow explicit role filter to see students.
 		$role = isset( $_REQUEST['role'] ) ? sanitize_key( wp_unslash( $_REQUEST['role'] ) ) : '';
-		if ( 'gcm_student' === $role ) {
+		if ( 'gcm_student' === $role || 'administrator' === $role ) {
 			return;
 		}
 
 		global $pagenow;
-		if ( 'users.php' !== $pagenow && 'user-edit.php' !== $pagenow && 'user-new.php' !== $pagenow ) {
-			// Also exclude from some AJAX user pickers in admin.
-			if ( ! wp_doing_ajax() ) {
-				return;
-			}
+		if ( ! in_array( $pagenow, array( 'users.php', 'user-edit.php', 'user-new.php' ), true ) && ! wp_doing_ajax() ) {
+			return;
 		}
 
-		$exclude_roles = (array) $query->get( 'role__not_in' );
-		$exclude_roles[] = 'gcm_student';
-		$query->set( 'role__not_in', array_values( array_unique( $exclude_roles ) ) );
+		$running = true;
+		// Exclude only pure students — keep anyone who is also an administrator.
+		$student_only_ids = get_users(
+			array(
+				'role'         => 'gcm_student',
+				'role__not_in' => array( 'administrator' ),
+				'fields'       => 'ID',
+				'number'       => 9999,
+			)
+		);
+		$running = false;
+
+		if ( empty( $student_only_ids ) ) {
+			return;
+		}
+
+		$exclude = array_merge( array_map( 'absint', (array) $query->get( 'exclude' ) ), array_map( 'absint', $student_only_ids ) );
+		$query->set( 'exclude', array_values( array_unique( array_filter( $exclude ) ) ) );
 	}
 
 	/**

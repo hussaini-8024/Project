@@ -259,6 +259,7 @@ class GCM_Installer {
 		}
 
 		// Normalize existing students to GCM-only identity (not Subscriber + Student).
+		// Also strip accidental gcm_student role from administrators so all admins remain visible.
 		$students = get_users(
 			array(
 				'role'   => 'gcm_student',
@@ -268,6 +269,24 @@ class GCM_Installer {
 		);
 		foreach ( $students as $student ) {
 			GCM_Roles::assign_student_identity( (int) $student->ID );
+		}
+
+		$admins = get_users(
+			array(
+				'role'   => 'administrator',
+				'fields' => array( 'ID' ),
+				'number' => 200,
+			)
+		);
+		foreach ( $admins as $admin ) {
+			$admin_user = get_userdata( (int) $admin->ID );
+			if ( $admin_user ) {
+				$admin_user->remove_role( 'gcm_student' );
+				delete_user_meta( $admin_user->ID, 'gcm_is_student' );
+				if ( 'student' === get_user_meta( $admin_user->ID, 'gcm_account_type', true ) ) {
+					delete_user_meta( $admin_user->ID, 'gcm_account_type' );
+				}
+			}
 		}
 
 		update_option( 'gcm_settings', $settings, false );
