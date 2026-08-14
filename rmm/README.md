@@ -49,6 +49,6 @@ build\build_windows.bat
 
 | Item | Default |
 |------|---------|
-| Admin login | `admin` / `ChangeMeNow!` |
+| Admin login | `admin` / `admin123` |
 | Enrollment token | `enroll-change-me` |
 | Uninstall password | `UninstallMe!` |

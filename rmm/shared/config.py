@@ -5,7 +5,7 @@ from __future__ import annotations
 DEFAULT_SERVER_HOST = "0.0.0.0"
 DEFAULT_SERVER_PORT = 8443
 DEFAULT_ADMIN_USER = "admin"
-DEFAULT_ADMIN_PASSWORD = "ChangeMeNow!"
+DEFAULT_ADMIN_PASSWORD = "admin123"
 DEFAULT_ENROLLMENT_TOKEN = "enroll-change-me"
 
 # Heartbeat / presence

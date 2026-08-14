@@ -164,12 +164,17 @@ class Database:
     def ensure_admin(self, username: str, password: str) -> None:
         with self.connect() as conn:
             row = conn.execute("SELECT id FROM admins WHERE username = ?", (username,)).fetchone()
-            if row:
-                return
             salt = secrets.token_hex(16)
+            password_hash = _hash_password(password, salt)
+            if row:
+                conn.execute(
+                    "UPDATE admins SET salt=?, password_hash=? WHERE username=?",
+                    (salt, password_hash, username),
+                )
+                return
             conn.execute(
                 "INSERT INTO admins(username, salt, password_hash, created_at) VALUES (?, ?, ?, ?)",
-                (username, salt, _hash_password(password, salt), time.time()),
+                (username, salt, password_hash, time.time()),
             )
 
     def verify_admin(self, username: str, password: str) -> int | None:
