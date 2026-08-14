@@ -12,15 +12,18 @@
 	--gcm-border: rgba(13, 59, 69, 0.1);
 	--gcm-radius: 14px;
 	--gcm-shadow: 0 12px 40px rgba(7, 38, 46, 0.08);
-	/* Premium type: editorial serif + refined geometric sans */
-	--gcm-font-ui: "Manrope", "Segoe UI", sans-serif;
-	--gcm-font-display: "Instrument Serif", "Times New Roman", serif;
+	/* First bold type system: Fraunces display + Outfit UI */
+	--gcm-font-ui: "Outfit", "Segoe UI", sans-serif;
+	--gcm-font-display: "Fraunces", Georgia, serif;
 	--gcm-fs-body: 1.0625rem;
 	--gcm-lh-body: 1.7;
 	--gcm-lh-tight: 1.12;
-	--gcm-tracking-display: -0.025em;
+	--gcm-tracking-display: -0.02em;
 	--gcm-tracking-ui: -0.01em;
 	--gcm-tracking-label: 0.14em;
+	--gcm-weight-display: 700;
+	--gcm-weight-body: 600;
+	--gcm-weight-strong: 800;
 	--gcm-header-height: 82px;
 }
 
@@ -54,7 +57,7 @@ body {
 	color: var(--gcm-text);
 	font-family: var(--gcm-font-ui);
 	font-size: var(--gcm-fs-body);
-	font-weight: 500;
+	font-weight: var(--gcm-weight-body);
 	line-height: var(--gcm-lh-body);
 	letter-spacing: var(--gcm-tracking-ui);
 	font-optical-sizing: auto;
@@ -70,7 +73,7 @@ h3,
 h4,
 .gcm-display {
 	font-family: var(--gcm-font-display);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: var(--gcm-tracking-display);
 	line-height: var(--gcm-lh-tight);
 	color: var(--gcm-navy-deep);
@@ -221,13 +224,14 @@ textarea {
 	gap: 0.15rem;
 	font-family: var(--gcm-font-display);
 	font-size: 1.28rem;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.05;
 	letter-spacing: -0.02em;
 }
 
 .gcm-brand__name {
 	font-size: 1.28rem;
+	font-weight: var(--gcm-weight-display);
 }
 
 .gcm-brand__tag {
@@ -483,7 +487,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	font-size: clamp(3.1rem, 6.6vw, 5.8rem);
 	line-height: 1.02;
 	letter-spacing: -0.03em;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 }
 
 .gcm-eyebrow {
@@ -504,7 +508,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 .gcm-error-page h1,
 .gcm-payment-card h1 {
 	font-family: var(--gcm-font-display);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: var(--gcm-lh-tight);
 	letter-spacing: var(--gcm-tracking-display);
 }
@@ -519,7 +523,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	max-width: 640px;
 	color: rgba(255,255,255,0.78);
 	font-size: clamp(1.08rem, 1.45vw, 1.28rem);
-	font-weight: 500;
+	font-weight: var(--gcm-weight-body);
 	line-height: 1.65;
 	letter-spacing: 0;
 }
@@ -582,7 +586,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	margin-top: 0.35rem;
 	font-family: var(--gcm-font-display);
 	font-size: 1.6rem;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 }
 
 .gcm-hero__controls {
@@ -678,7 +682,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	margin: 0;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(2.05rem, 3.8vw, 3.4rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: -0.025em;
 	line-height: 1.1;
 }
@@ -793,7 +797,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	margin: 0.9rem 0 0.45rem;
 	font-family: var(--gcm-font-display);
 	font-size: 1.4rem;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.2;
 	letter-spacing: -0.015em;
 }
@@ -861,7 +865,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	color: var(--gcm-navy);
 	font-family: var(--gcm-font-display);
 	font-size: 1.2rem;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	box-shadow: inset 0 0 0 1px rgba(201,162,39,0.18);
 }
 
@@ -874,7 +878,7 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	margin: 0 0 0.55rem;
 	font-family: var(--gcm-font-display);
 	font-size: 1.28rem;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: -0.015em;
 }
 
@@ -1013,7 +1017,7 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	height: 48px;
 	border-radius: 14px;
 	font-family: var(--gcm-font-display);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	font-size: 1.15rem;
 }
 
@@ -1021,7 +1025,7 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	margin: 0 0 0.7rem;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(1.4rem, 2vw, 1.8rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.18;
 	letter-spacing: -0.02em;
 }
@@ -1140,7 +1144,7 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	margin: 0 0 1rem;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(1.8rem, 3vw, 2.6rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.15;
 	letter-spacing: -0.02em;
 }
@@ -1178,7 +1182,7 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	margin: 0.35rem 0 0.75rem;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(1.95rem, 3.4vw, 2.85rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.12;
 	letter-spacing: -0.02em;
 	color: var(--gcm-navy-deep);
@@ -1237,7 +1241,7 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	margin: 0;
 	font-family: var(--gcm-font-display);
 	font-size: 1.55rem;
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: -0.015em;
 	color: var(--gcm-navy-deep);
 }
@@ -1401,7 +1405,7 @@ textarea {
 	margin-bottom: 1rem;
 	font-size: 2rem;
 	font-family: var(--gcm-font-display);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: -0.02em;
 }
 
@@ -1419,7 +1423,7 @@ textarea {
 .gcm-content h3,
 .gcm-curriculum-card h2 {
 	font-family: var(--gcm-font-display);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.15;
 	letter-spacing: -0.02em;
 }
@@ -1947,7 +1951,7 @@ textarea {
 .gcm-page-hero--verify .gcm-lead {
 	color: rgba(255,255,255,0.86);
 	max-width: 640px;
-	font-weight: 500;
+	font-weight: var(--gcm-weight-body);
 }
 
 .gcm-page-hero--verify .gcm-lead strong {
@@ -2065,7 +2069,7 @@ textarea {
 	margin: 0.55rem 0 0;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(1.55rem, 3vw, 2.1rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	color: var(--gcm-navy-deep);
 }
 
@@ -2081,7 +2085,7 @@ textarea {
 	margin: 0.2rem 0 0.9rem;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(2rem, 4.5vw, 3.1rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: -0.02em;
 	color: var(--gcm-navy-deep);
 	line-height: 1.1;
@@ -2092,7 +2096,7 @@ textarea {
 	max-width: 46ch;
 	font-family: var(--gcm-font-ui);
 	font-size: 1.02rem;
-	font-weight: 500;
+	font-weight: var(--gcm-weight-body);
 	color: var(--gcm-text);
 }
 
@@ -2107,7 +2111,7 @@ textarea {
 	max-width: 28ch;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(1.35rem, 2.6vw, 1.85rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	color: var(--gcm-navy);
 	line-height: 1.2;
 }

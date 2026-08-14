@@ -211,7 +211,7 @@ class GCM_Certificate_Service {
 			$cert->course_title
 		);
 
-		$message  = '<div style="font-family:Manrope,Arial,sans-serif;color:#0D2A2E;line-height:1.6;">';
+		$message  = '<div style="font-family:Outfit,Arial,sans-serif;color:#0D2A2E;line-height:1.6;font-weight:600;">';
 		$message .= '<p><strong>' . esc_html__( 'Congratulations!', 'giga-class-market' ) . '</strong></p>';
 		$message .= '<p>' . esc_html(
 			sprintf(

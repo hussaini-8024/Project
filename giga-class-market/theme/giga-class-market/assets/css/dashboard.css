@@ -11,7 +11,7 @@
 	margin: 0;
 	font-family: var(--gcm-font-display);
 	font-size: clamp(2.4rem, 5vw, 4.2rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	line-height: 1.08;
 	letter-spacing: -0.025em;
 }
@@ -62,7 +62,7 @@
 .gcm-dashboard-course h3 {
 	margin-top: 0;
 	font-family: var(--gcm-font-display);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 	letter-spacing: -0.015em;
 }
 
