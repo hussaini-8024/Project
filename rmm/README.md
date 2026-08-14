@@ -45,10 +45,16 @@ build\build_windows.bat
 - Closing dialogs/windows does **not** stop it
 - Remove only with: `AU-Kamra-Remote-Manager-Agent.exe --uninstall` + admin password
 
-### Defaults (change immediately)
+### Dashboard login (visitors)
+
+**Username:** `admin`  
+**Password:** `admin123`  
+
+Open `http://SERVER_IP:8443` after starting the server.
 
 | Item | Default |
 |------|---------|
-| Admin login | `admin` / `admin123` |
+| **Username** | **`admin`** |
+| **Password** | **`admin123`** |
 | Enrollment token | `enroll-change-me` |
 | Uninstall password | `UninstallMe!` |
