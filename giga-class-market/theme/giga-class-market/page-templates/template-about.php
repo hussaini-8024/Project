@@ -37,10 +37,26 @@ $about_cards = array(
 		'icon'    => '04',
 	),
 );
+
+$team_uri = trailingslashit( GCM_THEME_URI ) . 'assets/images/team/';
+$core_team = array(
+	array(
+		'name'  => __( 'Manzoor Ahmad', 'giga-class-market' ),
+		'role'  => __( 'Lecturer', 'giga-class-market' ),
+		'bio'   => __( 'An experienced lecturer focused on clear teaching, practical skills, and helping students build confidence through structured live classes.', 'giga-class-market' ),
+		'photo' => $team_uri . 'manzoor-ahmad.jpg',
+	),
+	array(
+		'name'  => __( 'Navyan Baig', 'giga-class-market' ),
+		'role'  => __( 'Web Developer', 'giga-class-market' ),
+		'bio'   => __( 'Web developer building and refining the Giga Class Market platform so students, teachers, and admins enjoy a smooth, reliable learning experience.', 'giga-class-market' ),
+		'photo' => $team_uri . 'navyan-baig.jpg',
+	),
+);
 ?>
 <section class="gcm-page-hero gcm-page-hero--about">
 	<div class="gcm-container">
-		<p class="gcm-eyebrow gcm-animate"><?php esc_html_e( 'About Giga Class Market', 'giga-class-market' ); ?></p>
+		<p class="gcm-eyebrow gcm-animate"><?php esc_html_e( 'About Us', 'giga-class-market' ); ?></p>
 		<h1 class="gcm-animate"><?php esc_html_e( 'Premium education for ambitious learners', 'giga-class-market' ); ?></h1>
 		<p class="gcm-animate"><?php esc_html_e( 'We built a modern learning marketplace that feels trustworthy, polished, and ready for real careers.', 'giga-class-market' ); ?></p>
 	</div>
@@ -58,6 +74,37 @@ $about_cards = array(
 				<p><?php echo esc_html( $card['text'] ); ?></p>
 			</article>
 		<?php endforeach; ?>
+	</div>
+</section>
+
+<section class="gcm-section gcm-section--team" aria-labelledby="gcm-core-team-heading">
+	<div class="gcm-container">
+		<header class="gcm-section__header gcm-section__header--center gcm-animate">
+			<p class="gcm-eyebrow"><?php esc_html_e( 'Our people', 'giga-class-market' ); ?></p>
+			<h2 id="gcm-core-team-heading"><?php esc_html_e( 'Meet Our Core Team', 'giga-class-market' ); ?></h2>
+			<p><?php esc_html_e( 'The educators and builders guiding Giga Class Market every day.', 'giga-class-market' ); ?></p>
+		</header>
+		<div class="gcm-team-grid">
+			<?php foreach ( $core_team as $index => $member ) : ?>
+				<article class="gcm-team-card gcm-animate" style="--gcm-delay: <?php echo esc_attr( ( $index + 1 ) * 0.1 ); ?>s">
+					<div class="gcm-team-card__photo">
+						<img
+							src="<?php echo esc_url( $member['photo'] ); ?>"
+							alt="<?php echo esc_attr( $member['name'] ); ?>"
+							width="480"
+							height="640"
+							loading="lazy"
+							decoding="async"
+						>
+					</div>
+					<div class="gcm-team-card__body">
+						<h3><?php echo esc_html( $member['name'] ); ?></h3>
+						<p class="gcm-team-card__role"><?php echo esc_html( $member['role'] ); ?></p>
+						<p class="gcm-team-card__bio"><?php echo esc_html( $member['bio'] ); ?></p>
+					</div>
+				</article>
+			<?php endforeach; ?>
+		</div>
 	</div>
 </section>
 
