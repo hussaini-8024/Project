@@ -14,7 +14,7 @@ get_template_part( 'template-parts/home/hero-slider' );
 		<div class="gcm-section__heading gcm-animate">
 			<p class="gcm-eyebrow"><?php esc_html_e( 'Top courses', 'giga-class-market' ); ?></p>
 			<h2><?php esc_html_e( 'Featured courses for serious growth', 'giga-class-market' ); ?></h2>
-			<p><?php esc_html_e( 'Curated premium courses from Giga Class Market, ranked for impact and learner momentum.', 'giga-class-market' ); ?></p>
+			<p><?php echo wp_kses( __( 'Curated <strong>premium courses</strong> from Giga Class Market, ranked for impact and <strong>learner momentum</strong>.', 'giga-class-market' ), array( 'strong' => array() ) ); ?></p>
 		</div>
 
 		<div class="gcm-course-grid gcm-course-grid--three">

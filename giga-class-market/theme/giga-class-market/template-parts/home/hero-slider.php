@@ -34,19 +34,19 @@ if ( empty( $slides ) ) {
 		array(
 			'eyebrow' => __( 'Luxury-tech learning marketplace', 'giga-class-market' ),
 			'title'   => __( 'Master premium skills with Giga Class Market', 'giga-class-market' ),
-			'text'    => __( 'Discover polished courses built for ambitious learners, creative professionals, and future-ready teams.', 'giga-class-market' ),
+			'text'    => __( 'Discover <strong>polished courses</strong> built for ambitious learners, creative professionals, and <strong>future-ready teams</strong>.', 'giga-class-market' ),
 			'image'   => '',
 		),
 		array(
 			'eyebrow' => __( 'Structured paths. Real momentum.', 'giga-class-market' ),
 			'title'   => __( 'Learn from focused courses that move careers forward', 'giga-class-market' ),
-			'text'    => __( 'Every track blends expert insight, applied projects, and elegant study experiences.', 'giga-class-market' ),
+			'text'    => __( 'Every track blends <strong>expert insight</strong>, applied projects, and elegant study experiences.', 'giga-class-market' ),
 			'image'   => '',
 		),
 		array(
 			'eyebrow' => __( 'From first lesson to certification', 'giga-class-market' ),
 			'title'   => __( 'Build confidence with a marketplace made for growth', 'giga-class-market' ),
-			'text'    => __( 'Choose your course, continue at your pace, and showcase measurable progress.', 'giga-class-market' ),
+			'text'    => __( 'Choose your course, continue at your pace, and showcase <strong>measurable progress</strong>.', 'giga-class-market' ),
 			'image'   => '',
 		),
 	);
@@ -71,7 +71,7 @@ if ( empty( $slides ) ) {
 						<?php else : ?>
 							<h2 class="gcm-hero__title"><?php echo esc_html( $slide['title'] ?? __( 'Giga Class Market', 'giga-class-market' ) ); ?></h2>
 						<?php endif; ?>
-						<p class="gcm-hero__lead"><?php echo esc_html( $slide['text'] ?? '' ); ?></p>
+						<p class="gcm-hero__lead"><?php echo wp_kses( $slide['text'] ?? '', array( 'strong' => array() ) ); ?></p>
 						<div class="gcm-hero__actions">
 							<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ); ?>"><?php esc_html_e( 'Explore Courses', 'giga-class-market' ); ?></a>
 							<a class="gcm-button gcm-button--ghost" href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Start Learning', 'giga-class-market' ); ?></a>

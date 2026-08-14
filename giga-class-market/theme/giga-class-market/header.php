@@ -61,6 +61,7 @@
 		</nav>
 
 		<div class="gcm-header__actions">
+			<a class="gcm-header-link gcm-verify-link" href="<?php echo esc_url( home_url( '/verify-certificate/' ) ); ?>"><?php esc_html_e( 'Verify Certificate', 'giga-class-market' ); ?></a>
 			<?php if ( is_user_logged_in() ) : ?>
 				<?php if ( current_user_can( 'gcm_teacher_dashboard' ) && ! current_user_can( 'manage_options' ) ) : ?>
 					<a class="gcm-header-link" href="<?php echo esc_url( home_url( '/teacher-dashboard/' ) ); ?>"><?php esc_html_e( 'Teacher Dashboard', 'giga-class-market' ); ?></a>

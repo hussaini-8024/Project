@@ -177,6 +177,23 @@
 	margin-bottom: 0.45rem;
 }
 
+.gcm-student-course-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	list-style: disc;
+}
+
+.gcm-student-course-row__info {
+	flex: 1 1 220px;
+}
+
+.gcm-generate-certificate {
+	white-space: nowrap;
+}
+
 .gcm-status {
 	display: inline-block;
 	margin-left: 0.35rem;

@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="wrap gcm-admin-wrap">
 	<h1><?php esc_html_e( 'Students', 'giga-class-market' ); ?></h1>
 	<p><?php esc_html_e( 'GCM students are separate from normal WordPress users. They only use the student dashboard/login — manage them here (not under Users → All Users).', 'giga-class-market' ); ?></p>
+	<p>
+		<a class="button button-secondary" href="<?php echo esc_url( home_url( '/verify-certificate/' ) ); ?>" target="_blank" rel="noopener">
+			<?php esc_html_e( 'Open certificate verification page', 'giga-class-market' ); ?>
+		</a>
+	</p>
 	<form method="get" class="gcm-admin-search">
 		<input type="hidden" name="page" value="gcm-students" />
 		<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Search students', 'giga-class-market' ); ?>" />
@@ -22,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<tr>
 				<th><?php esc_html_e( 'Student', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?></th>
-				<th><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></th>
+				<th><?php esc_html_e( 'Courses & certificates', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Registered', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Actions', 'giga-class-market' ); ?></th>
 			</tr>
@@ -44,10 +49,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php else : ?>
 							<ul class="gcm-student-courses">
 								<?php foreach ( $student->courses as $course ) : ?>
-									<li>
-										<strong><?php echo esc_html( $course['title'] ); ?></strong>
-										<span class="gcm-status gcm-status-<?php echo esc_attr( $course['status'] ); ?>"><?php echo esc_html( ucfirst( $course['status'] ) ); ?></span>
-										— <?php echo esc_html( sprintf( __( '%d%% complete', 'giga-class-market' ), (int) $course['progress'] ) ); ?>
+									<?php
+									$cert = class_exists( 'GCM_Certificate_Service' )
+										? GCM_Certificate_Service::get_for_enrollment( (int) $student->ID, (int) $course['id'] )
+										: null;
+									?>
+									<li class="gcm-student-course-row">
+										<div class="gcm-student-course-row__info">
+											<strong><?php echo esc_html( $course['title'] ); ?></strong>
+											<span class="gcm-status gcm-status-<?php echo esc_attr( $course['status'] ); ?>"><?php echo esc_html( ucfirst( $course['status'] ) ); ?></span>
+											— <?php echo esc_html( sprintf( __( '%d%% complete', 'giga-class-market' ), (int) $course['progress'] ) ); ?>
+											<?php if ( $cert ) : ?>
+												<br /><small><?php echo esc_html( sprintf( __( 'Certificate ID: %s', 'giga-class-market' ), $cert->certificate_code ) ); ?></small>
+											<?php endif; ?>
+										</div>
+										<button
+											type="button"
+											class="button button-primary gcm-ajax-button gcm-generate-certificate"
+											data-action="gcm_generate_certificate"
+											data-user-id="<?php echo esc_attr( $student->ID ); ?>"
+											data-course-id="<?php echo esc_attr( $course['id'] ); ?>"
+										>
+											<?php echo esc_html( $cert ? __( 'Resend Certificate', 'giga-class-market' ) : __( 'Generate Certificate', 'giga-class-market' ) ); ?>
+										</button>
 									</li>
 								<?php endforeach; ?>
 							</ul>

@@ -232,6 +232,24 @@ class GCM_Installer {
 			KEY user_id (user_id)
 		) {$charset_collate};";
 
+		$sql[] = "CREATE TABLE {$prefix}gcm_certificates (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			certificate_code VARCHAR(40) NOT NULL,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			student_name VARCHAR(191) NOT NULL,
+			course_title VARCHAR(255) NOT NULL,
+			issued_at DATETIME NOT NULL,
+			issued_by BIGINT(20) UNSIGNED NULL,
+			email_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+			meta LONGTEXT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY certificate_code (certificate_code),
+			UNIQUE KEY user_course (user_id, course_id),
+			KEY course_id (course_id),
+			KEY issued_at (issued_at)
+		) {$charset_collate};";
+
 
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );

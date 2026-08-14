@@ -58,7 +58,7 @@ $core_team = array(
 	<div class="gcm-container">
 		<p class="gcm-eyebrow gcm-animate"><?php esc_html_e( 'About Us', 'giga-class-market' ); ?></p>
 		<h1 class="gcm-animate"><?php esc_html_e( 'Premium education for ambitious learners', 'giga-class-market' ); ?></h1>
-		<p class="gcm-animate"><?php esc_html_e( 'We built a modern learning marketplace that feels trustworthy, polished, and ready for real careers.', 'giga-class-market' ); ?></p>
+		<p class="gcm-animate"><?php echo wp_kses( __( 'We built a modern learning marketplace that feels <strong>trustworthy</strong>, polished, and ready for <strong>real careers</strong>.', 'giga-class-market' ), array( 'strong' => array() ) ); ?></p>
 	</div>
 </section>
 

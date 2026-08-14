@@ -106,6 +106,11 @@ class GCM_Activator {
 				'content'  => '',
 				'template' => 'page-templates/template-terms.php',
 			),
+			'verify-certificate'   => array(
+				'title'    => __( 'Verify Certificate', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-verify-certificate.php',
+			),
 		);
 
 		foreach ( $pages as $slug => $page ) {

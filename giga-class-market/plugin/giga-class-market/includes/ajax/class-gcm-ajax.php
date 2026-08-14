@@ -60,6 +60,7 @@ class GCM_Ajax {
 			'create_teacher',
 			'set_teacher_password',
 			'assign_teacher_courses',
+			'generate_certificate',
 		);
 		foreach ( $admin_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
@@ -692,6 +693,38 @@ class GCM_Ajax {
 			array(
 				'attendance' => GCM_Attendance_Service::get_for_class( $class_id ),
 				'count'      => GCM_Attendance_Service::count_for_class( $class_id ),
+			)
+		);
+	}
+
+	/**
+	 * Admin: generate certificate for a student course and email it.
+	 *
+	 * @return void
+	 */
+	public function generate_certificate() {
+		GCM_Security::verify_ajax_nonce();
+		if ( ! current_user_can( 'gcm_manage_students' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to issue certificates.', 'giga-class-market' ) ), 403 );
+		}
+
+		$user_id   = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+		$course_id = isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0;
+		$result    = GCM_Certificate_Service::generate_and_send( $user_id, $course_id, get_current_user_id() );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %s: certificate code */
+					__( 'Certificate generated and emailed. ID: %s', 'giga-class-market' ),
+					$result->certificate_code
+				),
+				'code'    => $result->certificate_code,
+				'url'     => GCM_Certificate_Service::verify_url( $result->certificate_code ),
 			)
 		);
 	}
