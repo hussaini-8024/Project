@@ -51,6 +51,10 @@ if ( ! $current && ! empty( $lessons ) ) {
 
 $progress = class_exists( 'GCM_Progress_Service' ) ? GCM_Progress_Service::get_percentage( $user_id, $course_id ) : 0;
 $learn_base = home_url( '/course-learn/' );
+$live_class = ( $course_id && $has_access && class_exists( 'GCM_Class_Service' ) ) ? GCM_Class_Service::get_live_for_course( $course_id ) : null;
+$course_classes = ( $course_id && $has_access && class_exists( 'GCM_Class_Service' ) ) ? GCM_Class_Service::get_for_course( $course_id ) : array();
+$course_notes = ( $course_id && $has_access && class_exists( 'GCM_Notes_Service' ) ) ? GCM_Notes_Service::get_for_course( $course_id ) : array();
+$course_messages = ( $course_id && $has_access && class_exists( 'GCM_Message_Service' ) ) ? GCM_Message_Service::get_thread( $course_id, $user_id ) : array();
 
 get_header();
 ?>
@@ -63,6 +67,14 @@ get_header();
 				<span style="width: <?php echo esc_attr( min( 100, max( 0, $progress ) ) ); ?>%"></span>
 			</div>
 			<p><?php echo esc_html( sprintf( __( '%d%% complete', 'giga-class-market' ), $progress ) ); ?></p>
+
+			<?php if ( $has_access && $live_class && ! empty( $live_class->zoom_join_url ) ) : ?>
+				<div class="gcm-live-banner">
+					<strong><?php esc_html_e( 'Live class now', 'giga-class-market' ); ?></strong>
+					<p><?php echo esc_html( $live_class->title ); ?></p>
+					<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $live_class->zoom_join_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Join live class', 'giga-class-market' ); ?></a>
+				</div>
+			<?php endif; ?>
 
 			<?php if ( ! empty( $curriculum ) ) : ?>
 				<?php foreach ( $curriculum as $module ) : ?>
@@ -83,6 +95,49 @@ get_header();
 			<?php else : ?>
 				<p><?php esc_html_e( 'Curriculum will appear once modules and lessons are added by an administrator.', 'giga-class-market' ); ?></p>
 			<?php endif; ?>
+
+			<?php if ( $has_access ) : ?>
+				<div class="gcm-module-block">
+					<h3><?php esc_html_e( 'Upcoming classes', 'giga-class-market' ); ?></h3>
+					<?php if ( empty( $course_classes ) ) : ?>
+						<p><?php esc_html_e( 'No scheduled classes yet.', 'giga-class-market' ); ?></p>
+					<?php else : ?>
+						<ul class="gcm-upcoming-classes">
+							<?php foreach ( $course_classes as $class ) : ?>
+								<li>
+									<strong><?php echo esc_html( $class->title ); ?></strong>
+									<span><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $class->scheduled_at ) ); ?></span>
+									<span class="gcm-status gcm-status-<?php echo esc_attr( $class->status ); ?>"><?php echo esc_html( ucfirst( $class->status ) ); ?></span>
+									<?php if ( 'live' === $class->status && ! empty( $class->zoom_join_url ) ) : ?>
+										<a class="gcm-button gcm-button--small gcm-button--gold" href="<?php echo esc_url( $class->zoom_join_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Join', 'giga-class-market' ); ?></a>
+									<?php endif; ?>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+				</div>
+
+				<div class="gcm-module-block">
+					<h3><?php esc_html_e( 'Course notes', 'giga-class-market' ); ?></h3>
+					<?php if ( empty( $course_notes ) ) : ?>
+						<p><?php esc_html_e( 'No notes uploaded yet.', 'giga-class-market' ); ?></p>
+					<?php else : ?>
+						<ul class="gcm-notes-list">
+							<?php foreach ( $course_notes as $note ) : ?>
+								<li>
+									<strong><?php echo esc_html( $note->title ); ?></strong>
+									<?php if ( ! empty( $note->content ) ) : ?>
+										<p><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $note->content ), 24 ) ); ?></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $note->file_url ) ) : ?>
+										<a href="<?php echo esc_url( $note->file_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Download', 'giga-class-market' ); ?></a>
+									<?php endif; ?>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
 		</aside>
 
 		<div class="gcm-learn__player">
@@ -95,7 +150,7 @@ get_header();
 			<?php elseif ( ! $current ) : ?>
 				<div class="gcm-empty-state">
 					<h2><?php esc_html_e( 'No lessons available yet', 'giga-class-market' ); ?></h2>
-					<p><?php esc_html_e( 'Your instructor has not published lessons for this course.', 'giga-class-market' ); ?></p>
+					<p><?php esc_html_e( 'Your instructor has not published lessons for this course. You can still join live classes, download notes, and message your teacher when available.', 'giga-class-market' ); ?></p>
 				</div>
 			<?php else : ?>
 				<div class="gcm-video-frame">
@@ -132,6 +187,32 @@ get_header();
 							<a class="gcm-button" href="<?php echo esc_url( add_query_arg( array( 'course_id' => $course_id, 'lesson_id' => (int) $lessons[ $current_index + 1 ]->id ), $learn_base ) ); ?>"><?php esc_html_e( 'Next', 'giga-class-market' ); ?></a>
 						<?php endif; ?>
 					</nav>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( $course_id && $has_access ) : ?>
+				<div class="gcm-learn__messages gcm-dashboard-card">
+					<h2><?php esc_html_e( 'Message your teacher', 'giga-class-market' ); ?></h2>
+					<div class="gcm-message-thread">
+						<?php if ( empty( $course_messages ) ) : ?>
+							<p><?php esc_html_e( 'No messages yet. Ask a question about this course.', 'giga-class-market' ); ?></p>
+						<?php else : ?>
+							<?php foreach ( $course_messages as $msg ) : ?>
+								<div class="gcm-message <?php echo ! empty( $msg->is_mine ) ? 'is-mine' : ''; ?>">
+									<strong><?php echo esc_html( $msg->sender_name ); ?></strong>
+									<p><?php echo esc_html( $msg->message ); ?></p>
+									<small><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $msg->created_at ) ); ?></small>
+								</div>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</div>
+					<form class="gcm-ajax-form" data-action="gcm_send_course_message">
+						<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+						<input type="hidden" name="course_id" value="<?php echo esc_attr( $course_id ); ?>" />
+						<label><?php esc_html_e( 'Your message', 'giga-class-market' ); ?><textarea name="message" rows="3" required></textarea></label>
+						<button type="submit" class="gcm-button gcm-button--gold"><?php esc_html_e( 'Send', 'giga-class-market' ); ?></button>
+						<div class="gcm-form-message" aria-live="polite"></div>
+					</form>
 				</div>
 			<?php endif; ?>
 		</div>

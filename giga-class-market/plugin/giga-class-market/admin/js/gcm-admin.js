@@ -87,4 +87,25 @@
 				$message.text(message);
 			});
 	});
+
+	$(document).on('submit', '.gcm-create-teacher-form, .gcm-set-teacher-password, .gcm-assign-teacher-courses', function (event) {
+		event.preventDefault();
+		var $form = $(this);
+		var $message = $form.find('.gcm-form-message').first();
+		$message.text('Saving...');
+
+		$.post(gcmAdmin.ajaxUrl, $form.serialize())
+			.done(function (response) {
+				$message.text(response.data && response.data.message ? response.data.message : 'Done.');
+				if (response.success) {
+					window.setTimeout(function () {
+						window.location.reload();
+					}, 700);
+				}
+			})
+			.fail(function (xhr) {
+				var message = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : 'Request failed.';
+				$message.text(message);
+			});
+	});
 })(jQuery);

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.2.3' );
+define( 'GCM_THEME_VERSION', '1.3.0' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -73,7 +73,7 @@ function gcm_enqueue_assets() {
 		GCM_THEME_VERSION
 	);
 
-	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) ) {
+	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) || is_page_template( 'page-templates/template-teacher-dashboard.php' ) ) {
 		wp_enqueue_style(
 			'gcm-dashboard',
 			GCM_THEME_URI . '/assets/css/dashboard.css',
@@ -237,7 +237,7 @@ function gcm_body_classes( $classes ) {
 		$classes[] = 'gcm-dark-mode';
 	}
 
-	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) ) {
+	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) || is_page_template( 'page-templates/template-teacher-dashboard.php' ) ) {
 		$classes[] = 'gcm-student-area';
 	}
 

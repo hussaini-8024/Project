@@ -61,7 +61,9 @@
 		</nav>
 
 		<div class="gcm-header__actions">
-			<?php if ( is_user_logged_in() && ( current_user_can( 'gcm_access_dashboard' ) || current_user_can( 'manage_options' ) ) ) : ?>
+			<?php if ( is_user_logged_in() && current_user_can( 'gcm_teacher_dashboard' ) && ! current_user_can( 'manage_options' ) ) : ?>
+				<a class="gcm-login-link" href="<?php echo esc_url( home_url( '/teacher-dashboard/' ) ); ?>"><?php esc_html_e( 'Teacher Dashboard', 'giga-class-market' ); ?></a>
+			<?php elseif ( is_user_logged_in() && ( current_user_can( 'gcm_access_dashboard' ) || current_user_can( 'manage_options' ) ) ) : ?>
 				<a class="gcm-login-link" href="<?php echo esc_url( home_url( '/student-dashboard/' ) ); ?>"><?php esc_html_e( 'My Courses', 'giga-class-market' ); ?></a>
 			<?php else : ?>
 				<a class="gcm-login-link" href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Login', 'giga-class-market' ); ?></a>

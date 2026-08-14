@@ -153,6 +153,116 @@
 	color: var(--gcm-muted);
 }
 
+.gcm-teacher-class-list,
+.gcm-teacher-students,
+.gcm-notes-list,
+.gcm-upcoming-classes {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.gcm-teacher-class,
+.gcm-teacher-students li,
+.gcm-notes-list li,
+.gcm-upcoming-classes li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.9rem 1rem;
+	border: 1px solid var(--gcm-border);
+	border-radius: var(--gcm-radius);
+	background: #fff;
+}
+
+.gcm-teacher-course-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.gcm-teacher-panel {
+	margin: 1rem 0;
+	padding: 0.75rem 0;
+	border-top: 1px solid var(--gcm-border);
+}
+
+.gcm-teacher-panel summary {
+	cursor: pointer;
+	font-weight: 700;
+	margin-bottom: 0.75rem;
+}
+
+.gcm-live-banner {
+	margin: 1rem 0;
+	padding: 1rem;
+	border-radius: var(--gcm-radius);
+	background: linear-gradient(135deg, #0b1f3a, #1a3a66);
+	color: #fff;
+}
+
+.gcm-live-banner .gcm-button {
+	margin-top: 0.5rem;
+}
+
+.gcm-message-thread {
+	display: grid;
+	gap: 0.65rem;
+	max-height: 320px;
+	overflow: auto;
+	margin-bottom: 1rem;
+	padding: 0.5rem;
+	border: 1px solid var(--gcm-border);
+	border-radius: var(--gcm-radius);
+	background: color-mix(in srgb, var(--gcm-navy, #0b1f3a) 3%, white);
+}
+
+.gcm-message {
+	padding: 0.65rem 0.8rem;
+	border-radius: 10px;
+	background: #fff;
+	border: 1px solid var(--gcm-border);
+}
+
+.gcm-message.is-mine {
+	background: color-mix(in srgb, var(--gcm-gold, #d4af37) 18%, white);
+	margin-left: 1.5rem;
+}
+
+.gcm-learn__messages {
+	margin-top: 1.5rem;
+}
+
+.gcm-link-button {
+	background: none;
+	border: 0;
+	color: #8a1f1f;
+	cursor: pointer;
+	text-decoration: underline;
+	padding: 0;
+}
+
+.gcm-divider {
+	border: 0;
+	border-top: 1px solid var(--gcm-border);
+	margin: 1.25rem 0;
+}
+
+.gcm-status-live {
+	color: #0a7a3e;
+	font-weight: 700;
+}
+
+.gcm-status-scheduled {
+	color: #0b1f3a;
+	font-weight: 600;
+}
+
 @media (max-width: 1024px) {
 	.gcm-dashboard__grid {
 		grid-template-columns: 1fr;

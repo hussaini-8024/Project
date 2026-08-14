@@ -35,10 +35,59 @@
 			if (json.success && form.classList.contains('gcm-contact-form')) {
 				form.reset();
 			}
+			if (json.success && (form.classList.contains('gcm-teacher-form') || form.getAttribute('data-action') === 'gcm_send_course_message')) {
+				window.setTimeout(function () {
+					window.location.reload();
+				}, 600);
+			}
+			if (json.success && json.data && json.data.start_url && form.getAttribute('data-action') === 'gcm_start_class') {
+				window.open(json.data.start_url, '_blank', 'noopener');
+			}
 		}).catch(function () {
 			setMessage(form, 'Request failed. Please try again.', false);
 		});
 	}
+
+	document.addEventListener('click', function (event) {
+		var button = event.target.closest('.gcm-teacher-action');
+		if (!button || !window.gcmPublic) {
+			return;
+		}
+		event.preventDefault();
+		var data = new URLSearchParams();
+		data.append('action', button.getAttribute('data-action'));
+		data.append('nonce', window.gcmPublic.nonce);
+		if (button.getAttribute('data-class-id')) {
+			data.append('class_id', button.getAttribute('data-class-id'));
+		}
+		if (button.getAttribute('data-note-id')) {
+			data.append('note_id', button.getAttribute('data-note-id'));
+		}
+		button.disabled = true;
+		fetch(window.gcmPublic.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: data.toString()
+		}).then(function (response) {
+			return response.json();
+		}).then(function (json) {
+			if (json.success && json.data && json.data.start_url) {
+				window.open(json.data.start_url, '_blank', 'noopener');
+			}
+			if (json.success) {
+				window.setTimeout(function () {
+					window.location.reload();
+				}, 400);
+			} else {
+				window.alert((json.data && json.data.message) || 'Request failed.');
+				button.disabled = false;
+			}
+		}).catch(function () {
+			window.alert('Request failed.');
+			button.disabled = false;
+		});
+	});
 
 	document.addEventListener('submit', function (event) {
 		var form = event.target.closest('.gcm-ajax-form');

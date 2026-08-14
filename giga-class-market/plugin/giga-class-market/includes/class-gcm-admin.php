@@ -34,6 +34,7 @@ class GCM_Admin {
 		add_submenu_page( 'gcm-dashboard', __( 'Courses', 'giga-class-market' ), __( 'Courses', 'giga-class-market' ), 'gcm_manage_courses', 'edit.php?post_type=gcm_course' );
 		add_submenu_page( 'gcm-dashboard', __( 'Payments', 'giga-class-market' ), __( 'Payments', 'giga-class-market' ), 'gcm_manage_payments', 'gcm-payments', array( $this, 'render_payments' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Students', 'giga-class-market' ), __( 'Students', 'giga-class-market' ), 'gcm_manage_students', 'gcm-students', array( $this, 'render_students' ) );
+		add_submenu_page( 'gcm-dashboard', __( 'Teachers', 'giga-class-market' ), __( 'Teachers', 'giga-class-market' ), 'gcm_manage_teachers', 'gcm-teachers', array( $this, 'render_teachers' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Contact Messages', 'giga-class-market' ), __( 'Contact Messages', 'giga-class-market' ), 'gcm_manage_contacts', 'gcm-contacts', array( $this, 'render_contacts' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Testimonials', 'giga-class-market' ), __( 'Testimonials', 'giga-class-market' ), 'gcm_manage_testimonials', 'edit.php?post_type=gcm_testimonial' );
 		add_submenu_page( 'gcm-dashboard', __( 'Hero Slides', 'giga-class-market' ), __( 'Hero Slides', 'giga-class-market' ), 'gcm_manage_settings', 'edit.php?post_type=gcm_slide' );
@@ -95,6 +96,20 @@ class GCM_Admin {
 		$search   = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$students = GCM_Student_Service::get_students_list( array( 'search' => $search, 'limit' => 100 ) );
 		$this->view( 'students', array( 'students' => $students, 'search' => $search ) );
+	}
+
+	/**
+	 * Render teachers.
+	 *
+	 * @return void
+	 */
+	public function render_teachers() {
+		if ( ! current_user_can( 'gcm_manage_teachers' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to manage teachers.', 'giga-class-market' ) );
+		}
+		$search   = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		$teachers = GCM_Teacher_Service::get_teachers_list( array( 'search' => $search, 'number' => 100 ) );
+		$this->view( 'teachers', array( 'teachers' => $teachers, 'search' => $search ) );
 	}
 
 	/**

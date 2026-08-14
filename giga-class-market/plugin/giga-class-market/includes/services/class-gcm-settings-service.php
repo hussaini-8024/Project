@@ -70,6 +70,11 @@ class GCM_Settings_Service {
 				'default_password' => 'Student@giga',
 				'max_upload_mb'    => 5,
 			),
+			'zoom'     => array(
+				'account_id'    => '',
+				'client_id'     => '',
+				'client_secret' => '',
+			),
 		);
 	}
 
@@ -245,6 +250,12 @@ class GCM_Settings_Service {
 		if ( isset( $settings['security'] ) && is_array( $settings['security'] ) ) {
 			$clean['security']['default_password'] = sanitize_text_field( $settings['security']['default_password'] ?? 'Student@giga' );
 			$clean['security']['max_upload_mb']    = max( 1, absint( $settings['security']['max_upload_mb'] ?? 5 ) );
+		}
+
+		if ( isset( $settings['zoom'] ) && is_array( $settings['zoom'] ) ) {
+			$clean['zoom']['account_id']    = sanitize_text_field( $settings['zoom']['account_id'] ?? '' );
+			$clean['zoom']['client_id']     = sanitize_text_field( $settings['zoom']['client_id'] ?? '' );
+			$clean['zoom']['client_secret'] = sanitize_text_field( $settings['zoom']['client_secret'] ?? '' );
 		}
 
 		return $clean;

@@ -198,11 +198,14 @@ class GCM_Frontend {
 	 */
 	public function login_form_shortcode() {
 		if ( is_user_logged_in() ) {
+			if ( current_user_can( 'gcm_teacher_dashboard' ) && ! current_user_can( 'manage_options' ) ) {
+				return '<p><a class="gcm-button" href="' . esc_url( home_url( '/teacher-dashboard/' ) ) . '">' . esc_html__( 'Go to teacher dashboard', 'giga-class-market' ) . '</a></p>';
+			}
 			return '<p><a class="gcm-button" href="' . esc_url( home_url( '/student-dashboard/' ) ) . '">' . esc_html__( 'Go to dashboard', 'giga-class-market' ) . '</a></p>';
 		}
 
 		$url = self::get_student_login_url( home_url( '/student-dashboard/' ) );
-		return '<p><a class="gcm-button" href="' . esc_url( $url ) . '">' . esc_html__( 'Student Login', 'giga-class-market' ) . '</a></p>';
+		return '<p><a class="gcm-button" href="' . esc_url( $url ) . '">' . esc_html__( 'Login', 'giga-class-market' ) . '</a></p>';
 	}
 
 	/**
@@ -262,6 +265,17 @@ class GCM_Frontend {
 	 * @return void
 	 */
 	public function protect_student_pages() {
+		if ( $this->is_teacher_page() ) {
+			if ( ! is_user_logged_in() ) {
+				wp_safe_redirect( add_query_arg( 'redirect_to', rawurlencode( home_url( '/teacher-dashboard/' ) ), home_url( '/login/' ) ) );
+				exit;
+			}
+			if ( ! current_user_can( 'gcm_teacher_dashboard' ) && ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have access to the teacher dashboard.', 'giga-class-market' ), esc_html__( 'Access denied', 'giga-class-market' ), array( 'response' => 403 ) );
+			}
+			return;
+		}
+
 		if ( $this->is_student_page() && ! is_user_logged_in() ) {
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/student-dashboard/';
 			$target      = home_url( wp_parse_url( $request_uri, PHP_URL_PATH ) );
@@ -331,7 +345,7 @@ class GCM_Frontend {
 	 * @return array
 	 */
 	public function noindex_student_pages( $robots ) {
-		if ( $this->is_student_page() ) {
+		if ( $this->is_student_page() || $this->is_teacher_page() ) {
 			$robots['noindex']  = true;
 			$robots['nofollow'] = true;
 		}
@@ -397,6 +411,13 @@ class GCM_Frontend {
 				return $requested;
 			}
 			return home_url( '/student-dashboard/' );
+		}
+
+		if ( in_array( 'gcm_teacher', (array) $user->roles, true ) ) {
+			if ( $requested && false === strpos( $requested, 'wp-admin' ) && false !== strpos( $requested, 'teacher' ) ) {
+				return $requested;
+			}
+			return home_url( '/teacher-dashboard/' );
 		}
 
 		return $redirect_to;
@@ -465,13 +486,18 @@ class GCM_Frontend {
 	}
 
 	/**
-	 * Redirect students away from wp-admin.
+	 * Redirect students/teachers away from wp-admin.
 	 *
 	 * @return void
 	 */
 	public function redirect_students_from_admin() {
 		if ( wp_doing_ajax() || current_user_can( 'manage_options' ) ) {
 			return;
+		}
+
+		if ( current_user_can( 'gcm_teacher_dashboard' ) ) {
+			wp_safe_redirect( home_url( '/teacher-dashboard/' ) );
+			exit;
 		}
 
 		if ( current_user_can( 'gcm_access_dashboard' ) ) {
@@ -481,7 +507,7 @@ class GCM_Frontend {
 	}
 
 	/**
-	 * Hide the WordPress admin bar for students (keep it for admins).
+	 * Hide the WordPress admin bar for students and teachers (keep it for admins).
 	 *
 	 * @param bool $show Whether to show the admin bar.
 	 * @return bool
@@ -496,11 +522,11 @@ class GCM_Frontend {
 		}
 
 		$user = wp_get_current_user();
-		if ( $user && in_array( 'gcm_student', (array) $user->roles, true ) ) {
+		if ( $user && ( in_array( 'gcm_student', (array) $user->roles, true ) || in_array( 'gcm_teacher', (array) $user->roles, true ) ) ) {
 			return false;
 		}
 
-		if ( current_user_can( 'gcm_access_dashboard' ) && ! current_user_can( 'edit_posts' ) ) {
+		if ( ( current_user_can( 'gcm_access_dashboard' ) || current_user_can( 'gcm_teacher_dashboard' ) ) && ! current_user_can( 'edit_posts' ) ) {
 			return false;
 		}
 
@@ -576,5 +602,14 @@ class GCM_Frontend {
 	 */
 	private function is_student_page() {
 		return is_page( array( 'student-dashboard', 'course-learn' ) );
+	}
+
+	/**
+	 * Teacher dashboard page.
+	 *
+	 * @return bool
+	 */
+	private function is_teacher_page() {
+		return is_page( array( 'teacher-dashboard' ) );
 	}
 }

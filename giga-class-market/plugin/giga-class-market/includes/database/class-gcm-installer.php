@@ -161,6 +161,65 @@ class GCM_Installer {
 			KEY channel (channel)
 		) {$charset_collate};";
 
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_teacher_courses (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			teacher_id BIGINT(20) UNSIGNED NOT NULL,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			assigned_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY teacher_course (teacher_id, course_id),
+			KEY course_id (course_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_classes (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			teacher_id BIGINT(20) UNSIGNED NOT NULL,
+			title VARCHAR(255) NOT NULL,
+			scheduled_at DATETIME NOT NULL,
+			status VARCHAR(30) NOT NULL DEFAULT 'scheduled',
+			zoom_meeting_id VARCHAR(100) NULL,
+			zoom_join_url TEXT NULL,
+			zoom_start_url TEXT NULL,
+			started_at DATETIME NULL,
+			ended_at DATETIME NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id),
+			KEY teacher_id (teacher_id),
+			KEY status (status),
+			KEY scheduled_at (scheduled_at)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_notes (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			teacher_id BIGINT(20) UNSIGNED NOT NULL,
+			title VARCHAR(255) NOT NULL,
+			content LONGTEXT NULL,
+			file_id BIGINT(20) UNSIGNED NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id),
+			KEY teacher_id (teacher_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_messages (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			sender_id BIGINT(20) UNSIGNED NOT NULL,
+			recipient_id BIGINT(20) UNSIGNED NULL,
+			message LONGTEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id),
+			KEY sender_id (sender_id),
+			KEY recipient_id (recipient_id),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
 		}
@@ -242,6 +301,13 @@ class GCM_Installer {
 			return;
 		}
 
+		// Ensure new tables/columns exist on every plugin version bump.
+		self::install();
+
+		if ( class_exists( 'GCM_Activator' ) ) {
+			GCM_Activator::create_pages();
+		}
+
 		$settings = get_option( 'gcm_settings', array() );
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
@@ -256,6 +322,14 @@ class GCM_Installer {
 		$settings['company']['email']    = 'Official@gigaclassmarket.com';
 		if ( empty( $settings['company']['name'] ) ) {
 			$settings['company']['name'] = 'Giga Class Market';
+		}
+
+		if ( empty( $settings['zoom'] ) || ! is_array( $settings['zoom'] ) ) {
+			$settings['zoom'] = array(
+				'account_id'    => '',
+				'client_id'     => '',
+				'client_secret' => '',
+			);
 		}
 
 		// Normalize existing students to GCM-only identity (not Subscriber + Student).

@@ -26,8 +26,22 @@ class GCM_Ajax {
 			add_action( 'wp_ajax_nopriv_gcm_' . $action, array( $this, $action ) );
 		}
 
-		$student_actions = array( 'mark_lesson_complete', 'update_profile', 'change_password' );
+		$student_actions = array( 'mark_lesson_complete', 'update_profile', 'change_password', 'send_course_message', 'get_course_messages' );
 		foreach ( $student_actions as $action ) {
+			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
+		}
+
+		$teacher_actions = array(
+			'schedule_class',
+			'start_class',
+			'end_class',
+			'upload_note',
+			'delete_note',
+			'send_teacher_message',
+			'get_teacher_messages',
+			'get_course_students',
+		);
+		foreach ( $teacher_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
 		}
 
@@ -42,6 +56,9 @@ class GCM_Ajax {
 			'save_settings',
 			'save_curriculum',
 			'toggle_featured',
+			'create_teacher',
+			'set_teacher_password',
+			'assign_teacher_courses',
 		);
 		foreach ( $admin_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
@@ -358,6 +375,275 @@ class GCM_Ajax {
 		GCM_Audit_Service::log( 'course_featured_toggled', 'course', $course_id, array( 'featured' => $featured ) );
 
 		wp_send_json_success( array( 'message' => __( 'Featured status updated.', 'giga-class-market' ) ) );
+	}
+
+	/**
+	 * Admin creates a teacher account.
+	 *
+	 * @return void
+	 */
+	public function create_teacher() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_manage_teachers' );
+
+		$result = GCM_Teacher_Service::create_teacher(
+			array(
+				'full_name'  => isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '',
+				'email'      => isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '',
+				'username'   => isset( $_POST['username'] ) ? sanitize_user( wp_unslash( $_POST['username'] ), true ) : '',
+				'password'   => isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '',
+				'whatsapp'   => isset( $_POST['whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp'] ) ) : '',
+				'course_ids' => isset( $_POST['course_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['course_ids'] ) ) : array(),
+			)
+		);
+		$this->send_service_response( $result, __( 'Teacher account created.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Admin sets teacher password.
+	 *
+	 * @return void
+	 */
+	public function set_teacher_password() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_manage_teachers' );
+
+		$result = GCM_Teacher_Service::set_password(
+			isset( $_POST['teacher_id'] ) ? absint( $_POST['teacher_id'] ) : 0,
+			isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''
+		);
+		$this->send_service_response( $result, __( 'Teacher password updated.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Admin assigns courses to a teacher.
+	 *
+	 * @return void
+	 */
+	public function assign_teacher_courses() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_manage_teachers' );
+
+		$teacher_id = isset( $_POST['teacher_id'] ) ? absint( $_POST['teacher_id'] ) : 0;
+		$course_ids = isset( $_POST['course_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['course_ids'] ) ) : array();
+		$user       = get_userdata( $teacher_id );
+		if ( ! $user || ! GCM_Roles::is_gcm_teacher_only( $user ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid teacher account.', 'giga-class-market' ) ), 400 );
+		}
+
+		GCM_Teacher_Service::set_teacher_courses( $teacher_id, $course_ids );
+		GCM_Audit_Service::log( 'teacher_courses_assigned', 'user', $teacher_id, array( 'courses' => $course_ids ) );
+		wp_send_json_success( array( 'message' => __( 'Teacher courses updated.', 'giga-class-market' ) ) );
+	}
+
+	/**
+	 * Teacher schedules a live class.
+	 *
+	 * @return void
+	 */
+	public function schedule_class() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Class_Service::schedule(
+			array(
+				'course_id'    => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'teacher_id'   => get_current_user_id(),
+				'title'        => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'scheduled_at' => isset( $_POST['scheduled_at'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_at'] ) ) : '',
+			)
+		);
+		$this->send_service_response( $result, __( 'Class scheduled.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher starts a class (creates Zoom meeting).
+	 *
+	 * @return void
+	 */
+	public function start_class() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Class_Service::start(
+			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+			get_current_user_id()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success(
+			array(
+				'message'   => __( 'Class started. Zoom link is live for students.', 'giga-class-market' ),
+				'join_url'  => $result->zoom_join_url ?? '',
+				'start_url' => $result->zoom_start_url ?? '',
+				'id'        => (int) $result->id,
+			)
+		);
+	}
+
+	/**
+	 * Teacher ends a live class.
+	 *
+	 * @return void
+	 */
+	public function end_class() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Class_Service::end(
+			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+			get_current_user_id()
+		);
+		$this->send_service_response( $result, __( 'Class ended.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher uploads course notes.
+	 *
+	 * @return void
+	 */
+	public function upload_note() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$file = isset( $_FILES['note_file'] ) ? $_FILES['note_file'] : array();
+		$result = GCM_Notes_Service::create(
+			array(
+				'course_id'  => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'teacher_id' => get_current_user_id(),
+				'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'content'    => isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '',
+			),
+			$file
+		);
+		$this->send_service_response( $result, __( 'Notes uploaded for students.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher deletes a note.
+	 *
+	 * @return void
+	 */
+	public function delete_note() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Notes_Service::delete(
+			isset( $_POST['note_id'] ) ? absint( $_POST['note_id'] ) : 0,
+			get_current_user_id()
+		);
+		$this->send_service_response( $result, __( 'Note deleted.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher lists enrolled students for a course.
+	 *
+	 * @return void
+	 */
+	public function get_course_students() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$course_id = isset( $_REQUEST['course_id'] ) ? absint( $_REQUEST['course_id'] ) : 0;
+		if ( ! GCM_Teacher_Service::teacher_can_manage_course( get_current_user_id(), $course_id ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not assigned to this course.', 'giga-class-market' ) ), 403 );
+		}
+
+		$students = GCM_Enrollment_Service::get_course_students( $course_id );
+		wp_send_json_success( array( 'students' => $students ) );
+	}
+
+	/**
+	 * Teacher sends a message to a student (or course broadcast if recipient empty).
+	 *
+	 * @return void
+	 */
+	public function send_teacher_message() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Message_Service::send(
+			array(
+				'course_id'    => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'sender_id'    => get_current_user_id(),
+				'recipient_id' => isset( $_POST['recipient_id'] ) ? absint( $_POST['recipient_id'] ) : 0,
+				'message'      => isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '',
+			)
+		);
+		$this->send_service_response( $result, __( 'Message sent.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher loads message thread.
+	 *
+	 * @return void
+	 */
+	public function get_teacher_messages() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$course_id = isset( $_REQUEST['course_id'] ) ? absint( $_REQUEST['course_id'] ) : 0;
+		$with_user = isset( $_REQUEST['with_user'] ) ? absint( $_REQUEST['with_user'] ) : 0;
+		$messages  = GCM_Message_Service::get_thread( $course_id, get_current_user_id(), $with_user );
+		wp_send_json_success( array( 'messages' => $messages ) );
+	}
+
+	/**
+	 * Student (or teacher via shared UI) sends a course message.
+	 *
+	 * @return void
+	 */
+	public function send_course_message() {
+		GCM_Security::verify_ajax_nonce();
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			wp_send_json_error( array( 'message' => __( 'Please log in.', 'giga-class-market' ) ), 403 );
+		}
+
+		$result = GCM_Message_Service::send(
+			array(
+				'course_id'    => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'sender_id'    => $user_id,
+				'recipient_id' => isset( $_POST['recipient_id'] ) ? absint( $_POST['recipient_id'] ) : 0,
+				'message'      => isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '',
+			)
+		);
+		$this->send_service_response( $result, __( 'Message sent.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Student loads course messages.
+	 *
+	 * @return void
+	 */
+	public function get_course_messages() {
+		GCM_Security::verify_ajax_nonce();
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			wp_send_json_error( array( 'message' => __( 'Please log in.', 'giga-class-market' ) ), 403 );
+		}
+
+		$course_id = isset( $_REQUEST['course_id'] ) ? absint( $_REQUEST['course_id'] ) : 0;
+		$with_user = isset( $_REQUEST['with_user'] ) ? absint( $_REQUEST['with_user'] ) : 0;
+		$messages  = GCM_Message_Service::get_thread( $course_id, $user_id, $with_user );
+		wp_send_json_success( array( 'messages' => $messages ) );
+	}
+
+	/**
+	 * Require teacher dashboard capability or admin.
+	 *
+	 * @return void
+	 */
+	private function require_teacher_or_admin() {
+		if ( current_user_can( 'manage_options' ) || current_user_can( 'gcm_teacher_dashboard' ) ) {
+			return;
+		}
+		wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'giga-class-market' ) ), 403 );
 	}
 
 	/**

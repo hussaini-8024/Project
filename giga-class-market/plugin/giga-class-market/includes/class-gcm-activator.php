@@ -38,7 +38,7 @@ class GCM_Activator {
 	 *
 	 * @return void
 	 */
-	private static function create_pages() {
+	public static function create_pages() {
 		$pages = array(
 			'home'                 => array(
 				'title'    => __( 'Home', 'giga-class-market' ),
@@ -70,6 +70,11 @@ class GCM_Activator {
 				'title'    => __( 'Student Dashboard', 'giga-class-market' ),
 				'content'  => '',
 				'template' => 'page-templates/template-student-dashboard.php',
+			),
+			'teacher-dashboard'    => array(
+				'title'    => __( 'Teacher Dashboard', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-teacher-dashboard.php',
 			),
 			'course-learn'         => array(
 				'title'    => __( 'Course Learn', 'giga-class-market' ),

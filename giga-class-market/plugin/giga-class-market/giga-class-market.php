@@ -3,7 +3,7 @@
  * Plugin Name: Giga Class Market
  * Plugin URI:  https://gigaclassmarket.com/
  * Description: Core course marketplace, enrollment, payment verification, student dashboard, and administration plugin for Giga Class Market.
- * Version:     1.0.7
+ * Version:     1.1.0
  * Author:      Giga Class Market
  * Text Domain: giga-class-market
  * Domain Path: /languages
@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_VERSION', '1.0.7' );
+define( 'GCM_VERSION', '1.1.0' );
 define( 'GCM_PLUGIN_FILE', __FILE__ );
 define( 'GCM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GCM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'GCM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-define( 'GCM_DB_VERSION', '1.0.0' );
+define( 'GCM_DB_VERSION', '1.1.0' );
 
 /**
  * Autoload plugin classes.
@@ -55,6 +55,21 @@ spl_autoload_register( 'gcm_autoload' );
 
 register_activation_hook( __FILE__, array( 'GCM_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'GCM_Deactivator', 'deactivate' ) );
+
+/**
+ * Read a settings section or nested key.
+ *
+ * @param string $section Section key (e.g. zoom, company).
+ * @param mixed  $default Default when missing.
+ * @return mixed
+ */
+function gcm_get_setting( $section, $default = array() ) {
+	$settings = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_settings() : get_option( 'gcm_settings', array() );
+	if ( ! is_array( $settings ) ) {
+		return $default;
+	}
+	return isset( $settings[ $section ] ) ? $settings[ $section ] : $default;
+}
 
 /**
  * Boot the plugin.

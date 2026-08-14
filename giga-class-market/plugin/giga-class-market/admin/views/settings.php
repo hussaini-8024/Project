@@ -22,6 +22,7 @@ $methods = $settings['payment']['methods'];
 			<a href="#gcm-tab-whatsapp"><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-website"><?php esc_html_e( 'Website', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-course"><?php esc_html_e( 'Course', 'giga-class-market' ); ?></a>
+			<a href="#gcm-tab-zoom"><?php esc_html_e( 'Zoom', 'giga-class-market' ); ?></a>
 		</nav>
 
 		<section id="gcm-tab-company" class="gcm-tab active">
@@ -72,6 +73,14 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Default rating', 'giga-class-market' ); ?><input type="number" step="0.1" min="0" max="5" name="settings[course][default_rating]" value="<?php echo esc_attr( $settings['course']['default_rating'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Default student password', 'giga-class-market' ); ?><input type="text" name="settings[security][default_password]" value="<?php echo esc_attr( $settings['security']['default_password'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Max upload size (MB)', 'giga-class-market' ); ?><input type="number" min="1" name="settings[security][max_upload_mb]" value="<?php echo esc_attr( $settings['security']['max_upload_mb'] ); ?>" /></label>
+		</section>
+
+		<section id="gcm-tab-zoom" class="gcm-tab">
+			<h2><?php esc_html_e( 'Zoom (Server-to-Server OAuth)', 'giga-class-market' ); ?></h2>
+			<p><?php esc_html_e( 'When a teacher starts a class, GCM creates a Zoom meeting and shows the join link on the student course screen. Leave blank to use a temporary placeholder link until Zoom is configured.', 'giga-class-market' ); ?></p>
+			<label><?php esc_html_e( 'Account ID', 'giga-class-market' ); ?><input type="text" name="settings[zoom][account_id]" value="<?php echo esc_attr( $settings['zoom']['account_id'] ?? '' ); ?>" autocomplete="off" /></label>
+			<label><?php esc_html_e( 'Client ID', 'giga-class-market' ); ?><input type="text" name="settings[zoom][client_id]" value="<?php echo esc_attr( $settings['zoom']['client_id'] ?? '' ); ?>" autocomplete="off" /></label>
+			<label><?php esc_html_e( 'Client Secret', 'giga-class-market' ); ?><input type="password" name="settings[zoom][client_secret]" value="<?php echo esc_attr( $settings['zoom']['client_secret'] ?? '' ); ?>" autocomplete="new-password" /></label>
 		</section>
 
 		<p>

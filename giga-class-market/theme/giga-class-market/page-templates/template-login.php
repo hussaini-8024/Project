@@ -11,6 +11,8 @@ if ( is_user_logged_in() ) {
 	$user = wp_get_current_user();
 	if ( user_can( $user, 'manage_options' ) ) {
 		wp_safe_redirect( admin_url() );
+	} elseif ( in_array( 'gcm_teacher', (array) $user->roles, true ) ) {
+		wp_safe_redirect( home_url( '/teacher-dashboard/' ) );
 	} else {
 		wp_safe_redirect( home_url( '/student-dashboard/' ) );
 	}
@@ -66,10 +68,14 @@ if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['gcm_login
 
 			$user = wp_signon( $creds, is_ssl() );
 			if ( is_wp_error( $user ) ) {
-				$error = __( 'Invalid login details. Please check your student credentials and try again.', 'giga-class-market' );
+				$error = __( 'Invalid login details. Please check your credentials and try again.', 'giga-class-market' );
 			} else {
 				if ( user_can( $user, 'manage_options' ) ) {
 					$target = admin_url();
+				} elseif ( in_array( 'gcm_teacher', (array) $user->roles, true ) ) {
+					$target = ( $redirect_to && false !== strpos( $redirect_to, 'teacher' ) )
+						? $redirect_to
+						: home_url( '/teacher-dashboard/' );
 				} elseif ( in_array( 'gcm_student', (array) $user->roles, true ) ) {
 					$target = $redirect_to ? $redirect_to : home_url( '/student-dashboard/' );
 				} else {
@@ -87,9 +93,9 @@ get_header();
 <section class="gcm-auth-page">
 	<div class="gcm-container gcm-auth-page__grid">
 		<div class="gcm-auth-page__copy gcm-animate">
-			<p class="gcm-eyebrow"><?php esc_html_e( 'Student access', 'giga-class-market' ); ?></p>
+			<p class="gcm-eyebrow"><?php esc_html_e( 'Student & teacher access', 'giga-class-market' ); ?></p>
 			<h1><?php esc_html_e( 'Continue your premium learning path', 'giga-class-market' ); ?></h1>
-			<p><?php esc_html_e( 'Sign in with the student credentials sent to your email or WhatsApp. You will land on your student dashboard — not the WordPress admin.', 'giga-class-market' ); ?></p>
+			<p><?php esc_html_e( 'Sign in with the credentials provided by Giga Class Market. Students land on their dashboard; teachers land on the teacher dashboard. Same login page for everyone.', 'giga-class-market' ); ?></p>
 		</div>
 
 		<?php if ( 'lostpassword' === $action ) : ?>

@@ -158,6 +158,42 @@ class GCM_Enrollment_Service {
 	}
 
 	/**
+	 * Enrolled students for a course (teacher view).
+	 *
+	 * @param int $course_id Course ID.
+	 * @return array
+	 */
+	public static function get_course_students( $course_id ) {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT e.*, u.display_name, u.user_email, u.user_login
+				FROM {$wpdb->prefix}gcm_enrollments e
+				INNER JOIN {$wpdb->users} u ON u.ID = e.user_id
+				WHERE e.course_id = %d AND e.status IN ('active','completed')
+				ORDER BY e.enrolled_at DESC",
+				absint( $course_id )
+			)
+		);
+
+		$list = array();
+		foreach ( (array) $rows as $row ) {
+			$list[] = (object) array(
+				'user_id'      => (int) $row->user_id,
+				'display_name' => $row->display_name,
+				'user_email'   => $row->user_email,
+				'user_login'   => $row->user_login,
+				'status'       => $row->status,
+				'enrolled_at'  => $row->enrolled_at,
+				'whatsapp'     => get_user_meta( (int) $row->user_id, 'gcm_whatsapp', true ),
+				'progress'     => GCM_Progress_Service::get_percentage( (int) $row->user_id, absint( $course_id ) ),
+			);
+		}
+		return $list;
+	}
+
+	/**
 	 * Update enrollment status.
 	 *
 	 * @param int    $user_id User ID.
