@@ -1,14 +1,14 @@
-# Ansible
-*.retry
-.ansible/
-inventory/hosts.yml
-
-# Secrets
-*.vault
-.vault_pass
-.env
-
-# OS / editor
-.DS_Store
-Thumbs.db
-*.swp
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/dist/
+build/work/
+*.spec.bak
+rmm/data/
+rmm/bin/
+rmm/build/gen-*/
+.pytest_cache/
+.mypy_cache/
+*.log
