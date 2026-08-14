@@ -1660,8 +1660,14 @@ textarea {
 	.gcm-ceo-grid,
 	.gcm-ceo-panel,
 	.gcm-contact-grid,
-	.gcm-auth-page__grid {
+	.gcm-auth-page__grid,
+	.gcm-team-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.gcm-team-grid {
+		max-width: 320px;
+		margin-inline: auto;
 	}
 
 	.gcm-hero__visual {
