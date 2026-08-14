@@ -358,8 +358,8 @@ class GCM_Certificate_Service {
 							class="gcm-certificate__logo"
 							src="<?php echo esc_url( $logo ); ?>"
 							alt="<?php echo esc_attr( $brand ); ?>"
-							width="72"
-							height="72"
+							width="58"
+							height="58"
 						>
 						<div class="gcm-certificate__brand-block">
 							<p class="gcm-certificate__brand"><?php echo esc_html( $brand ); ?></p>

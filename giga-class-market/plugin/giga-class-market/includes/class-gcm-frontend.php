@@ -198,10 +198,16 @@ class GCM_Frontend {
 	 */
 	public function login_form_shortcode() {
 		if ( is_user_logged_in() ) {
-			if ( current_user_can( 'gcm_teacher_dashboard' ) && ! current_user_can( 'manage_options' ) ) {
+			if ( current_user_can( 'manage_options' ) ) {
+				return '<p><a class="gcm-button" href="' . esc_url( admin_url() ) . '">' . esc_html__( 'Go to admin', 'giga-class-market' ) . '</a></p>';
+			}
+			if ( current_user_can( 'gcm_teacher_dashboard' ) ) {
 				return '<p><a class="gcm-button" href="' . esc_url( home_url( '/teacher-dashboard/' ) ) . '">' . esc_html__( 'Go to teacher dashboard', 'giga-class-market' ) . '</a></p>';
 			}
-			return '<p><a class="gcm-button" href="' . esc_url( home_url( '/student-dashboard/' ) ) . '">' . esc_html__( 'Go to dashboard', 'giga-class-market' ) . '</a></p>';
+			if ( current_user_can( 'gcm_access_dashboard' ) ) {
+				return '<p><a class="gcm-button" href="' . esc_url( home_url( '/student-dashboard/' ) ) . '">' . esc_html__( 'Go to dashboard', 'giga-class-market' ) . '</a></p>';
+			}
+			return '<p><a class="gcm-button" href="' . esc_url( home_url( '/' ) ) . '">' . esc_html__( 'Go to home', 'giga-class-market' ) . '</a></p>';
 		}
 
 		$url = self::get_student_login_url( home_url( '/student-dashboard/' ) );
