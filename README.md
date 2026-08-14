@@ -200,3 +200,37 @@ Each scheduled run installs Office on all hosts in the inventory that do not alr
 - **GitHub project:** https://github.com/hussaini-8024/Project.git
 - **Playbook:** `playbooks/install-office2016.yml`
 - **AWX project script:** `scripts/add-awx-office2016-project.sh`
+
+---
+
+## Flutter app development
+
+This repo also includes Flutter tooling so you can build mobile/web apps.
+
+### Already installed in this cloud environment
+
+- **Flutter** 3.44.9 (stable) at `~/development/flutter`
+- **Android SDK** at `~/Android/Sdk` (platforms 34–36, build-tools, NDK)
+- **JDK 17** for Android builds
+- Sample app: `apps/hello_flutter` (Android APK + web builds verified)
+
+```bash
+source ~/.bashrc   # or open a new terminal
+flutter doctor
+cd apps/hello_flutter
+flutter run -d chrome          # web
+flutter build apk              # Android APK
+```
+
+### Install on your own Linux laptop
+
+```bash
+bash scripts/install-flutter-linux.sh
+source ~/.bashrc
+flutter doctor
+```
+
+### Install on Windows laptop
+
+See `scripts/install-flutter-windows.md` (Android Studio + Flutter SDK).
+

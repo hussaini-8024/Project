@@ -1,0 +1,5 @@
+{
+  "name": "flutter-app-dev",
+  "install": "bash scripts/install-flutter-linux.sh",
+  "terminals": []
+}
