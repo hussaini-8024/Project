@@ -77,6 +77,30 @@ $core_team = array(
 	</div>
 </section>
 
+<section class="gcm-section gcm-section--surface">
+	<div class="gcm-container gcm-ceo-panel gcm-animate">
+		<div class="gcm-ceo-panel__photo">
+			<?php
+			$ceo_photo = gcm_setting( 'gcm_ceo_photo' );
+			if ( $ceo_photo ) :
+				?>
+				<img src="<?php echo esc_url( $ceo_photo ); ?>" alt="<?php echo esc_attr( gcm_setting( 'gcm_ceo_name', __( 'CEO of Giga Class Market', 'giga-class-market' ) ) ); ?>">
+			<?php else : ?>
+				<div class="gcm-ceo-placeholder" aria-hidden="true">GCM</div>
+			<?php endif; ?>
+		</div>
+		<div class="gcm-ceo-panel__message">
+			<p class="gcm-eyebrow"><?php esc_html_e( 'CEO Message', 'giga-class-market' ); ?></p>
+			<h2><?php echo esc_html( gcm_setting( 'gcm_ceo_title', __( 'Learning should feel as premium as the future it creates.', 'giga-class-market' ) ) ); ?></h2>
+			<p><?php echo esc_html( gcm_setting( 'gcm_ceo_message', __( 'We built Giga Class Market for students who want clarity, elegant study experiences, and real skill progress. Our promise is simple: every course journey should help you move forward with confidence.', 'giga-class-market' ) ) ); ?></p>
+			<div class="gcm-ceo-panel__identity">
+				<strong><?php echo esc_html( gcm_setting( 'gcm_ceo_name', __( 'Qasim Hussaini', 'giga-class-market' ) ) ); ?></strong>
+				<span><?php echo esc_html( gcm_setting( 'gcm_ceo_designation', __( 'CEO, Giga Class Market', 'giga-class-market' ) ) ); ?></span>
+			</div>
+		</div>
+	</div>
+</section>
+
 <section class="gcm-section gcm-section--team" aria-labelledby="gcm-core-team-heading">
 	<div class="gcm-container">
 		<header class="gcm-section__header gcm-section__header--center gcm-animate">
@@ -104,30 +128,6 @@ $core_team = array(
 					</div>
 				</article>
 			<?php endforeach; ?>
-		</div>
-	</div>
-</section>
-
-<section class="gcm-section gcm-section--surface">
-	<div class="gcm-container gcm-ceo-panel gcm-animate">
-		<div class="gcm-ceo-panel__photo">
-			<?php
-			$ceo_photo = gcm_setting( 'gcm_ceo_photo' );
-			if ( $ceo_photo ) :
-				?>
-				<img src="<?php echo esc_url( $ceo_photo ); ?>" alt="<?php echo esc_attr( gcm_setting( 'gcm_ceo_name', __( 'CEO of Giga Class Market', 'giga-class-market' ) ) ); ?>">
-			<?php else : ?>
-				<div class="gcm-ceo-placeholder" aria-hidden="true">GCM</div>
-			<?php endif; ?>
-		</div>
-		<div class="gcm-ceo-panel__message">
-			<p class="gcm-eyebrow"><?php esc_html_e( 'CEO Message', 'giga-class-market' ); ?></p>
-			<h2><?php echo esc_html( gcm_setting( 'gcm_ceo_title', __( 'Learning should feel as premium as the future it creates.', 'giga-class-market' ) ) ); ?></h2>
-			<p><?php echo esc_html( gcm_setting( 'gcm_ceo_message', __( 'We built Giga Class Market for students who want clarity, elegant study experiences, and real skill progress. Our promise is simple: every course journey should help you move forward with confidence.', 'giga-class-market' ) ) ); ?></p>
-			<div class="gcm-ceo-panel__identity">
-				<strong><?php echo esc_html( gcm_setting( 'gcm_ceo_name', __( 'Qasim Hussaini', 'giga-class-market' ) ) ); ?></strong>
-				<span><?php echo esc_html( gcm_setting( 'gcm_ceo_designation', __( 'CEO, Giga Class Market', 'giga-class-market' ) ) ); ?></span>
-			</div>
 		</div>
 	</div>
 </section>
