@@ -210,6 +210,20 @@
 	margin-top: 0.5rem;
 }
 
+.gcm-live-banner__time,
+.gcm-live-banner__joined,
+.gcm-joined-at {
+	display: block;
+	margin-top: 0.35rem;
+	font-size: 0.92rem;
+	opacity: 0.92;
+}
+
+.gcm-joined-at {
+	color: var(--gcm-muted);
+	opacity: 1;
+}
+
 .gcm-message-thread {
 	display: grid;
 	gap: 0.65rem;

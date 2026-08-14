@@ -64,6 +64,8 @@ class GCM_Attendance_Service {
 			)
 		);
 
+		$joined_at = $existing ? $existing->joined_at : current_time( 'mysql' );
+
 		if ( ! $existing ) {
 			$wpdb->insert(
 				$wpdb->prefix . 'gcm_attendance',
@@ -71,18 +73,45 @@ class GCM_Attendance_Service {
 					'class_id'  => $class_id,
 					'course_id' => (int) $class->course_id,
 					'user_id'   => $user_id,
-					'joined_at' => current_time( 'mysql' ),
+					'joined_at' => $joined_at,
 				),
 				array( '%d', '%d', '%d', '%s' )
 			);
 		}
 
 		return (object) array(
-			'class_id'  => $class_id,
-			'join_url'  => $class->zoom_join_url,
-			'start_url' => ! empty( $class->zoom_start_url ) ? $class->zoom_start_url : $class->zoom_join_url,
-			'recorded'  => true,
+			'class_id'   => $class_id,
+			'join_url'   => $class->zoom_join_url,
+			'start_url'  => ! empty( $class->zoom_start_url ) ? $class->zoom_start_url : $class->zoom_join_url,
+			'joined_at'  => $joined_at,
+			'recorded'   => true,
 		);
+	}
+
+	/**
+	 * Exact join timestamp for a user in a class (or null).
+	 *
+	 * @param int $class_id Class ID.
+	 * @param int $user_id User ID.
+	 * @return string|null MySQL datetime.
+	 */
+	public static function get_joined_at( $class_id, $user_id = 0 ) {
+		global $wpdb;
+
+		$user_id = $user_id ? absint( $user_id ) : get_current_user_id();
+		if ( ! $user_id || ! $class_id ) {
+			return null;
+		}
+
+		$joined = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT joined_at FROM {$wpdb->prefix}gcm_attendance WHERE class_id = %d AND user_id = %d LIMIT 1",
+				absint( $class_id ),
+				$user_id
+			)
+		);
+
+		return $joined ? (string) $joined : null;
 	}
 
 	/**

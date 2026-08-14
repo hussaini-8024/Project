@@ -507,6 +507,33 @@ class GCM_Frontend {
 	}
 
 	/**
+	 * Force session-only auth cookies for students and teachers.
+	 * Closing the browser ends the login; they must sign in again.
+	 *
+	 * Re-issues cookies with remember=false so the browser stores a session cookie
+	 * (even if "Remember me" was checked elsewhere).
+	 *
+	 * @param string  $user_login Username.
+	 * @param WP_User $user User object.
+	 * @return void
+	 */
+	public function force_session_login_cookie( $user_login, $user ) {
+		unset( $user_login );
+		if ( ! ( $user instanceof WP_User ) ) {
+			return;
+		}
+
+		$roles = (array) $user->roles;
+		if ( ! in_array( 'gcm_student', $roles, true ) && ! in_array( 'gcm_teacher', $roles, true ) ) {
+			return;
+		}
+
+		// Avoid recursion if wp_set_auth_cookie fires wp_login again (it does not).
+		wp_clear_auth_cookie();
+		wp_set_auth_cookie( (int) $user->ID, false, is_ssl() );
+	}
+
+	/**
 	 * Hide the WordPress admin bar for students and teachers (keep it for admins).
 	 *
 	 * @param bool $show Whether to show the admin bar.

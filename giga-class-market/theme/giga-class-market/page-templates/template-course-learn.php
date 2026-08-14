@@ -27,6 +27,9 @@ $course_classes = ( $course_id && $has_access && class_exists( 'GCM_Class_Servic
 $course_notes   = ( $course_id && $has_access && class_exists( 'GCM_Notes_Service' ) ) ? GCM_Notes_Service::get_for_course( $course_id ) : array();
 $course_messages = ( $course_id && $has_access && class_exists( 'GCM_Message_Service' ) ) ? GCM_Message_Service::get_thread( $course_id, $user_id ) : array();
 $teacher        = ( $course_id && class_exists( 'GCM_Teacher_Service' ) ) ? GCM_Teacher_Service::get_teacher_for_course( $course_id ) : null;
+$my_joined_at   = ( $live_class && class_exists( 'GCM_Attendance_Service' ) )
+	? GCM_Attendance_Service::get_joined_at( (int) $live_class->id, $user_id )
+	: null;
 
 get_header();
 ?>
@@ -55,11 +58,37 @@ get_header();
 				<section class="gcm-live-banner gcm-live-banner--hero">
 					<strong><?php esc_html_e( 'Class is live now', 'giga-class-market' ); ?></strong>
 					<p><?php echo esc_html( $live_class->title ); ?></p>
+					<?php if ( ! empty( $live_class->scheduled_at ) ) : ?>
+						<p class="gcm-live-banner__time">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: exact class start datetime */
+									__( 'Scheduled start: %s', 'giga-class-market' ),
+									function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $live_class->scheduled_at ) : $live_class->scheduled_at
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
+					<?php if ( $my_joined_at ) : ?>
+						<p class="gcm-live-banner__joined">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: exact join datetime */
+									__( 'You joined at %s', 'giga-class-market' ),
+									function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $my_joined_at ) : $my_joined_at
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
 					<button
 						type="button"
 						class="gcm-button gcm-button--gold gcm-join-live"
 						data-class-id="<?php echo esc_attr( $live_class->id ); ?>"
-					><?php esc_html_e( 'Join live class', 'giga-class-market' ); ?></button>
+					><?php echo esc_html( $my_joined_at ? __( 'Rejoin live class', 'giga-class-market' ) : __( 'Join live class', 'giga-class-market' ) ); ?></button>
 				</section>
 			<?php endif; ?>
 
@@ -75,15 +104,46 @@ get_header();
 									<div>
 										<strong><?php echo esc_html( $class->title ); ?></strong>
 										<span>
-											<?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $class->scheduled_at ) ); ?>
+											<?php
+											echo esc_html(
+												function_exists( 'gcm_format_exact_datetime' )
+													? gcm_format_exact_datetime( $class->scheduled_at )
+													: mysql2date( get_option( 'date_format' ) . ' H:i:s', $class->scheduled_at )
+											);
+											?>
 											<?php if ( ! empty( $class->scheduled_end ) ) : ?>
-												– <?php echo esc_html( mysql2date( get_option( 'time_format' ), $class->scheduled_end ) ); ?>
+												–
+												<?php
+												echo esc_html(
+													function_exists( 'gcm_format_exact_datetime' )
+														? gcm_format_exact_datetime( $class->scheduled_end )
+														: mysql2date( get_option( 'date_format' ) . ' H:i:s', $class->scheduled_end )
+												);
+												?>
 											<?php endif; ?>
 										</span>
+										<?php
+										$class_joined = class_exists( 'GCM_Attendance_Service' )
+											? GCM_Attendance_Service::get_joined_at( (int) $class->id, $user_id )
+											: null;
+										?>
+										<?php if ( $class_joined ) : ?>
+											<span class="gcm-joined-at">
+												<?php
+												echo esc_html(
+													sprintf(
+														/* translators: %s: exact join datetime */
+														__( 'Joined at %s', 'giga-class-market' ),
+														function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $class_joined ) : $class_joined
+													)
+												);
+												?>
+											</span>
+										<?php endif; ?>
 										<span class="gcm-status gcm-status-<?php echo esc_attr( $class->status ); ?>"><?php echo esc_html( ucfirst( $class->status ) ); ?></span>
 									</div>
 									<?php if ( 'live' === $class->status && ! empty( $class->zoom_join_url ) ) : ?>
-										<button type="button" class="gcm-button gcm-button--small gcm-button--gold gcm-join-live" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Join', 'giga-class-market' ); ?></button>
+										<button type="button" class="gcm-button gcm-button--small gcm-button--gold gcm-join-live" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php echo esc_html( $class_joined ? __( 'Rejoin', 'giga-class-market' ) : __( 'Join', 'giga-class-market' ) ); ?></button>
 									<?php endif; ?>
 								</li>
 							<?php endforeach; ?>

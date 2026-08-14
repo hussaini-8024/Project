@@ -47,15 +47,15 @@ if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['gcm_login
 	} else {
 		$login_value = isset( $_POST['log'] ) ? sanitize_text_field( wp_unslash( $_POST['log'] ) ) : '';
 		$password    = isset( $_POST['pwd'] ) ? (string) wp_unslash( $_POST['pwd'] ) : '';
-		$remember    = ! empty( $_POST['rememberme'] );
 
 		if ( '' === $login_value || '' === $password ) {
 			$error = __( 'Please enter your email/username and password.', 'giga-class-market' );
 		} else {
+			// Session cookie only — closing the browser logs the user out.
 			$creds = array(
 				'user_login'    => $login_value,
 				'user_password' => $password,
-				'remember'      => $remember,
+				'remember'      => false,
 			);
 
 			// Allow email login.
@@ -129,10 +129,7 @@ get_header();
 					<span><?php esc_html_e( 'Password', 'giga-class-market' ); ?></span>
 					<input type="password" name="pwd" required autocomplete="current-password">
 				</label>
-				<label class="gcm-checkbox">
-					<input type="checkbox" name="rememberme" value="forever">
-					<span><?php esc_html_e( 'Remember me', 'giga-class-market' ); ?></span>
-				</label>
+				<p class="gcm-auth-hint"><?php esc_html_e( 'For security, closing your browser signs you out. You will need to log in again next time.', 'giga-class-market' ); ?></p>
 				<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>">
 				<button class="gcm-button gcm-button--gold gcm-button--full" type="submit"><?php esc_html_e( 'Login', 'giga-class-market' ); ?></button>
 				<a class="gcm-auth-card__link" href="<?php echo esc_url( add_query_arg( 'action', 'lostpassword', home_url( '/login/' ) ) ); ?>"><?php esc_html_e( 'Forgot password?', 'giga-class-market' ); ?></a>

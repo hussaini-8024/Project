@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.5.1' );
+define( 'GCM_THEME_VERSION', '1.5.2' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -473,6 +473,25 @@ function gcm_open_graph_meta() {
 	<?php
 }
 add_action( 'wp_head', 'gcm_open_graph_meta', 5 );
+
+/**
+ * Format a MySQL datetime with exact date and time (including seconds).
+ *
+ * @param string $mysql_datetime MySQL datetime string.
+ * @return string
+ */
+function gcm_format_exact_datetime( $mysql_datetime ) {
+	if ( empty( $mysql_datetime ) ) {
+		return '';
+	}
+
+	$date_format = get_option( 'date_format' );
+	if ( ! is_string( $date_format ) || '' === $date_format ) {
+		$date_format = 'F j, Y';
+	}
+
+	return (string) mysql2date( $date_format . ' H:i:s', $mysql_datetime );
+}
 
 /**
  * Safe service method call.

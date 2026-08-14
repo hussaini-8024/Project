@@ -658,10 +658,14 @@ class GCM_Ajax {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
 		}
 
+		$joined_at = ! empty( $result->joined_at ) ? (string) $result->joined_at : '';
+
 		wp_send_json_success(
 			array(
-				'message'  => __( 'Opening live class…', 'giga-class-market' ),
-				'join_url' => $result->join_url,
+				'message'           => __( 'Opening live class…', 'giga-class-market' ),
+				'join_url'          => $result->join_url,
+				'joined_at'         => $joined_at,
+				'joined_at_display' => $joined_at ? mysql2date( get_option( 'date_format' ) . ' H:i:s', $joined_at ) : '',
 			)
 		);
 	}

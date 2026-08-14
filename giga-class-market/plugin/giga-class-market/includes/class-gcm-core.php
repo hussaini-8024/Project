@@ -41,6 +41,7 @@ class GCM_Core {
 		add_action( 'login_init', array( $frontend, 'redirect_wp_login_to_branded' ) );
 		add_action( 'admin_init', array( $frontend, 'redirect_students_from_admin' ) );
 		add_filter( 'show_admin_bar', array( $frontend, 'maybe_hide_admin_bar' ) );
+		add_action( 'wp_login', array( $frontend, 'force_session_login_cookie' ), 20, 2 );
 
 		// Force branded From address (replaces wordpress@domain default).
 		add_filter( 'wp_mail_from', array( 'GCM_Notification_Service', 'filter_mail_from' ) );

@@ -123,9 +123,9 @@ get_header();
 									<div>
 										<strong><?php echo esc_html( $class->title ); ?></strong>
 										<p>
-											<?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $class->scheduled_at ) ); ?>
+											<?php echo esc_html( gcm_format_exact_datetime( $class->scheduled_at ) ); ?>
 											<?php if ( ! empty( $class->scheduled_end ) ) : ?>
-												– <?php echo esc_html( mysql2date( get_option( 'time_format' ), $class->scheduled_end ) ); ?>
+												– <?php echo esc_html( gcm_format_exact_datetime( $class->scheduled_end ) ); ?>
 											<?php endif; ?>
 											· <span class="gcm-status gcm-status-<?php echo esc_attr( $class->status ); ?>"><?php echo esc_html( ucfirst( $class->status ) ); ?></span>
 											<?php if ( 'live' === $class->status || 'ended' === $class->status ) : ?>
@@ -154,7 +154,7 @@ get_header();
 													<?php foreach ( $roster as $row ) : ?>
 														<li>
 															<?php echo esc_html( $row->display_name ); ?>
-															<small><?php echo esc_html( mysql2date( get_option( 'time_format' ), $row->joined_at ) ); ?></small>
+															<small><?php echo esc_html( function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $row->joined_at ) : mysql2date( get_option( 'date_format' ) . ' H:i:s', $row->joined_at ) ); ?></small>
 														</li>
 													<?php endforeach; ?>
 												</ul>
