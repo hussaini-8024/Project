@@ -1,0 +1,9 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.0.0
+python-multipart>=0.0.9
+requests>=2.31.0
+websocket-client>=1.7.0
+mss>=9.0.1
+Pillow>=10.0.0
+pyinstaller>=6.0.0

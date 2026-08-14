@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AU-Kamra IT Experts Remote Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #07101c;
+      --bg: #0a1524;
+      --panel: rgba(16, 28, 46, 0.78);
+      --panel-solid: #101c2e;
+      --panel-2: #162338;
+      --border: rgba(120, 160, 200, 0.16);
+      --border-strong: rgba(120, 180, 210, 0.28);
+      --text: #edf4fb;
+      --muted: #8fa6bd;
+      --accent: #2ec4a6;
+      --accent-2: #3aa0ff;
+      --accent-warm: #f0b429;
+      --danger: #ff5d6c;
+      --warn: #f59e0b;
+      --live: #34d399;
+      --dead: #fb7185;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: "Manrope", sans-serif;
+      --display: "Sora", sans-serif;
+      --mono: "JetBrains Mono", monospace;
+      --nav-w: 272px;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    /* Atmospheric background */
+    .bg-fx {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(900px 500px at 8% -5%, rgba(46, 196, 166, 0.18), transparent 55%),
+        radial-gradient(800px 480px at 95% 0%, rgba(58, 160, 255, 0.14), transparent 50%),
+        radial-gradient(700px 400px at 70% 100%, rgba(240, 180, 41, 0.08), transparent 45%),
+        linear-gradient(165deg, #07101c 0%, #0b1730 45%, #0a1524 100%);
+    }
+    .bg-fx::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+      animation: gridDrift 28s linear infinite;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.45;
+      animation: floatOrb 14s var(--ease) infinite alternate;
+    }
+    .orb-a { width: 280px; height: 280px; background: #2ec4a6; top: 12%; left: -60px; }
+    .orb-b { width: 320px; height: 320px; background: #3aa0ff; right: -80px; bottom: 10%; animation-delay: -4s; }
+
+    @keyframes gridDrift {
+      from { transform: translateY(0); }
+      to { transform: translateY(48px); }
+    }
+    @keyframes floatOrb {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to { transform: translate3d(30px, -24px, 0) scale(1.08); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.35); }
+      50% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+    }
+    @keyframes shimmer {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    @keyframes slideInTab {
+      from { opacity: 0; transform: translateX(12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .hidden { display: none !important; }
+
+    /* ——— Login ——— */
+    #login-view {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      animation: fadeIn 0.6s var(--ease);
+    }
+    .login-shell {
+      width: min(980px, 100%);
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr;
+      background: var(--panel);
+      border: 1px solid var(--border-strong);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      animation: fadeUp 0.7s var(--ease);
+    }
+    .login-hero {
+      position: relative;
+      padding: 48px 40px;
+      background:
+        linear-gradient(145deg, rgba(46, 196, 166, 0.16), transparent 50%),
+        linear-gradient(205deg, rgba(58, 160, 255, 0.12), transparent 55%),
+        #0d1a2d;
+      overflow: hidden;
+    }
+    .login-hero::after {
+      content: "";
+      position: absolute;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      right: -40px; bottom: -40px;
+      background: radial-gradient(circle, rgba(46,196,166,0.35), transparent 70%);
+      animation: floatOrb 10s ease-in-out infinite alternate;
+    }
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .brand-mark .logo {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #041018;
+      box-shadow: 0 10px 30px rgba(46, 196, 166, 0.35);
+    }
+    .login-hero h1 {
+      font-family: var(--display);
+      font-size: clamp(1.8rem, 3vw, 2.35rem);
+      line-height: 1.15;
+      margin: 0 0 12px;
+      letter-spacing: -0.03em;
+    }
+    .login-hero h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-warm));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shimmer 6s linear infinite;
+    }
+    .login-hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 34ch;
+      line-height: 1.55;
+    }
+    .hero-pills {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 28px;
+    }
+    .hero-pills span {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.03);
+      color: #c9dbea;
+    }
+    .login-form {
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .login-form h2 {
+      font-family: var(--display);
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+    }
+    .login-form .lead {
+      color: var(--muted);
+      margin: 0 0 28px;
+      font-size: 0.95rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 7px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    input, select, textarea, button { font: inherit; color: var(--text); }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(8, 16, 28, 0.65);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(46, 196, 166, 0.55);
+      box-shadow: 0 0 0 4px rgba(46, 196, 166, 0.12);
+    }
+    button {
+      background: linear-gradient(135deg, #2ec4a6, #249f88);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: transform 0.18s var(--ease), filter 0.18s, box-shadow 0.18s;
+      box-shadow: 0 8px 24px rgba(46, 196, 166, 0.22);
+    }
+    button:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button.secondary {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    button.danger {
+      background: linear-gradient(135deg, #ff5d6c, #e04858);
+      box-shadow: 0 8px 20px rgba(255, 93, 108, 0.2);
+    }
+    button.warn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2);
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    #login-err { color: var(--danger); min-height: 1.2em; margin: 10px 0 0; font-size: 0.9rem; }
+
+    /* ——— App shell ——— */
+    #app {
+      display: grid;
+      grid-template-columns: var(--nav-w) 1fr;
+      min-height: 100vh;
+      animation: fadeIn 0.45s var(--ease);
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 22px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: linear-gradient(180deg, rgba(10, 20, 36, 0.96), rgba(8, 16, 28, 0.92));
+      border-right: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      overflow: auto;
+    }
+    .brand {
+      padding: 8px 10px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .brand .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand .logo {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-family: var(--display);
+      font-weight: 800;
+      color: #041018;
+      flex-shrink: 0;
+      animation: pulseGlow 3.5s ease-in-out infinite;
+    }
+    .brand .name {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 1.02rem;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+    .brand .name small {
+      display: block;
+      font-family: var(--font);
+      font-weight: 500;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+    .nav-section {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6d8499;
+      padding: 12px 12px 6px;
+    }
+    .nav-btn {
+      position: relative;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-weight: 600;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: none;
+      width: 100%;
+    }
+    .nav-btn svg {
+      width: 18px; height: 18px;
+      opacity: 0.75;
+      flex-shrink: 0;
+    }
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-color: transparent;
+      transform: none;
+      filter: none;
+    }
+    .nav-btn.active {
+      background: linear-gradient(90deg, rgba(46, 196, 166, 0.16), rgba(58, 160, 255, 0.08));
+      color: var(--text);
+      border-color: rgba(46, 196, 166, 0.28);
+    }
+    .nav-btn.active::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 8px; bottom: 8px;
+      width: 3px;
+      border-radius: 0 4px 4px 0;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    }
+    .nav-btn.active svg { opacity: 1; color: var(--accent); }
+    .nav-foot {
+      margin-top: auto;
+      padding: 14px 10px 4px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .nav-foot .who-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+    }
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(46,196,166,0.3), rgba(58,160,255,0.3));
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    main {
+      padding: 28px 32px 48px;
+      overflow: auto;
+      max-height: 100vh;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 22px;
+      animation: fadeUp 0.5s var(--ease);
+    }
+    .topbar h1 {
+      font-family: var(--display);
+      font-size: clamp(1.35rem, 2vw, 1.7rem);
+      margin: 0 0 4px;
+      letter-spacing: -0.03em;
+    }
+    .topbar .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .notice {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: linear-gradient(90deg, rgba(240, 180, 41, 0.12), rgba(240, 180, 41, 0.04));
+      border: 1px solid rgba(240, 180, 41, 0.35);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 22px;
+      font-size: 0.92rem;
+      animation: fadeUp 0.55s var(--ease) 0.05s both;
+    }
+    .notice .ico {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: grid; place-items: center;
+      background: rgba(240, 180, 41, 0.2);
+      flex-shrink: 0;
+      font-size: 0.95rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .stat {
+      position: relative;
+      overflow: hidden;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 18px 16px;
+      backdrop-filter: blur(10px);
+      animation: fadeUp 0.55s var(--ease) both;
+      transition: transform 0.25s var(--ease), border-color 0.25s;
+    }
+    .stat:nth-child(1) { animation-delay: 0.05s; }
+    .stat:nth-child(2) { animation-delay: 0.1s; }
+    .stat:nth-child(3) { animation-delay: 0.15s; }
+    .stat:nth-child(4) { animation-delay: 0.2s; }
+    .stat:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-strong);
+    }
+    .stat::after {
+      content: "";
+      position: absolute;
+      inset: auto -20% -40% auto;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(46,196,166,0.15), transparent 70%);
+    }
+    .stat .label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .stat .value {
+      font-family: var(--display);
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .stat .hint { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+    .tab { animation: slideInTab 0.35s var(--ease); }
+    h2 {
+      font-family: var(--display);
+      margin: 0 0 4px;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+    .sub { color: var(--muted); margin: 0 0 18px; font-size: 0.92rem; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .toolbar input, .toolbar select { width: auto; margin: 0; min-width: 140px; }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      background: rgba(0,0,0,0.18);
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr {
+      transition: background 0.18s;
+    }
+    tbody tr:hover { background: rgba(46, 196, 166, 0.05); }
+    td button { margin: 2px 4px 2px 0; padding: 8px 12px; font-size: 0.82rem; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      letter-spacing: 0.02em;
+    }
+    .badge::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .badge.on { color: var(--live); border-color: rgba(52,211,153,0.35); background: rgba(52,211,153,0.1); }
+    .badge.off { color: var(--dead); border-color: rgba(251,113,133,0.35); background: rgba(251,113,133,0.1); }
+    .badge.live { color: var(--accent-warm); border-color: rgba(240,180,41,0.4); background: rgba(240,180,41,0.12); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.25s, transform 0.25s var(--ease);
+    }
+    .panel:hover { border-color: var(--border-strong); }
+    .panel h3 {
+      font-family: var(--display);
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+    pre, .mono {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #shell-out, #enroll-help {
+      background: rgba(4, 10, 18, 0.75);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+    }
+    #shell-out {
+      min-height: 180px;
+      max-height: 360px;
+      overflow: auto;
+      margin-top: 14px;
+    }
+    #live-frame {
+      width: 100%;
+      max-height: 70vh;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      object-fit: contain;
+      box-shadow: var(--shadow);
+    }
+    .live-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+    }
+    .dot.active {
+      background: var(--live);
+      animation: pulseGlow 1.4s ease-in-out infinite;
+    }
+    .section-head { margin-bottom: 6px; }
+
+    @media (max-width: 1100px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .login-shell { grid-template-columns: 1fr; }
+      .login-hero { display: none; }
+    }
+    @media (max-width: 900px) {
+      #app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: relative;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .brand { width: 100%; }
+      .nav-section, .nav-foot { display: none; }
+      .nav-btn { width: auto; }
+      .grid-2 { grid-template-columns: 1fr; }
+      main { max-height: none; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-fx" aria-hidden="true">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+  </div>
+
+  <div id="login-view">
+    <div class="login-shell">
+      <div class="login-hero">
+        <div class="brand-mark">
+          <div class="logo">AU</div>
+          <div>
+            <strong style="font-family:var(--display)">AU-Kamra</strong><br />
+            <span style="color:var(--muted);font-size:0.85rem">IT Experts</span>
+          </div>
+        </div>
+        <h1>AU-Kamra<br /><em>IT Experts Remote Manager</em></h1>
+        <p>Professional remote operations console for company-owned PCs — disclosed live sessions, group deploy, and network visibility.</p>
+        <div class="hero-pills">
+          <span>Live Session</span>
+          <span>Group Deploy</span>
+          <span>Discovery</span>
+          <span>Audit Trail</span>
+        </div>
+      </div>
+      <div class="login-form">
+        <h2>Administrator sign in</h2>
+        <p class="lead">Secure access to the AU-Kamra remote management dashboard.</p>
+        <label for="user">Username</label>
+        <input id="user" autocomplete="username" value="admin" />
+        <label for="pass">Password</label>
+        <input id="pass" type="password" autocomplete="current-password" />
+        <button id="login-btn" style="width:100%">Enter dashboard</button>
+        <p id="login-err"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-row">
+          <div class="logo">AU</div>
+          <div class="name">
+            AU-Kamra
+            <small>IT Experts Remote Manager</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-section">Operations</div>
+      <button class="nav-btn active" data-tab="pcs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+        Remote PCs
+      </button>
+      <button class="nav-btn" data-tab="enroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        Add / Discover
+      </button>
+      <button class="nav-btn" data-tab="groups">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Groups
+      </button>
+      <button class="nav-btn" data-tab="software">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Software
+      </button>
+
+      <div class="nav-section">Control</div>
+      <button class="nav-btn" data-tab="shell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Remote Shell
+      </button>
+      <button class="nav-btn" data-tab="live">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 21h8"/></svg>
+        Live Session
+      </button>
+      <button class="nav-btn" data-tab="network">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Network Monitor
+      </button>
+
+      <div class="nav-section">Admin</div>
+      <button class="nav-btn" data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+      <button class="nav-btn" data-tab="audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        Audit Log
+      </button>
+
+      <div class="nav-foot">
+        <div class="who-chip">
+          <div class="avatar" id="who-avatar">A</div>
+          <div>
+            <div style="color:var(--text);font-weight:700" id="who">admin</div>
+            <div style="font-size:0.75rem">Administrator</div>
+          </div>
+        </div>
+        <button class="secondary" id="logout-btn" style="width:100%">Sign out</button>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h1 id="page-title">Remote PCs</h1>
+          <p class="sub" id="page-sub">AU-Kamra IT Experts Remote Manager — operations overview</p>
+        </div>
+      </div>
+
+      <div class="notice">
+        <div class="ico">!</div>
+        <div>
+          Live viewing always shows a banner on the remote PC: <strong>REMOTE SESSION ACTIVE</strong>.
+          Hidden monitoring is not available by design.
+        </div>
+      </div>
+
+      <section id="tab-pcs" class="tab">
+        <div class="stats" id="kpi-stats">
+          <div class="stat">
+            <div class="label">Total agents</div>
+            <div class="value" id="kpi-total">0</div>
+            <div class="hint">Enrolled endpoints</div>
+          </div>
+          <div class="stat">
+            <div class="label">Online</div>
+            <div class="value" id="kpi-online" style="color:var(--live)">0</div>
+            <div class="hint">Connected now</div>
+          </div>
+          <div class="stat">
+            <div class="label">Offline</div>
+            <div class="value" id="kpi-offline" style="color:var(--dead)">0</div>
+            <div class="hint">Not reachable</div>
+          </div>
+          <div class="stat">
+            <div class="label">Live views</div>
+            <div class="value" id="kpi-live" style="color:var(--accent-warm)">0</div>
+            <div class="hint">Active sessions</div>
+          </div>
+        </div>
+        <div class="section-head">
+          <h2>Fleet inventory</h2>
+          <p class="sub">Permanently installed agents. Uninstall requires the admin password.</p>
+        </div>
+        <div class="toolbar">
+          <button id="refresh-agents">Refresh</button>
+          <button id="discover-quick" class="secondary">Discover network</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hostname</th><th>User</th><th>IP</th><th>OS</th><th>Status</th><th>Live</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="agents-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-groups" class="tab hidden">
+        <h2>Groups</h2>
+        <p class="sub">Assign PCs to groups for bulk software deploy.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Create group</h3>
+            <label>Name</label>
+            <input id="group-name" />
+            <label>Description</label>
+            <input id="group-desc" />
+            <label>Members (Ctrl/Cmd multi-select)</label>
+            <select id="group-members" multiple size="8"></select>
+            <button id="create-group">Create</button>
+          </div>
+          <div class="panel">
+            <h3>Existing groups</h3>
+            <div id="groups-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-software" class="tab hidden">
+        <h2>Software deploy</h2>
+        <p class="sub">Register a setup from a path on the server host, or upload a file, then deploy to a group or PC.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Register local path (on server)</h3>
+            <label>Display name</label>
+            <input id="pkg-name" placeholder="Chrome" />
+            <label>Absolute path on server</label>
+            <input id="pkg-path" placeholder="C:\\Setups\\chrome_installer.exe" />
+            <label>Silent args (optional)</label>
+            <input id="pkg-args" placeholder="/S" />
+            <button id="reg-pkg">Register</button>
+            <hr style="border:none;border-top:1px solid var(--border);margin:18px 0" />
+            <h3>Or upload</h3>
+            <label>Name</label>
+            <input id="up-name" />
+            <label>Args</label>
+            <input id="up-args" />
+            <label>File</label>
+            <input id="up-file" type="file" />
+            <button id="up-pkg">Upload</button>
+          </div>
+          <div class="panel">
+            <h3>Deploy</h3>
+            <label>Package</label>
+            <select id="deploy-pkg"></select>
+            <label>Target group</label>
+            <select id="deploy-group"><option value="">—</option></select>
+            <label>Or single agent</label>
+            <select id="deploy-agent"><option value="">—</option></select>
+            <button id="deploy-btn">Deploy &amp; run on targets</button>
+            <p class="sub" style="margin-top:12px">Agents download the package from this server and run it.</p>
+          </div>
+        </div>
+        <h3 style="margin-top:20px;font-family:var(--display)">Packages</h3>
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Path</th><th>Args</th><th></th></tr></thead>
+            <tbody id="pkg-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-shell" class="tab hidden">
+        <h2>Remote shell</h2>
+        <p class="sub">Run cmd, PowerShell, or bash on a connected agent. Commands are audited.</p>
+        <div class="toolbar">
+          <select id="shell-agent"></select>
+          <select id="shell-type">
+            <option value="cmd">cmd</option>
+            <option value="powershell">powershell</option>
+            <option value="bash">bash</option>
+          </select>
+        </div>
+        <label>Command</label>
+        <input id="shell-cmd" placeholder="hostname &amp;&amp; whoami" />
+        <button id="shell-run">Run</button>
+        <pre id="shell-out" class="mono"></pre>
+      </section>
+
+      <section id="tab-live" class="tab hidden">
+        <h2>Live session</h2>
+        <p class="sub">View the remote desktop. A banner is shown on the remote PC for the entire session.</p>
+        <div class="live-bar">
+          <select id="live-agent"></select>
+          <button id="live-start" class="warn">Start live view</button>
+          <button id="live-stop" class="secondary" disabled>Stop</button>
+          <span class="dot" id="live-dot"></span>
+          <span id="live-status" class="sub" style="margin:0">Idle</span>
+        </div>
+        <img id="live-frame" alt="Live remote display" />
+      </section>
+
+      <section id="tab-network" class="tab hidden">
+        <h2>Network monitor</h2>
+        <p class="sub">Ping hosts to see live / dead status.</p>
+        <div class="toolbar">
+          <input id="net-label" placeholder="Label" />
+          <input id="net-host" placeholder="IP or hostname" />
+          <button id="net-add">Add host</button>
+          <button id="net-scan" class="secondary">Scan all</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Label</th><th>Host</th><th>Status</th><th>Latency</th><th>Last check</th><th></th></tr></thead>
+            <tbody id="net-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-enroll" class="tab hidden">
+        <h2>Add / Discover PC</h2>
+        <p class="sub">Auto-discover agents on the LAN, or push-install using IP + Windows admin credentials. Remote PCs only need the Agent .exe.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>1) Network discovery</h3>
+            <label>Optional subnet scan (/24)</label>
+            <input id="discover-cidr" placeholder="192.168.1.0/24" />
+            <button id="discover-btn">Discover agents now</button>
+            <p class="sub" style="margin-top:10px">Listens for agent beacons and probes the subnet.</p>
+            <div class="table-wrap" style="margin-top:12px">
+              <table>
+                <thead><tr><th>Hostname</th><th>IP</th><th>User</th><th>Enrolled</th></tr></thead>
+                <tbody id="discovered-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>2) Manual add (IP + credentials)</h3>
+            <label>Remote PC IP</label>
+            <input id="manual-ip" placeholder="192.168.1.50" />
+            <label>Windows admin username</label>
+            <input id="manual-user" placeholder="Administrator" />
+            <label>Windows admin password</label>
+            <input id="manual-pass" type="password" />
+            <button id="manual-add">Push-install agent</button>
+            <p class="sub" style="margin-top:10px">Requires Server .exe on Windows and Agent .exe on the server (bin/ or dist/).</p>
+            <h3 style="margin-top:16px">Pending / push jobs</h3>
+            <div id="pending-list"></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <h3>3) Download agent for Windows / macOS / Linux</h3>
+          <p class="sub">Generate packages on the server, or upload a native build per OS. Endpoints install permanently with the enrollment token.</p>
+          <div class="toolbar">
+            <button id="generate-agents">Generate agent packages</button>
+            <span class="sub" style="margin:0" id="generate-status"></span>
+          </div>
+          <div class="stats" style="margin-top:8px" id="agent-dl-cards">
+            <div class="stat">
+              <div class="label">Windows</div>
+              <div class="value" style="font-size:1.1rem" id="st-windows">—</div>
+              <div class="hint" id="hint-windows">Not generated yet</div>
+              <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+                <button data-dl="windows">Download</button>
+                <label class="secondary" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin:0">
+                  Upload<input type="file" data-up="windows" hidden />
+                </label>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="label">macOS</div>
+              <div class="value" style="font-size:1.1rem" id="st-macos">—</div>
+              <div class="hint" id="hint-macos">Not generated yet</div>
+              <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+                <button data-dl="macos">Download</button>
+                <label class="secondary" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin:0">
+                  Upload<input type="file" data-up="macos" hidden />
+                </label>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="label">Linux</div>
+              <div class="value" style="font-size:1.1rem" id="st-linux">—</div>
+              <div class="hint" id="hint-linux">Not generated yet</div>
+              <div class="toolbar" style="margin-top:12px;margin-bottom:0">
+                <button data-dl="linux">Download</button>
+                <label class="secondary" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin:0">
+                  Upload<input type="file" data-up="linux" hidden />
+                </label>
+              </div>
+            </div>
+          </div>
+          <label style="margin-top:18px">Enrollment token</label>
+          <div class="toolbar">
+            <input id="enroll-token" class="mono" style="flex:1;min-width:220px" />
+            <button id="save-token">Save token</button>
+          </div>
+          <pre class="mono" id="enroll-help"></pre>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="tab hidden">
+        <h2>Settings</h2>
+        <p class="sub">Uninstall password is required to remove the agent from any PC. Managed only here.</p>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>Agent uninstall password</h3>
+            <p class="sub" id="uninstall-meta">—</p>
+            <label>New uninstall password</label>
+            <input id="uninstall-pass" type="password" placeholder="min 6 characters" />
+            <label>Confirm</label>
+            <input id="uninstall-pass2" type="password" />
+            <button id="save-uninstall">Save &amp; push to agents</button>
+          </div>
+          <div class="panel">
+            <h3>Agent packages on server</h3>
+            <p class="sub" id="binary-meta">—</p>
+            <p class="sub">Use <strong>Add / Discover → Generate agent packages</strong>, then download for Windows, macOS, or Linux.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-audit" class="tab hidden">
+        <h2>Audit log</h2>
+        <p class="sub">Every admin action and agent connect/disconnect.</p>
+        <button id="refresh-audit" class="secondary">Refresh</button>
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+            <tbody id="audit-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const PRODUCT = "AU-Kamra IT Experts Remote Manager";
+    const AGENT_EXE = "AU-Kamra-Remote-Manager-Agent.exe";
+    const PAGE_META = {
+      pcs: ["Remote PCs", "Fleet overview and endpoint health"],
+      enroll: ["Add / Discover PC", "Enroll new endpoints and scan the network"],
+      groups: ["Groups", "Organize PCs for bulk operations"],
+      software: ["Software deploy", "Distribute and run installers across the fleet"],
+      shell: ["Remote shell", "Audited command execution on agents"],
+      live: ["Live session", "Disclosed remote desktop viewing"],
+      network: ["Network monitor", "Host reachability — live or dead"],
+      settings: ["Settings", "Uninstall password and agent binary"],
+      audit: ["Audit log", "Security and operations trail"],
+    };
+
+    const state = { token: localStorage.getItem("rmm_token") || "", username: "", liveWs: null };
+
+    async function api(path, opts = {}) {
+      const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+      if (state.token) headers["Authorization"] = "Bearer " + state.token;
+      const res = await fetch(path, { ...opts, headers });
+      if (res.status === 401) {
+        logout(false);
+        throw new Error("Unauthorized");
+      }
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+      if (!res.ok) throw new Error((data && data.detail) || res.statusText);
+      return data;
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      return new Date(ts * 1000).toLocaleString();
+    }
+
+    function showApp() {
+      document.getElementById("login-view").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      document.getElementById("who").textContent = state.username || "admin";
+      document.getElementById("who-avatar").textContent = (state.username || "A").slice(0, 1).toUpperCase();
+      refreshAll();
+    }
+
+    function logout(callApi) {
+      if (callApi && state.token) api("/api/logout", { method: "POST" }).catch(() => {});
+      stopLive();
+      state.token = "";
+      localStorage.removeItem("rmm_token");
+      document.getElementById("app").classList.add("hidden");
+      document.getElementById("login-view").classList.remove("hidden");
+    }
+
+    document.getElementById("login-btn").onclick = async () => {
+      const username = document.getElementById("user").value.trim();
+      const password = document.getElementById("pass").value;
+      try {
+        const data = await api("/api/login", { method: "POST", body: JSON.stringify({ username, password }) });
+        state.token = data.token;
+        state.username = data.username;
+        localStorage.setItem("rmm_token", state.token);
+        showApp();
+      } catch (e) {
+        document.getElementById("login-err").textContent = e.message;
+      }
+    };
+    document.getElementById("pass").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("login-btn").click();
+    });
+    document.getElementById("logout-btn").onclick = () => logout(true);
+
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".tab").forEach((t) => t.classList.add("hidden"));
+        const tab = document.getElementById("tab-" + btn.dataset.tab);
+        tab.classList.remove("hidden");
+        // retrigger animation
+        tab.style.animation = "none";
+        void tab.offsetWidth;
+        tab.style.animation = "";
+        const meta = PAGE_META[btn.dataset.tab] || [btn.textContent.trim(), PRODUCT];
+        document.getElementById("page-title").textContent = meta[0];
+        document.getElementById("page-sub").textContent = meta[1];
+      };
+    });
+
+    async function loadAgents() {
+      const agents = await api("/api/agents");
+      const online = agents.filter((a) => a.connected).length;
+      const live = agents.reduce((n, a) => n + (a.live_viewers || 0), 0);
+      document.getElementById("kpi-total").textContent = agents.length;
+      document.getElementById("kpi-online").textContent = online;
+      document.getElementById("kpi-offline").textContent = agents.length - online;
+      document.getElementById("kpi-live").textContent = live;
+
+      const body = document.getElementById("agents-body");
+      body.innerHTML = "";
+      const selects = ["group-members", "deploy-agent", "shell-agent", "live-agent"];
+      selects.forEach((id) => {
+        const el = document.getElementById(id);
+        const prev = el.value;
+        el.innerHTML = id === "deploy-agent" ? '<option value="">—</option>' : "";
+        agents.forEach((a) => {
+          const opt = document.createElement("option");
+          opt.value = a.id;
+          opt.textContent = `${a.hostname} (${a.connected ? "online" : "offline"})`;
+          el.appendChild(opt);
+        });
+        if ([...el.options].some((o) => o.value === prev)) el.value = prev;
+      });
+      agents.forEach((a) => {
+        const tr = document.createElement("tr");
+        const status = a.connected ? '<span class="badge on">Online</span>' : '<span class="badge off">Offline</span>';
+        const liveBadge = a.live_viewers > 0 ? '<span class="badge live">Viewing</span>' : "—";
+        tr.innerHTML = `
+          <td><strong>${esc(a.hostname)}</strong></td>
+          <td>${esc(a.username || "")}</td>
+          <td class="mono">${esc(a.ip_address || "")}</td>
+          <td>${esc(a.os_info || "")}</td>
+          <td>${status}</td>
+          <td>${liveBadge}</td>
+          <td>
+            <button class="danger" data-del="${a.id}">Remove</button>
+            <button class="warn" data-uninst="${a.id}" ${a.connected ? "" : "disabled"}>Uninstall</button>
+          </td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("[data-del]").forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm("Remove this agent from the panel only? (does not uninstall from the PC)")) return;
+          await api("/api/agents/" + b.dataset.del, { method: "DELETE" });
+          loadAgents();
+        };
+      });
+      body.querySelectorAll("[data-uninst]").forEach((b) => {
+        b.onclick = async () => {
+          const password = prompt("Enter agent uninstall password (from Settings):");
+          if (!password) return;
+          try {
+            await api("/api/agents/" + b.dataset.uninst + "/remote-uninstall", {
+              method: "POST",
+              body: JSON.stringify({ password }),
+            });
+            alert("Uninstall command sent to agent.");
+          } catch (e) {
+            alert(e.message);
+          }
+        };
+      });
+    }
+
+    async function loadGroups() {
+      const groups = await api("/api/groups");
+      const list = document.getElementById("groups-list");
+      const sel = document.getElementById("deploy-group");
+      sel.innerHTML = '<option value="">—</option>';
+      list.innerHTML = "";
+      groups.forEach((g) => {
+        const opt = document.createElement("option");
+        opt.value = g.id;
+        opt.textContent = `${g.name} (${(g.member_ids || []).length})`;
+        sel.appendChild(opt);
+        const div = document.createElement("div");
+        div.style.cssText = "margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)";
+        div.innerHTML = `<strong>${esc(g.name)}</strong> — ${esc(g.description || "")}<br/>
+          <span class="mono" style="color:var(--muted)">${(g.member_ids || []).join(", ") || "no members"}</span><br/>
+          <button class="danger" data-gid="${g.id}" style="margin-top:8px">Delete</button>`;
+        list.appendChild(div);
+      });
+      list.querySelectorAll("[data-gid]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/groups/" + b.dataset.gid, { method: "DELETE" });
+          loadGroups();
+        };
+      });
+    }
+
+    document.getElementById("create-group").onclick = async () => {
+      const name = document.getElementById("group-name").value.trim();
+      const description = document.getElementById("group-desc").value.trim();
+      const member_ids = [...document.getElementById("group-members").selectedOptions].map((o) => o.value);
+      await api("/api/groups", { method: "POST", body: JSON.stringify({ name, description, member_ids }) });
+      document.getElementById("group-name").value = "";
+      loadGroups();
+    };
+
+    async function loadPackages() {
+      const pkgs = await api("/api/packages");
+      const body = document.getElementById("pkg-body");
+      const sel = document.getElementById("deploy-pkg");
+      body.innerHTML = "";
+      sel.innerHTML = "";
+      pkgs.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sel.appendChild(opt);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.id}</td><td>${esc(p.name)}</td><td class="mono">${esc(p.local_path)}</td>
+          <td class="mono">${esc(p.args || "")}</td>
+          <td><button class="danger" data-pid="${p.id}">Delete</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("[data-pid]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/packages/" + b.dataset.pid, { method: "DELETE" });
+          loadPackages();
+        };
+      });
+    }
+
+    document.getElementById("reg-pkg").onclick = async () => {
+      await api("/api/packages", {
+        method: "POST",
+        body: JSON.stringify({
+          name: document.getElementById("pkg-name").value.trim(),
+          local_path: document.getElementById("pkg-path").value.trim(),
+          args: document.getElementById("pkg-args").value,
+        }),
+      });
+      loadPackages();
+    };
+
+    document.getElementById("up-pkg").onclick = async () => {
+      const file = document.getElementById("up-file").files[0];
+      if (!file) return alert("Choose a file");
+      const fd = new FormData();
+      fd.append("file", file);
+      const name = document.getElementById("up-name").value.trim() || file.name;
+      const args = document.getElementById("up-args").value;
+      const res = await fetch(`/api/packages/upload?name=${encodeURIComponent(name)}&args=${encodeURIComponent(args)}`, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + state.token },
+        body: fd,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      loadPackages();
+    };
+
+    document.getElementById("deploy-btn").onclick = async () => {
+      const package_id = Number(document.getElementById("deploy-pkg").value);
+      const group_id = document.getElementById("deploy-group").value;
+      const agent_id = document.getElementById("deploy-agent").value;
+      const body = { package_id };
+      if (group_id) body.group_id = Number(group_id);
+      else if (agent_id) body.agent_id = agent_id;
+      else return alert("Select a group or agent");
+      const result = await api("/api/deploy", { method: "POST", body: JSON.stringify(body) });
+      alert("Deploy sent to: " + result.targets.join(", "));
+    };
+
+    document.getElementById("shell-run").onclick = async () => {
+      const out = document.getElementById("shell-out");
+      out.textContent = "Running...";
+      try {
+        const data = await api("/api/shell", {
+          method: "POST",
+          body: JSON.stringify({
+            agent_id: document.getElementById("shell-agent").value,
+            command: document.getElementById("shell-cmd").value,
+            shell: document.getElementById("shell-type").value,
+          }),
+        });
+        out.textContent = `exit ${data.exit_code}\n\n${data.output || ""}`;
+      } catch (e) {
+        out.textContent = e.message;
+      }
+    };
+
+    function stopLive() {
+      if (state.liveWs) {
+        try {
+          state.liveWs.send(JSON.stringify({ v: 1, type: "stop_live", payload: {} }));
+          state.liveWs.close();
+        } catch {}
+        state.liveWs = null;
+      }
+      document.getElementById("live-start").disabled = false;
+      document.getElementById("live-stop").disabled = true;
+      document.getElementById("live-dot").classList.remove("active");
+      document.getElementById("live-status").textContent = "Idle";
+    }
+
+    document.getElementById("live-start").onclick = () => {
+      const agentId = document.getElementById("live-agent").value;
+      if (!agentId) return alert("Select an agent");
+      stopLive();
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${proto}://${location.host}/ws/live/${agentId}?token=${encodeURIComponent(state.token)}`);
+      state.liveWs = ws;
+      document.getElementById("live-start").disabled = true;
+      document.getElementById("live-stop").disabled = false;
+      document.getElementById("live-status").textContent = "Connecting… (banner visible on remote)";
+      ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "frame") {
+          document.getElementById("live-frame").src = "data:image/jpeg;base64," + msg.payload.data;
+          document.getElementById("live-dot").classList.add("active");
+          document.getElementById("live-status").textContent = "Live — remote banner is showing";
+        } else if (msg.type === "error" || msg.type === "stop_live") {
+          document.getElementById("live-status").textContent = msg.payload?.error || msg.payload?.reason || "Stopped";
+          stopLive();
+        }
+      };
+      ws.onclose = () => {
+        document.getElementById("live-dot").classList.remove("active");
+        document.getElementById("live-start").disabled = false;
+        document.getElementById("live-stop").disabled = true;
+      };
+    };
+    document.getElementById("live-stop").onclick = stopLive;
+
+    async function loadNetwork() {
+      const hosts = await api("/api/network");
+      const body = document.getElementById("net-body");
+      body.innerHTML = "";
+      hosts.forEach((h) => {
+        const st = h.last_status === "live"
+          ? '<span class="badge on">Live</span>'
+          : h.last_status === "dead"
+            ? '<span class="badge off">Dead</span>'
+            : '<span class="badge">Unknown</span>';
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${esc(h.label)}</td><td class="mono">${esc(h.host)}</td><td>${st}</td>
+          <td>${h.last_latency_ms != null ? h.last_latency_ms + " ms" : "—"}</td>
+          <td>${fmtTime(h.last_checked)}</td>
+          <td><button class="danger" data-nid="${h.id}">Delete</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll("[data-nid]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/network/" + b.dataset.nid, { method: "DELETE" });
+          loadNetwork();
+        };
+      });
+    }
+
+    document.getElementById("net-add").onclick = async () => {
+      await api("/api/network", {
+        method: "POST",
+        body: JSON.stringify({
+          label: document.getElementById("net-label").value.trim(),
+          host: document.getElementById("net-host").value.trim(),
+        }),
+      });
+      document.getElementById("net-label").value = "";
+      document.getElementById("net-host").value = "";
+      loadNetwork();
+    };
+    document.getElementById("net-scan").onclick = async () => {
+      await api("/api/network/scan", { method: "POST" });
+      loadNetwork();
+    };
+
+    async function downloadPlatformAgent(platform) {
+      const res = await fetch(`/api/agent-binary/download/${platform}`, {
+        headers: { Authorization: "Bearer " + state.token },
+      });
+      if (!res.ok) {
+        let msg = await res.text();
+        try { msg = JSON.parse(msg).detail || msg; } catch {}
+        throw new Error(msg || "Download failed");
+      }
+      const disp = res.headers.get("Content-Disposition") || "";
+      const match = /filename="?([^"]+)"?/i.exec(disp);
+      const filename = match ? match[1] : `AU-Kamra-Agent-${platform}.bin`;
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    function fmtBytes(n) {
+      n = Number(n) || 0;
+      if (n < 1024) return n + " B";
+      if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+      return (n / 1048576).toFixed(1) + " MB";
+    }
+
+    function renderAgentPlatformCards(platforms) {
+      (platforms || []).forEach((p) => {
+        const st = document.getElementById("st-" + p.platform);
+        const hint = document.getElementById("hint-" + p.platform);
+        if (!st || !hint) return;
+        if (p.native_available) {
+          st.textContent = "Native .exe ready";
+          st.style.color = "var(--live)";
+          hint.textContent = `Binary ${fmtBytes(p.native_size)} — ready to download`;
+        } else if (p.kit_available) {
+          st.textContent = "Installer kit";
+          st.style.color = "var(--accent-warm)";
+          hint.textContent = `ZIP ${fmtBytes(p.kit_size)} — upload native .exe for best result`;
+        } else {
+          st.textContent = "Missing";
+          st.style.color = "var(--muted)";
+          hint.textContent = "Click Generate or Upload";
+        }
+      });
+    }
+
+    async function loadAgentDownloads() {
+      const bin = await api("/api/agent-binary");
+      renderAgentPlatformCards(bin.platforms || []);
+      return bin;
+    }
+
+    async function loadEnroll() {
+      const data = await api("/api/enrollment");
+      document.getElementById("enroll-token").value = data.token;
+      const base = location.origin;
+      document.getElementById("enroll-help").textContent =
+`${PRODUCT} — multi-OS agent install
+
+1) Generate agent packages, then Download for Windows / macOS / Linux.
+2) Windows (double-click the .exe as Administrator once):
+   • Enter server + token in the dialog — OR silent:
+     AU-Kamra-Remote-Manager-Agent-Windows.exe --install --server ${base} --token ${data.token}
+   • Agent installs permanently and runs in the BACKGROUND (no CMD window).
+   • Survives reboot. Closing dialogs does NOT stop it.
+3) macOS / Linux:
+   chmod +x AU-Kamra-Remote-Manager-Agent-*
+   ./AU-Kamra-Remote-Manager-Agent-macOS --install --server ${base} --token ${data.token}
+4) PC appears under Remote PCs.
+5) Uninstall only with password (Settings):
+   AU-Kamra-Remote-Manager-Agent-Windows.exe --uninstall
+
+Default uninstall password until changed: UninstallMe!`;
+
+      document.querySelectorAll("[data-dl]").forEach((btn) => {
+        btn.onclick = () => downloadPlatformAgent(btn.dataset.dl).catch((e) => alert(e.message));
+      });
+      document.querySelectorAll("[data-up]").forEach((input) => {
+        input.onchange = async () => {
+          const file = input.files && input.files[0];
+          if (!file) return;
+          const fd = new FormData();
+          fd.append("file", file);
+          const res = await fetch("/api/agent-binary/upload/" + input.dataset.up, {
+            method: "POST",
+            headers: { Authorization: "Bearer " + state.token },
+            body: fd,
+          });
+          if (!res.ok) return alert(await res.text());
+          alert("Uploaded " + input.dataset.up + " agent.");
+          loadAgentDownloads();
+          input.value = "";
+        };
+      });
+      document.getElementById("generate-agents").onclick = async () => {
+        const status = document.getElementById("generate-status");
+        status.textContent = "Generating packages…";
+        try {
+          const result = await api("/api/agent-binary/generate", { method: "POST" });
+          renderAgentPlatformCards(result.platforms || []);
+          const win = (result.platforms || []).find((p) => p.platform === "windows");
+          if (win && win.native_available) {
+            status.textContent = "Windows agent .exe ready — click Download on Windows.";
+          } else if (result.built_native) {
+            status.textContent = `Agent staged for ${result.built_native.platform}.`;
+          } else {
+            status.textContent = "Kits created. Windows .exe missing — Upload agent or rebuild with build_windows.bat.";
+          }
+          const notes = []
+            .concat(result.warnings || [])
+            .concat(result.errors || []);
+          if (notes.length) {
+            status.textContent += " " + notes[0];
+          }
+        } catch (e) {
+          status.textContent = e.message;
+        }
+      };
+      await loadAgentDownloads();
+      await loadDiscovered();
+      await loadPending();
+    }
+
+    async function loadDiscovered() {
+      const rows = await api("/api/discovered");
+      const body = document.getElementById("discovered-body");
+      body.innerHTML = "";
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${esc(r.hostname || "")}</td><td class="mono">${esc(r.ip_address || "")}</td>
+          <td>${esc(r.username || "")}</td>
+          <td>${r.enrolled ? '<span class="badge on">Yes</span>' : '<span class="badge">Seen</span>'}</td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    async function loadPending() {
+      const rows = await api("/api/pending-pcs");
+      const el = document.getElementById("pending-list");
+      if (!rows.length) {
+        el.innerHTML = '<p class="sub">No manual push jobs yet.</p>';
+        return;
+      }
+      el.innerHTML = rows.map((r) =>
+        `<div style="margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:10px">
+          <strong class="mono">${esc(r.ip_address)}</strong> — ${esc(r.status)}
+          <div class="sub">${esc(r.detail || "")}</div>
+          <button class="secondary" data-retry="${r.id}">Retry</button>
+          <button class="danger" data-pendel="${r.id}">Delete</button>
+        </div>`
+      ).join("");
+      el.querySelectorAll("[data-retry]").forEach((b) => {
+        b.onclick = async () => {
+          try {
+            const r = await api("/api/pending-pcs/" + b.dataset.retry + "/retry", { method: "POST" });
+            alert(r.detail || r.status);
+          } catch (e) { alert(e.message); }
+          loadPending();
+        };
+      });
+      el.querySelectorAll("[data-pendel]").forEach((b) => {
+        b.onclick = async () => {
+          await api("/api/pending-pcs/" + b.dataset.pendel, { method: "DELETE" });
+          loadPending();
+        };
+      });
+    }
+
+    async function runDiscover() {
+      const subnet_cidr = document.getElementById("discover-cidr")?.value.trim() || "";
+      const data = await api("/api/discover", {
+        method: "POST",
+        body: JSON.stringify({ subnet_cidr }),
+      });
+      await loadDiscovered();
+      await loadAgents();
+      alert(`Discovery done. Beacons: ${data.beacon_count}, probed hits: ${data.probed_count}`);
+    }
+
+    document.getElementById("discover-btn").onclick = () => runDiscover().catch((e) => alert(e.message));
+    document.getElementById("discover-quick").onclick = () => runDiscover().catch((e) => alert(e.message));
+
+    document.getElementById("manual-add").onclick = async () => {
+      try {
+        const data = await api("/api/pending-pcs", {
+          method: "POST",
+          body: JSON.stringify({
+            ip_address: document.getElementById("manual-ip").value.trim(),
+            username: document.getElementById("manual-user").value.trim(),
+            password: document.getElementById("manual-pass").value,
+          }),
+        });
+        alert((data.status || "") + ": " + (data.detail || ""));
+        loadPending();
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    document.getElementById("save-token").onclick = async () => {
+      await api("/api/enrollment", {
+        method: "POST",
+        body: JSON.stringify({ token: document.getElementById("enroll-token").value.trim() }),
+      });
+      alert("Token saved");
+      loadEnroll();
+    };
+
+    async function loadSettings() {
+      const meta = await api("/api/uninstall-password");
+      document.getElementById("uninstall-meta").textContent =
+        meta.default_note + " Hint: " + (meta.hint || "");
+      const bin = await api("/api/agent-binary");
+      const parts = (bin.platforms || []).map((p) => {
+        if (p.native_available) return `${p.label}: native`;
+        if (p.kit_available) return `${p.label}: kit`;
+        return `${p.label}: missing`;
+      });
+      document.getElementById("binary-meta").textContent = parts.length
+        ? parts.join(" · ")
+        : (bin.hint || "—");
+    }
+
+    document.getElementById("save-uninstall").onclick = async () => {
+      const p1 = document.getElementById("uninstall-pass").value;
+      const p2 = document.getElementById("uninstall-pass2").value;
+      if (p1 !== p2) return alert("Passwords do not match");
+      try {
+        await api("/api/uninstall-password", { method: "POST", body: JSON.stringify({ password: p1 }) });
+        alert("Uninstall password saved and pushed to connected agents.");
+        document.getElementById("uninstall-pass").value = "";
+        document.getElementById("uninstall-pass2").value = "";
+        loadSettings();
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    async function loadAudit() {
+      const rows = await api("/api/audit");
+      const body = document.getElementById("audit-body");
+      body.innerHTML = "";
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${fmtTime(r.created_at)}</td><td>${esc(r.admin_username)}</td>
+          <td>${esc(r.action)}</td><td class="mono">${esc(r.target || "")}</td>
+          <td>${esc(r.detail || "")}</td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    async function refreshAll() {
+      await Promise.all([
+        loadAgents(), loadGroups(), loadPackages(), loadNetwork(),
+        loadEnroll(), loadSettings(), loadAudit(),
+      ]);
+    }
+    document.getElementById("refresh-agents").onclick = loadAgents;
+    document.getElementById("refresh-audit").onclick = loadAudit;
+
+    (async () => {
+      if (!state.token) return;
+      try {
+        const me = await api("/api/me");
+        state.username = me.username;
+        showApp();
+      } catch {
+        logout(false);
+      }
+    })();
+  </script>
+</body>
+</html>
