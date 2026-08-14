@@ -664,7 +664,11 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 
 .gcm-section__heading h2 {
 	margin: 0;
-	font-size: clamp(2.1rem, 4vw, 4rem);
+	font-family: var(--gcm-font-display);
+	font-size: clamp(2.05rem, 3.8vw, 3.4rem);
+	font-weight: 400;
+	letter-spacing: -0.025em;
+	line-height: 1.1;
 }
 
 .gcm-course-grid,
