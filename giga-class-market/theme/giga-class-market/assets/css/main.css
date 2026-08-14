@@ -860,7 +860,10 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 .gcm-benefit-card h3,
 .gcm-testimonial-card strong {
 	margin: 0 0 0.55rem;
-	font-size: 1.18rem;
+	font-family: var(--gcm-font-display);
+	font-size: 1.28rem;
+	font-weight: 400;
+	letter-spacing: -0.015em;
 }
 
 .gcm-testimonial-card {
