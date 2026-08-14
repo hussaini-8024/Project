@@ -661,7 +661,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	max-width: 860px;
 	margin: 0;
 	font-size: clamp(2.35rem, 4.8vw, 4.2rem);
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 }
 
 .gcm-page-hero p:not(.gcm-eyebrow),
@@ -2168,7 +2168,7 @@ textarea {
 	box-shadow: none;
 }
 
-/* Bold Manrope accents for supporting copy */
+/* Bold Outfit accents for supporting copy */
 .gcm-lead,
 .gcm-hero__lead,
 .gcm-section__heading p,
@@ -2192,7 +2192,7 @@ textarea {
 }
 
 .gcm-brand__name {
-	font-weight: 400;
+	font-weight: var(--gcm-weight-display);
 }
 
 .gcm-menu a {
