@@ -12,3 +12,7 @@ rmm/build/gen-*/
 .pytest_cache/
 .mypy_cache/
 *.log
+src/
+aukamra/
+*.zip
+AU-Kamra-IT-Experts-Remote-Manager.zip
