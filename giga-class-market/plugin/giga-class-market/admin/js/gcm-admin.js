@@ -24,7 +24,8 @@
 			nonce: gcmAdmin.nonce,
 			payment_id: $button.data('payment-id') || 0,
 			user_id: $button.data('user-id') || 0,
-			course_id: $button.data('course-id') || 0
+			course_id: $button.data('course-id') || 0,
+			class_id: $button.data('class-id') || 0
 		};
 
 		if ($button.hasClass('gcm-reject-payment')) {
@@ -88,7 +89,7 @@
 			});
 	});
 
-	$(document).on('submit', '.gcm-create-teacher-form, .gcm-set-teacher-password, .gcm-assign-teacher-courses', function (event) {
+	$(document).on('submit', '.gcm-create-teacher-form, .gcm-set-teacher-password, .gcm-assign-teacher-courses, .gcm-admin-schedule-class', function (event) {
 		event.preventDefault();
 		var $form = $(this);
 		var $message = $form.find('.gcm-form-message').first();

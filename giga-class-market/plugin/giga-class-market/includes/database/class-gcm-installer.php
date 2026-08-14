@@ -169,7 +169,7 @@ class GCM_Installer {
 			assigned_at DATETIME NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY teacher_course (teacher_id, course_id),
-			KEY course_id (course_id)
+			UNIQUE KEY course_id (course_id)
 		) {$charset_collate};";
 
 		$sql[] = "CREATE TABLE {$prefix}gcm_classes (
@@ -178,6 +178,7 @@ class GCM_Installer {
 			teacher_id BIGINT(20) UNSIGNED NOT NULL,
 			title VARCHAR(255) NOT NULL,
 			scheduled_at DATETIME NOT NULL,
+			scheduled_end DATETIME NULL,
 			status VARCHAR(30) NOT NULL DEFAULT 'scheduled',
 			zoom_meeting_id VARCHAR(100) NULL,
 			zoom_join_url TEXT NULL,
@@ -219,13 +220,57 @@ class GCM_Installer {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+		$sql[] = "CREATE TABLE {$prefix}gcm_attendance (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			class_id BIGINT(20) UNSIGNED NOT NULL,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			joined_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY class_user (class_id, user_id),
+			KEY course_id (course_id),
+			KEY user_id (user_id)
+		) {$charset_collate};";
+
 
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
 		}
 
+		self::maybe_migrate_one_teacher_per_course();
 		self::seed_default_options();
 		update_option( 'gcm_db_version', GCM_DB_VERSION );
+	}
+
+	/**
+	 * Keep one teacher per course (drop older duplicate assignments).
+	 *
+	 * @return void
+	 */
+	private static function maybe_migrate_one_teacher_per_course() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'gcm_teacher_courses';
+		$dupes = $wpdb->get_results(
+			"SELECT course_id, COUNT(*) AS c FROM {$table} GROUP BY course_id HAVING c > 1"
+		);
+		foreach ( (array) $dupes as $row ) {
+			$keep = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE course_id = %d ORDER BY assigned_at DESC, id DESC LIMIT 1",
+					(int) $row->course_id
+				)
+			);
+			if ( $keep ) {
+				$wpdb->query(
+					$wpdb->prepare(
+						"DELETE FROM {$table} WHERE course_id = %d AND id <> %d",
+						(int) $row->course_id,
+						(int) $keep
+					)
+				);
+			}
+		}
 	}
 
 	/**

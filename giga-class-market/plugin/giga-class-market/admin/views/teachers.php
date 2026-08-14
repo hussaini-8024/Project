@@ -13,7 +13,7 @@ $all_courses = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::search
 ?>
 <div class="wrap gcm-admin-wrap">
 	<h1><?php esc_html_e( 'Teachers', 'giga-class-market' ); ?></h1>
-	<p><?php esc_html_e( 'Teachers are created only here. They use the same Login page as students (/login/), then land on the Teacher Dashboard. Assign courses, set passwords, and manage accounts below.', 'giga-class-market' ); ?></p>
+	<p><?php esc_html_e( 'Teachers are created only here. They use the same Login page as students (/login/), then land on the Teacher Dashboard. Each course can have only one teacher. Assign courses, set passwords, and manage accounts below.', 'giga-class-market' ); ?></p>
 
 	<div class="gcm-admin-panel" style="margin-bottom:24px;">
 		<h2><?php esc_html_e( 'Create teacher', 'giga-class-market' ); ?></h2>
@@ -32,7 +32,7 @@ $all_courses = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::search
 					<?php endforeach; ?>
 				</select>
 			</label>
-			<p class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple courses.', 'giga-class-market' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple courses. Assigning a course moves it to this teacher (one teacher per course).', 'giga-class-market' ); ?></p>
 			<p>
 				<button type="submit" class="button button-primary"><?php esc_html_e( 'Create teacher', 'giga-class-market' ); ?></button>
 				<span class="gcm-form-message"></span>

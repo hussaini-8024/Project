@@ -94,7 +94,7 @@ class GCM_Teacher_Service {
 	}
 
 	/**
-	 * Assign courses to a teacher.
+	 * Assign courses to a teacher (one teacher per course).
 	 *
 	 * @param int   $teacher_id Teacher ID.
 	 * @param array $course_ids Course IDs.
@@ -112,6 +112,8 @@ class GCM_Teacher_Service {
 			if ( ! get_post( $course_id ) ) {
 				continue;
 			}
+			// Enforce one teacher per course: free the course from any other teacher.
+			$wpdb->delete( $table, array( 'course_id' => $course_id ), array( '%d' ) );
 			$wpdb->insert(
 				$table,
 				array(
@@ -122,6 +124,28 @@ class GCM_Teacher_Service {
 				array( '%d', '%d', '%s' )
 			);
 		}
+	}
+
+	/**
+	 * Teacher assigned to a course (single).
+	 *
+	 * @param int $course_id Course ID.
+	 * @return WP_User|null
+	 */
+	public static function get_teacher_for_course( $course_id ) {
+		global $wpdb;
+
+		$teacher_id = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT teacher_id FROM {$wpdb->prefix}gcm_teacher_courses WHERE course_id = %d LIMIT 1",
+				absint( $course_id )
+			)
+		);
+		if ( ! $teacher_id ) {
+			return null;
+		}
+		$user = get_userdata( $teacher_id );
+		return $user ? $user : null;
 	}
 
 	/**
@@ -151,7 +175,7 @@ class GCM_Teacher_Service {
 	}
 
 	/**
-	 * Whether teacher can manage a course.
+	 * Whether teacher (or admin) can manage a course.
 	 *
 	 * @param int $teacher_id Teacher ID.
 	 * @param int $course_id Course ID.

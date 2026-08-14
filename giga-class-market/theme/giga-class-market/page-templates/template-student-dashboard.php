@@ -31,7 +31,7 @@ get_header();
 	<div class="gcm-container">
 		<p class="gcm-eyebrow"><?php esc_html_e( 'Student dashboard', 'giga-class-market' ); ?></p>
 		<h1><?php echo esc_html( sprintf( __( 'Welcome back, %s', 'giga-class-market' ), $user->display_name ) ); ?></h1>
-		<p><?php esc_html_e( 'Continue learning, track your progress, and manage your Giga Class Market profile.', 'giga-class-market' ); ?></p>
+		<p><?php esc_html_e( 'Join live classes, open study materials, and use your course chat room.', 'giga-class-market' ); ?></p>
 	</div>
 </section>
 
@@ -52,8 +52,6 @@ get_header();
 								continue;
 							}
 							$enrollment = isset( $course['enrollment'] ) ? $course['enrollment'] : null;
-							$progress   = isset( $course['progress'] ) ? (int) $course['progress'] : ( class_exists( 'GCM_Progress_Service' ) ? (int) GCM_Progress_Service::get_percentage( $user_id, $course_id ) : 0 );
-							$last       = class_exists( 'GCM_Progress_Service' ) ? GCM_Progress_Service::get_last_lesson( $user_id, $course_id ) : null;
 							$learn_url  = add_query_arg( 'course_id', $course_id, home_url( '/course-learn/' ) );
 							$status     = $enrollment ? sanitize_key( $enrollment->status ) : 'active';
 							$title      = ! empty( $course['title'] ) ? $course['title'] : get_the_title( $course_id );
@@ -61,6 +59,7 @@ get_header();
 							$status_label = 'completed' === $status
 								? __( 'Completed', 'giga-class-market' )
 								: ( 'frozen' === $status ? __( 'Frozen', 'giga-class-market' ) : __( 'Active', 'giga-class-market' ) );
+							$live = class_exists( 'GCM_Class_Service' ) ? GCM_Class_Service::get_live_for_course( $course_id ) : null;
 							?>
 							<article class="gcm-dashboard-course">
 								<div class="gcm-dashboard-course__media">
@@ -74,20 +73,17 @@ get_header();
 									<h3><?php echo esc_html( $title ); ?></h3>
 									<p>
 										<span class="gcm-status gcm-status-<?php echo esc_attr( $status ); ?>"><?php echo esc_html( $status_label ); ?></span>
-										<?php echo esc_html( sprintf( __( '· %d%% complete', 'giga-class-market' ), $progress ) ); ?>
+										<?php if ( $live ) : ?>
+											<span class="gcm-status gcm-status-live"><?php esc_html_e( 'Live now', 'giga-class-market' ); ?></span>
+										<?php endif; ?>
 									</p>
-									<?php if ( $last ) : ?>
-										<p><?php echo esc_html( sprintf( __( 'Last watched: %s', 'giga-class-market' ), $last->title ) ); ?></p>
-									<?php endif; ?>
-									<div class="gcm-progress" aria-label="<?php echo esc_attr( sprintf( __( '%d percent complete', 'giga-class-market' ), $progress ) ); ?>">
-										<span style="width: <?php echo esc_attr( min( 100, max( 0, $progress ) ) ); ?>%"></span>
-									</div>
+									<p><?php esc_html_e( 'Join classes · Study material · Course chat', 'giga-class-market' ); ?></p>
 								</div>
 								<?php if ( 'frozen' === $status ) : ?>
 									<span class="gcm-button gcm-button--outline" aria-disabled="true"><?php esc_html_e( 'Access frozen', 'giga-class-market' ); ?></span>
 								<?php else : ?>
 									<a class="gcm-button gcm-button--outline" href="<?php echo esc_url( $learn_url ); ?>">
-										<?php echo esc_html( $progress > 0 ? __( 'Continue Learning', 'giga-class-market' ) : __( 'Start Learning', 'giga-class-market' ) ); ?>
+										<?php echo esc_html( $live ? __( 'Join class room', 'giga-class-market' ) : __( 'Open course', 'giga-class-market' ) ); ?>
 									</a>
 								<?php endif; ?>
 							</article>

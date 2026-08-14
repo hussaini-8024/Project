@@ -263,6 +263,59 @@
 	font-weight: 600;
 }
 
+.gcm-learn--live {
+	padding: 2rem 0 3.5rem;
+}
+
+.gcm-learn__header {
+	margin-bottom: 1.5rem;
+}
+
+.gcm-live-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1.25rem;
+	margin: 1.25rem 0;
+}
+
+.gcm-live-banner--hero {
+	margin-bottom: 1.25rem;
+}
+
+.gcm-chat-badge {
+	display: inline-block;
+	margin-left: 0.35rem;
+	padding: 0.1rem 0.45rem;
+	border-radius: 6px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	background: color-mix(in srgb, var(--gcm-gold) 25%, white);
+	color: var(--gcm-navy-deep);
+}
+
+.gcm-message--teacher {
+	border-color: color-mix(in srgb, var(--gcm-gold) 45%, var(--gcm-border));
+}
+
+.gcm-attendance-list {
+	list-style: none;
+	margin: 0.5rem 0 0;
+	padding: 0;
+	display: grid;
+	gap: 0.35rem;
+}
+
+.gcm-attendance-details {
+	width: 100%;
+	margin-top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+	.gcm-live-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 @media (max-width: 1024px) {
 	.gcm-dashboard__grid {
 		grid-template-columns: 1fr;

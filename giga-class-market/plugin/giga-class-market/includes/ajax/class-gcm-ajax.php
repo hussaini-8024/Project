@@ -26,7 +26,7 @@ class GCM_Ajax {
 			add_action( 'wp_ajax_nopriv_gcm_' . $action, array( $this, $action ) );
 		}
 
-		$student_actions = array( 'mark_lesson_complete', 'update_profile', 'change_password', 'send_course_message', 'get_course_messages' );
+		$student_actions = array( 'mark_lesson_complete', 'update_profile', 'change_password', 'send_course_message', 'get_course_messages', 'join_live_class' );
 		foreach ( $student_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
 		}
@@ -40,6 +40,7 @@ class GCM_Ajax {
 			'send_teacher_message',
 			'get_teacher_messages',
 			'get_course_students',
+			'get_class_attendance',
 		);
 		foreach ( $teacher_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
@@ -447,10 +448,11 @@ class GCM_Ajax {
 
 		$result = GCM_Class_Service::schedule(
 			array(
-				'course_id'    => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
-				'teacher_id'   => get_current_user_id(),
-				'title'        => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
-				'scheduled_at' => isset( $_POST['scheduled_at'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_at'] ) ) : '',
+				'course_id'     => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'teacher_id'    => get_current_user_id(),
+				'title'         => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'scheduled_at'  => isset( $_POST['scheduled_at'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_at'] ) ) : '',
+				'scheduled_end' => isset( $_POST['scheduled_end'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_end'] ) ) : '',
 			)
 		);
 		$this->send_service_response( $result, __( 'Class scheduled.', 'giga-class-market' ) );
@@ -632,6 +634,57 @@ class GCM_Ajax {
 		$with_user = isset( $_REQUEST['with_user'] ) ? absint( $_REQUEST['with_user'] ) : 0;
 		$messages  = GCM_Message_Service::get_thread( $course_id, $user_id, $with_user );
 		wp_send_json_success( array( 'messages' => $messages ) );
+	}
+
+	/**
+	 * Student/teacher joins a live class (records attendance, returns Zoom URL).
+	 *
+	 * @return void
+	 */
+	public function join_live_class() {
+		GCM_Security::verify_ajax_nonce();
+
+		$result = GCM_Attendance_Service::record_join(
+			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+			get_current_user_id()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Opening live class…', 'giga-class-market' ),
+				'join_url' => $result->join_url,
+			)
+		);
+	}
+
+	/**
+	 * Attendance roster for a class.
+	 *
+	 * @return void
+	 */
+	public function get_class_attendance() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$class_id = isset( $_REQUEST['class_id'] ) ? absint( $_REQUEST['class_id'] ) : 0;
+		$class    = GCM_Class_Service::get( $class_id );
+		if ( ! $class ) {
+			wp_send_json_error( array( 'message' => __( 'Class not found.', 'giga-class-market' ) ), 404 );
+		}
+		if ( ! GCM_Teacher_Service::teacher_can_manage_course( get_current_user_id(), $class->course_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You cannot view attendance for this class.', 'giga-class-market' ) ), 403 );
+		}
+
+		wp_send_json_success(
+			array(
+				'attendance' => GCM_Attendance_Service::get_for_class( $class_id ),
+				'count'      => GCM_Attendance_Service::count_for_class( $class_id ),
+			)
+		);
 	}
 
 	/**

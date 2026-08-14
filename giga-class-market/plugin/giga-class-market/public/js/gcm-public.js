@@ -49,6 +49,37 @@
 	}
 
 	document.addEventListener('click', function (event) {
+		var joinBtn = event.target.closest('.gcm-join-live');
+		if (!joinBtn || !window.gcmPublic) {
+			return;
+		}
+		event.preventDefault();
+		var data = new URLSearchParams();
+		data.append('action', 'gcm_join_live_class');
+		data.append('nonce', window.gcmPublic.nonce);
+		data.append('class_id', joinBtn.getAttribute('data-class-id'));
+		joinBtn.disabled = true;
+		fetch(window.gcmPublic.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: data.toString()
+		}).then(function (response) {
+			return response.json();
+		}).then(function (json) {
+			if (json.success && json.data && json.data.join_url) {
+				window.open(json.data.join_url, '_blank', 'noopener');
+			} else {
+				window.alert((json.data && json.data.message) || 'Unable to join class.');
+			}
+			joinBtn.disabled = false;
+		}).catch(function () {
+			window.alert('Unable to join class.');
+			joinBtn.disabled = false;
+		});
+	});
+
+	document.addEventListener('click', function (event) {
 		var button = event.target.closest('.gcm-teacher-action');
 		if (!button || !window.gcmPublic) {
 			return;

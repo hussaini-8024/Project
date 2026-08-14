@@ -10,12 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Schedule and start live classes.
+ * Schedule and start live classes (online class system).
  */
 class GCM_Class_Service {
 
 	/**
-	 * Schedule a class.
+	 * Schedule a class with start and end times.
 	 *
 	 * @param array $data Class data.
 	 * @return int|WP_Error
@@ -23,10 +23,11 @@ class GCM_Class_Service {
 	public static function schedule( $data ) {
 		global $wpdb;
 
-		$course_id     = absint( $data['course_id'] ?? 0 );
-		$teacher_id    = absint( $data['teacher_id'] ?? get_current_user_id() );
-		$title         = sanitize_text_field( $data['title'] ?? '' );
-		$scheduled_at  = sanitize_text_field( $data['scheduled_at'] ?? '' );
+		$course_id    = absint( $data['course_id'] ?? 0 );
+		$teacher_id   = absint( $data['teacher_id'] ?? get_current_user_id() );
+		$title        = sanitize_text_field( $data['title'] ?? '' );
+		$scheduled_at = sanitize_text_field( $data['scheduled_at'] ?? '' );
+		$scheduled_end = sanitize_text_field( $data['scheduled_end'] ?? '' );
 
 		if ( ! $course_id || ! get_post( $course_id ) ) {
 			return new WP_Error( 'gcm_invalid_course', __( 'Invalid course.', 'giga-class-market' ) );
@@ -37,10 +38,31 @@ class GCM_Class_Service {
 		if ( ! $title ) {
 			$title = sprintf( __( 'Live class — %s', 'giga-class-market' ), get_the_title( $course_id ) );
 		}
+
 		try {
-			$dt = new DateTimeImmutable( $scheduled_at, wp_timezone() );
+			$start = new DateTimeImmutable( $scheduled_at, wp_timezone() );
 		} catch ( Exception $e ) {
-			return new WP_Error( 'gcm_invalid_time', __( 'Choose a valid class date and time.', 'giga-class-market' ) );
+			return new WP_Error( 'gcm_invalid_time', __( 'Choose a valid class start time.', 'giga-class-market' ) );
+		}
+
+		$end = null;
+		if ( $scheduled_end ) {
+			try {
+				$end = new DateTimeImmutable( $scheduled_end, wp_timezone() );
+			} catch ( Exception $e ) {
+				return new WP_Error( 'gcm_invalid_end', __( 'Choose a valid class end time.', 'giga-class-market' ) );
+			}
+			if ( $end <= $start ) {
+				return new WP_Error( 'gcm_invalid_range', __( 'End time must be after the start time.', 'giga-class-market' ) );
+			}
+		} else {
+			$end = $start->modify( '+60 minutes' );
+		}
+
+		// Prefer the course’s assigned teacher when an admin schedules.
+		$assigned = GCM_Teacher_Service::get_teacher_for_course( $course_id );
+		if ( $assigned && user_can( $teacher_id, 'manage_options' ) ) {
+			$teacher_id = (int) $assigned->ID;
 		}
 
 		$inserted = $wpdb->insert(
@@ -49,11 +71,12 @@ class GCM_Class_Service {
 				'course_id'     => $course_id,
 				'teacher_id'    => $teacher_id,
 				'title'         => $title,
-				'scheduled_at'  => $dt->format( 'Y-m-d H:i:s' ),
+				'scheduled_at'  => $start->format( 'Y-m-d H:i:s' ),
+				'scheduled_end' => $end->format( 'Y-m-d H:i:s' ),
 				'status'        => 'scheduled',
 				'created_at'    => current_time( 'mysql' ),
 			),
-			array( '%d', '%d', '%s', '%s', '%s', '%s' )
+			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( ! $inserted ) {
@@ -64,25 +87,44 @@ class GCM_Class_Service {
 	}
 
 	/**
-	 * Start a class and create Zoom meeting when possible.
+	 * Duration in minutes from schedule.
+	 *
+	 * @param object $class Class row.
+	 * @return int
+	 */
+	public static function duration_minutes( $class ) {
+		if ( empty( $class->scheduled_at ) ) {
+			return 60;
+		}
+		$start = strtotime( $class->scheduled_at );
+		$end   = ! empty( $class->scheduled_end ) ? strtotime( $class->scheduled_end ) : 0;
+		if ( ! $start || ! $end || $end <= $start ) {
+			return 60;
+		}
+		return max( 15, (int) ceil( ( $end - $start ) / 60 ) );
+	}
+
+	/**
+	 * Start a class and create Zoom meeting.
 	 *
 	 * @param int $class_id Class ID.
-	 * @param int $teacher_id Teacher ID.
+	 * @param int $actor_id Teacher or admin ID.
 	 * @return object|WP_Error
 	 */
-	public static function start( $class_id, $teacher_id = 0 ) {
+	public static function start( $class_id, $actor_id = 0 ) {
 		global $wpdb;
 
 		$class = self::get( $class_id );
 		if ( ! $class ) {
 			return new WP_Error( 'gcm_invalid_class', __( 'Class not found.', 'giga-class-market' ) );
 		}
-		$teacher_id = $teacher_id ? absint( $teacher_id ) : (int) $class->teacher_id;
-		if ( ! GCM_Teacher_Service::teacher_can_manage_course( $teacher_id, $class->course_id ) ) {
+		$actor_id = $actor_id ? absint( $actor_id ) : get_current_user_id();
+		if ( ! GCM_Teacher_Service::teacher_can_manage_course( $actor_id, $class->course_id ) ) {
 			return new WP_Error( 'gcm_forbidden', __( 'You cannot start this class.', 'giga-class-market' ) );
 		}
 
-		$zoom = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, 60 );
+		$duration = self::duration_minutes( $class );
+		$zoom     = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, $duration );
 
 		if ( is_wp_error( $zoom ) ) {
 			return $zoom;
@@ -117,18 +159,18 @@ class GCM_Class_Service {
 	 * End a live class.
 	 *
 	 * @param int $class_id Class ID.
-	 * @param int $teacher_id Teacher ID.
+	 * @param int $actor_id Teacher or admin ID.
 	 * @return true|WP_Error
 	 */
-	public static function end( $class_id, $teacher_id = 0 ) {
+	public static function end( $class_id, $actor_id = 0 ) {
 		global $wpdb;
 
 		$class = self::get( $class_id );
 		if ( ! $class ) {
 			return new WP_Error( 'gcm_invalid_class', __( 'Class not found.', 'giga-class-market' ) );
 		}
-		$teacher_id = $teacher_id ? absint( $teacher_id ) : (int) $class->teacher_id;
-		if ( ! GCM_Teacher_Service::teacher_can_manage_course( $teacher_id, $class->course_id ) ) {
+		$actor_id = $actor_id ? absint( $actor_id ) : get_current_user_id();
+		if ( ! GCM_Teacher_Service::teacher_can_manage_course( $actor_id, $class->course_id ) ) {
 			return new WP_Error( 'gcm_forbidden', __( 'You cannot end this class.', 'giga-class-market' ) );
 		}
 
@@ -173,6 +215,23 @@ class GCM_Class_Service {
 			$wpdb->prepare(
 				"SELECT * FROM {$wpdb->prefix}gcm_classes WHERE teacher_id = %d ORDER BY scheduled_at ASC",
 				absint( $teacher_id )
+			)
+		);
+	}
+
+	/**
+	 * All classes (admin).
+	 *
+	 * @param int $limit Limit.
+	 * @return array
+	 */
+	public static function get_all( $limit = 100 ) {
+		global $wpdb;
+		$limit = min( 200, max( 1, absint( $limit ) ) );
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}gcm_classes ORDER BY FIELD(status,'live','scheduled','ended'), scheduled_at DESC LIMIT %d",
+				$limit
 			)
 		);
 	}
