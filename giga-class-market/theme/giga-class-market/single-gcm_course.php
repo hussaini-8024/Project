@@ -53,6 +53,10 @@ get_header();
 				<aside class="gcm-course-buy-card" aria-label="<?php esc_attr_e( 'Course enrollment', 'giga-class-market' ); ?>">
 					<?php if ( has_post_thumbnail() ) : ?>
 						<?php the_post_thumbnail( 'large', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+					<?php else : ?>
+						<div class="gcm-course-card__placeholder" aria-hidden="true">
+							<span><?php esc_html_e( 'GCM', 'giga-class-market' ); ?></span>
+						</div>
 					<?php endif; ?>
 					<div class="gcm-course-buy-card__body">
 						<strong><?php echo esc_html( gcm_format_price( $price ) ); ?></strong>

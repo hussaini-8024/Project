@@ -159,6 +159,15 @@
 	margin-bottom: 6px;
 }
 
+.gcm-meta-hint {
+	grid-column: 1 / -1;
+	margin: 0 0 0.75rem;
+	padding: 0.75rem 0.9rem;
+	border-left: 3px solid #E0A045;
+	background: #f7fafb;
+	color: #0D3B45;
+}
+
 .gcm-student-courses {
 	margin: 0;
 	padding-left: 1.1rem;

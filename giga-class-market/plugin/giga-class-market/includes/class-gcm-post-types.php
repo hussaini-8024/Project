@@ -217,6 +217,9 @@ class GCM_Post_Types {
 		);
 		?>
 		<div class="gcm-meta-grid">
+			<p class="gcm-meta-hint">
+				<?php esc_html_e( 'Set a Course Thumbnail in the sidebar (Featured image panel). It is shown on the courses page, homepage, and course details.', 'giga-class-market' ); ?>
+			</p>
 			<p>
 				<label for="gcm_price"><?php esc_html_e( 'Price', 'giga-class-market' ); ?></label>
 				<input type="number" step="0.01" min="0" id="gcm_price" name="gcm_price" value="<?php echo esc_attr( $fields['price'] ); ?>" class="widefat" />
@@ -373,5 +376,142 @@ class GCM_Post_Types {
 			update_post_meta( $remove_id, '_gcm_featured', 0 );
 			delete_post_meta( $remove_id, '_gcm_featured_priority' );
 		}
+	}
+
+	/**
+	 * Relabel featured image UI as Course Thumbnail.
+	 *
+	 * @param object $labels Post type labels.
+	 * @return object
+	 */
+	public function course_thumbnail_labels( $labels ) {
+		$labels->featured_image        = __( 'Course Thumbnail', 'giga-class-market' );
+		$labels->set_featured_image    = __( 'Set course thumbnail', 'giga-class-market' );
+		$labels->remove_featured_image = __( 'Remove course thumbnail', 'giga-class-market' );
+		$labels->use_featured_image    = __( 'Use as course thumbnail', 'giga-class-market' );
+		return $labels;
+	}
+
+	/**
+	 * Keep the course thumbnail box visible and high priority in the sidebar.
+	 *
+	 * @return void
+	 */
+	public function promote_course_thumbnail_box() {
+		remove_meta_box( 'postimagediv', 'gcm_course', 'side' );
+		add_meta_box(
+			'postimagediv',
+			__( 'Course Thumbnail', 'giga-class-market' ),
+			'post_thumbnail_meta_box',
+			'gcm_course',
+			'side',
+			'high'
+		);
+	}
+
+	/**
+	 * Block publishing a course without a thumbnail image.
+	 *
+	 * @param array $data    Sanitized post data.
+	 * @param array $postarr Raw post data.
+	 * @return array
+	 */
+	public function require_course_thumbnail_on_publish( $data, $postarr ) {
+		if ( empty( $data['post_type'] ) || 'gcm_course' !== $data['post_type'] ) {
+			return $data;
+		}
+
+		if ( 'publish' !== $data['post_status'] ) {
+			return $data;
+		}
+
+		$post_id = isset( $postarr['ID'] ) ? absint( $postarr['ID'] ) : 0;
+		$thumb   = 0;
+
+		if ( isset( $_POST['_thumbnail_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$thumb = absint( wp_unslash( $_POST['_thumbnail_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		}
+
+		if ( $thumb <= 0 && $post_id ) {
+			$thumb = (int) get_post_thumbnail_id( $post_id );
+		}
+
+		// -1 means "remove featured image" in classic editor.
+		if ( $thumb > 0 ) {
+			return $data;
+		}
+
+		$data['post_status'] = 'draft';
+		set_transient( 'gcm_course_thumb_required_' . get_current_user_id(), 1, 90 );
+
+		return $data;
+	}
+
+	/**
+	 * Admin notices for course thumbnail requirements.
+	 *
+	 * @return void
+	 */
+	public function course_thumbnail_admin_notices() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'gcm_course' !== $screen->post_type ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+		if ( get_transient( 'gcm_course_thumb_required_' . $user_id ) ) {
+			delete_transient( 'gcm_course_thumb_required_' . $user_id );
+			echo '<div class="notice notice-error is-dismissible"><p>';
+			echo esc_html__( 'Course not published: please set a Course Thumbnail image first, then publish again. The thumbnail is shown on the website course cards and course page.', 'giga-class-market' );
+			echo '</p></div>';
+		}
+
+		if ( 'post' === $screen->base && isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$post_id = absint( $_GET['post'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( $post_id && 'publish' === get_post_status( $post_id ) && ! has_post_thumbnail( $post_id ) ) {
+				echo '<div class="notice notice-warning"><p>';
+				echo esc_html__( 'Add a Course Thumbnail (sidebar) so this course displays an image on the website.', 'giga-class-market' );
+				echo '</p></div>';
+			}
+		}
+	}
+
+	/**
+	 * Add thumbnail column to course list.
+	 *
+	 * @param array $columns Columns.
+	 * @return array
+	 */
+	public function course_list_columns( $columns ) {
+		$new = array();
+		foreach ( $columns as $key => $label ) {
+			if ( 'title' === $key ) {
+				$new['gcm_thumbnail'] = __( 'Thumbnail', 'giga-class-market' );
+			}
+			$new[ $key ] = $label;
+		}
+		return $new;
+	}
+
+	/**
+	 * Render course list thumbnail column.
+	 *
+	 * @param string $column Column key.
+	 * @param int    $post_id Post ID.
+	 * @return void
+	 */
+	public function render_course_list_column( $column, $post_id ) {
+		if ( 'gcm_thumbnail' !== $column ) {
+			return;
+		}
+
+		if ( has_post_thumbnail( $post_id ) ) {
+			echo get_the_post_thumbnail( $post_id, array( 56, 56 ), array( 'style' => 'width:56px;height:56px;object-fit:cover;border-radius:8px;' ) );
+			return;
+		}
+
+		echo '<span style="display:inline-flex;width:56px;height:56px;align-items:center;justify-content:center;background:#e8eef0;border-radius:8px;color:#667;font-size:11px;">';
+		echo esc_html__( 'None', 'giga-class-market' );
+		echo '</span>';
 	}
 }
