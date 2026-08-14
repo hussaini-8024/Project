@@ -12,8 +12,15 @@
 	--gcm-border: rgba(13, 59, 69, 0.1);
 	--gcm-radius: 14px;
 	--gcm-shadow: 0 12px 40px rgba(7, 38, 46, 0.08);
-	--gcm-font-ui: "Outfit", sans-serif;
-	--gcm-font-display: "Fraunces", serif;
+	/* Premium type: editorial serif + refined geometric sans */
+	--gcm-font-ui: "Manrope", "Segoe UI", sans-serif;
+	--gcm-font-display: "Instrument Serif", "Times New Roman", serif;
+	--gcm-fs-body: 1.0625rem;
+	--gcm-lh-body: 1.7;
+	--gcm-lh-tight: 1.12;
+	--gcm-tracking-display: -0.025em;
+	--gcm-tracking-ui: -0.01em;
+	--gcm-tracking-label: 0.14em;
 	--gcm-header-height: 82px;
 }
 
@@ -34,6 +41,8 @@ html[data-theme="dark"] {
 
 html {
 	scroll-behavior: smooth;
+	text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -44,9 +53,45 @@ body {
 		var(--gcm-bg);
 	color: var(--gcm-text);
 	font-family: var(--gcm-font-ui);
-	font-size: 17px;
-	line-height: 1.65;
+	font-size: var(--gcm-fs-body);
+	font-weight: 500;
+	line-height: var(--gcm-lh-body);
+	letter-spacing: var(--gcm-tracking-ui);
+	font-optical-sizing: auto;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 	transition: background-color 260ms ease, color 260ms ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+.gcm-display {
+	font-family: var(--gcm-font-display);
+	font-weight: 400;
+	letter-spacing: var(--gcm-tracking-display);
+	line-height: var(--gcm-lh-tight);
+	color: var(--gcm-navy-deep);
+	text-wrap: balance;
+}
+
+h1 {
+	font-size: clamp(2.35rem, 5vw, 3.75rem);
+}
+
+h2 {
+	font-size: clamp(1.85rem, 3.4vw, 2.65rem);
+}
+
+h3 {
+	font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+	line-height: 1.2;
+}
+
+p {
+	max-width: 68ch;
 }
 
 a {
@@ -161,21 +206,23 @@ textarea {
 .gcm-brand__text {
 	display: flex;
 	flex-direction: column;
-	gap: 0.1rem;
+	gap: 0.15rem;
 	font-family: var(--gcm-font-display);
-	font-size: 1.12rem;
-	line-height: 1.1;
+	font-size: 1.28rem;
+	font-weight: 400;
+	line-height: 1.05;
+	letter-spacing: -0.02em;
 }
 
 .gcm-brand__name {
-	font-size: 1.12rem;
+	font-size: 1.28rem;
 }
 
 .gcm-brand__tag {
 	font-family: var(--gcm-font-ui);
-	font-size: 0.68rem;
+	font-size: 0.66rem;
 	font-weight: 700;
-	letter-spacing: 0.12em;
+	letter-spacing: var(--gcm-tracking-label);
 	text-transform: uppercase;
 	color: var(--gcm-gold);
 }
@@ -201,8 +248,9 @@ textarea {
 .gcm-menu a,
 .gcm-login-link {
 	color: var(--gcm-muted);
-	font-size: 0.96rem;
+	font-size: 0.94rem;
 	font-weight: 600;
+	letter-spacing: 0.01em;
 	transition: color 180ms ease;
 }
 
@@ -285,12 +333,15 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	justify-content: center;
 	gap: 0.5rem;
 	min-height: 48px;
-	padding: 0.85rem 1.25rem;
+	padding: 0.85rem 1.35rem;
 	border: 1px solid transparent;
 	border-radius: 999px;
 	background: var(--gcm-navy);
 	color: #fff;
+	font-family: var(--gcm-font-ui);
+	font-size: 0.94rem;
 	font-weight: 700;
+	letter-spacing: 0.02em;
 	cursor: pointer;
 	box-shadow: 0 14px 30px rgba(11,27,51,0.12);
 	transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
@@ -417,18 +468,19 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	max-width: 790px;
 	margin: 0;
 	font-family: var(--gcm-font-display);
-	font-size: clamp(3.25rem, 7vw, 6.8rem);
-	line-height: 1.04;
-	letter-spacing: -0.045em;
-	font-weight: 700;
+	font-size: clamp(3.1rem, 6.6vw, 5.8rem);
+	line-height: 1.02;
+	letter-spacing: -0.03em;
+	font-weight: 400;
 }
 
 .gcm-eyebrow {
-	margin: 0 0 0.75rem;
+	margin: 0 0 0.85rem;
 	color: var(--gcm-gold);
-	font-size: 0.78rem;
-	font-weight: 800;
-	letter-spacing: 0.16em;
+	font-family: var(--gcm-font-ui);
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: var(--gcm-tracking-label);
 	text-transform: uppercase;
 }
 
@@ -440,20 +492,24 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 .gcm-error-page h1,
 .gcm-payment-card h1 {
 	font-family: var(--gcm-font-display);
-	line-height: 1.04;
-	letter-spacing: -0.045em;
+	font-weight: 400;
+	line-height: var(--gcm-lh-tight);
+	letter-spacing: var(--gcm-tracking-display);
 }
 
 .gcm-hero h1 {
 	max-width: 790px;
 	margin: 0;
-	font-size: clamp(3.25rem, 7vw, 6.8rem);
+	font-size: clamp(3.1rem, 6.6vw, 5.8rem);
 }
 
 .gcm-hero__lead {
 	max-width: 640px;
 	color: rgba(255,255,255,0.78);
-	font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+	font-size: clamp(1.08rem, 1.45vw, 1.28rem);
+	font-weight: 500;
+	line-height: 1.65;
+	letter-spacing: 0;
 }
 
 .gcm-hero__actions,
@@ -514,6 +570,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	margin-top: 0.35rem;
 	font-family: var(--gcm-font-display);
 	font-size: 1.6rem;
+	font-weight: 400;
 }
 
 .gcm-hero__controls {
@@ -587,7 +644,8 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 .gcm-payment-card h1 {
 	max-width: 860px;
 	margin: 0;
-	font-size: clamp(2.4rem, 5vw, 4.8rem);
+	font-size: clamp(2.35rem, 4.8vw, 4.2rem);
+	font-weight: 400;
 }
 
 .gcm-page-hero p:not(.gcm-eyebrow),
@@ -717,8 +775,11 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 .gcm-course-card h2,
 .gcm-post-card h2 {
 	margin: 0.9rem 0 0.45rem;
-	font-size: 1.32rem;
-	line-height: 1.22;
+	font-family: var(--gcm-font-display);
+	font-size: 1.4rem;
+	font-weight: 400;
+	line-height: 1.2;
+	letter-spacing: -0.015em;
 }
 
 .gcm-course-card p,
@@ -783,8 +844,8 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	background: linear-gradient(145deg, rgba(201,162,39,0.22), rgba(30,107,255,0.1));
 	color: var(--gcm-navy);
 	font-family: var(--gcm-font-display);
-	font-size: 1.15rem;
-	font-weight: 700;
+	font-size: 1.2rem;
+	font-weight: 400;
 	box-shadow: inset 0 0 0 1px rgba(201,162,39,0.18);
 }
 
@@ -933,15 +994,17 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	height: 48px;
 	border-radius: 14px;
 	font-family: var(--gcm-font-display);
-	font-weight: 700;
-	font-size: 1rem;
+	font-weight: 400;
+	font-size: 1.15rem;
 }
 
 .gcm-about-card h2 {
 	margin: 0 0 0.7rem;
 	font-family: var(--gcm-font-display);
-	font-size: clamp(1.35rem, 2vw, 1.7rem);
-	line-height: 1.2;
+	font-size: clamp(1.4rem, 2vw, 1.8rem);
+	font-weight: 400;
+	line-height: 1.18;
+	letter-spacing: -0.02em;
 }
 
 .gcm-about-card p {
@@ -1057,8 +1120,10 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 .gcm-ceo-panel__message h2 {
 	margin: 0 0 1rem;
 	font-family: var(--gcm-font-display);
-	font-size: clamp(1.7rem, 3vw, 2.5rem);
+	font-size: clamp(1.8rem, 3vw, 2.6rem);
+	font-weight: 400;
 	line-height: 1.15;
+	letter-spacing: -0.02em;
 }
 
 .gcm-ceo-panel__identity {
@@ -1093,8 +1158,10 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 .gcm-section__header--center h2 {
 	margin: 0.35rem 0 0.75rem;
 	font-family: var(--gcm-font-display);
-	font-size: clamp(1.9rem, 3.4vw, 2.75rem);
-	line-height: 1.15;
+	font-size: clamp(1.95rem, 3.4vw, 2.85rem);
+	font-weight: 400;
+	line-height: 1.12;
+	letter-spacing: -0.02em;
 	color: var(--gcm-navy-deep);
 }
 
@@ -1150,15 +1217,20 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 .gcm-team-card__body h3 {
 	margin: 0;
 	font-family: var(--gcm-font-display);
-	font-size: 1.45rem;
+	font-size: 1.55rem;
+	font-weight: 400;
+	letter-spacing: -0.015em;
 	color: var(--gcm-navy-deep);
 }
 
 .gcm-team-card__role {
-	margin: 0.35rem 0 0.75rem;
+	margin: 0.4rem 0 0.8rem;
+	font-family: var(--gcm-font-ui);
 	color: var(--gcm-gold);
 	font-weight: 700;
-	letter-spacing: 0.02em;
+	font-size: 0.86rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }
 
 .gcm-team-card__bio {
@@ -1310,6 +1382,8 @@ textarea {
 	margin-bottom: 1rem;
 	font-size: 2rem;
 	font-family: var(--gcm-font-display);
+	font-weight: 400;
+	letter-spacing: -0.02em;
 }
 
 .gcm-course-buy-card li {
@@ -1326,7 +1400,9 @@ textarea {
 .gcm-content h3,
 .gcm-curriculum-card h2 {
 	font-family: var(--gcm-font-display);
-	line-height: 1.12;
+	font-weight: 400;
+	line-height: 1.15;
+	letter-spacing: -0.02em;
 }
 
 .gcm-content a {

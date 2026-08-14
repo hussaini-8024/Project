@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.5.5' );
+define( 'GCM_THEME_VERSION', '1.5.6' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -61,7 +61,7 @@ add_action( 'after_setup_theme', 'gcm_theme_setup' );
 function gcm_enqueue_assets() {
 	wp_enqueue_style(
 		'gcm-fonts',
-		'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Outfit:wght@400;500;600;700;800&display=swap',
+		'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap',
 		array(),
 		null
 	);
