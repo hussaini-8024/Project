@@ -286,6 +286,35 @@ class GCM_Certificate_Service {
 	}
 
 	/**
+	 * Absolute theme asset URL helper.
+	 *
+	 * @param string $relative Relative path under theme assets.
+	 * @return string
+	 */
+	public static function asset_url( $relative ) {
+		if ( defined( 'GCM_THEME_URI' ) ) {
+			return trailingslashit( GCM_THEME_URI ) . ltrim( $relative, '/' );
+		}
+		return trailingslashit( get_template_directory_uri() ) . ltrim( $relative, '/' );
+	}
+
+	/**
+	 * Resolve brand logo URL for certificates.
+	 *
+	 * @return string
+	 */
+	public static function logo_url() {
+		$custom_logo_id = (int) get_theme_mod( 'custom_logo' );
+		if ( $custom_logo_id ) {
+			$url = wp_get_attachment_image_url( $custom_logo_id, 'full' );
+			if ( $url ) {
+				return $url;
+			}
+		}
+		return self::asset_url( 'assets/images/certificate/logo.svg' );
+	}
+
+	/**
 	 * Premium HTML certificate markup.
 	 *
 	 * @param object $cert Certificate row.
@@ -300,48 +329,124 @@ class GCM_Certificate_Service {
 			)
 		);
 
-		$issued = mysql2date( get_option( 'date_format' ), $cert->issued_at );
-		$company = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_settings() : array();
-		$brand   = ! empty( $company['company']['name'] ) ? $company['company']['name'] : 'Giga Class Market';
+		$issued     = mysql2date( get_option( 'date_format' ), $cert->issued_at );
+		$company    = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_settings() : array();
+		$brand      = ! empty( $company['company']['name'] ) ? $company['company']['name'] : 'Giga Class Market';
+		$logo       = self::logo_url();
+		$buildings  = self::asset_url( 'assets/images/certificate/buildings.jpg' );
+		$watermark  = self::asset_url( 'assets/images/certificate/logo-watermark.svg' );
+		$is_email   = ! empty( $args['email'] );
+		$uid        = 'gcmc' . substr( md5( (string) $cert->certificate_code ), 0, 8 );
 
 		ob_start();
 		?>
-		<div class="gcm-certificate<?php echo ! empty( $args['email'] ) ? ' gcm-certificate--email' : ''; ?>" data-certificate-code="<?php echo esc_attr( $cert->certificate_code ); ?>">
-			<div class="gcm-certificate__frame">
+		<div class="gcm-certificate<?php echo $is_email ? ' gcm-certificate--email' : ''; ?>" data-certificate-code="<?php echo esc_attr( $cert->certificate_code ); ?>">
+			<div
+				class="gcm-certificate__frame"
+				style="--gcm-cert-buildings:url('<?php echo esc_url( $buildings ); ?>');--gcm-cert-watermark:url('<?php echo esc_url( $watermark ); ?>');"
+			>
+				<div class="gcm-certificate__skyline" aria-hidden="true"></div>
+				<div class="gcm-certificate__watermark" aria-hidden="true"></div>
 				<div class="gcm-certificate__ornament gcm-certificate__ornament--tl" aria-hidden="true"></div>
 				<div class="gcm-certificate__ornament gcm-certificate__ornament--tr" aria-hidden="true"></div>
 				<div class="gcm-certificate__ornament gcm-certificate__ornament--bl" aria-hidden="true"></div>
 				<div class="gcm-certificate__ornament gcm-certificate__ornament--br" aria-hidden="true"></div>
 
-				<p class="gcm-certificate__brand"><?php echo esc_html( $brand ); ?></p>
-				<p class="gcm-certificate__kicker"><?php esc_html_e( 'Certificate of Achievement', 'giga-class-market' ); ?></p>
-				<h2 class="gcm-certificate__title"><?php esc_html_e( 'This is to certify that', 'giga-class-market' ); ?></h2>
-				<p class="gcm-certificate__name"><?php echo esc_html( $cert->student_name ); ?></p>
-				<p class="gcm-certificate__body">
-					<?php esc_html_e( 'has successfully completed the professional learning program', 'giga-class-market' ); ?>
-				</p>
-				<p class="gcm-certificate__course"><?php echo esc_html( $cert->course_title ); ?></p>
-				<p class="gcm-certificate__body gcm-certificate__body--muted">
-					<?php esc_html_e( 'in recognition of dedication, skill development, and successful participation with Giga Class Market.', 'giga-class-market' ); ?>
-				</p>
-
-				<div class="gcm-certificate__meta">
-					<div>
-						<span><?php esc_html_e( 'Issued on', 'giga-class-market' ); ?></span>
-						<strong><?php echo esc_html( $issued ); ?></strong>
+				<div class="gcm-certificate__inner">
+					<div class="gcm-certificate__header">
+						<img
+							class="gcm-certificate__logo"
+							src="<?php echo esc_url( $logo ); ?>"
+							alt="<?php echo esc_attr( $brand ); ?>"
+							width="72"
+							height="72"
+						>
+						<div class="gcm-certificate__brand-block">
+							<p class="gcm-certificate__brand"><?php echo esc_html( $brand ); ?></p>
+							<p class="gcm-certificate__tagline"><?php esc_html_e( 'Premium Learning', 'giga-class-market' ); ?></p>
+						</div>
 					</div>
-					<div>
-						<span><?php esc_html_e( 'Certificate ID', 'giga-class-market' ); ?></span>
-						<strong class="gcm-certificate__code"><?php echo esc_html( $cert->certificate_code ); ?></strong>
-					</div>
-				</div>
 
-				<div class="gcm-certificate__seal" aria-hidden="true">
-					<span><?php esc_html_e( 'Verified', 'giga-class-market' ); ?></span>
+					<p class="gcm-certificate__ribbon"><?php esc_html_e( 'Official Certificate', 'giga-class-market' ); ?></p>
+					<p class="gcm-certificate__kicker"><?php esc_html_e( 'Certificate of Achievement', 'giga-class-market' ); ?></p>
+					<p class="gcm-certificate__title"><?php esc_html_e( 'This is to certify that', 'giga-class-market' ); ?></p>
+					<p class="gcm-certificate__name"><?php echo esc_html( $cert->student_name ); ?></p>
+					<p class="gcm-certificate__body">
+						<?php echo wp_kses( __( 'has successfully completed the <strong>professional learning program</strong>', 'giga-class-market' ), array( 'strong' => array() ) ); ?>
+					</p>
+					<p class="gcm-certificate__course"><?php echo esc_html( $cert->course_title ); ?></p>
+					<p class="gcm-certificate__body gcm-certificate__body--muted">
+						<?php echo wp_kses( __( 'in recognition of <strong>dedication</strong>, skill development, and successful participation with Giga Class Market.', 'giga-class-market' ), array( 'strong' => array() ) ); ?>
+					</p>
+
+					<div class="gcm-certificate__meta">
+						<div>
+							<span><?php esc_html_e( 'Issued on', 'giga-class-market' ); ?></span>
+							<strong><?php echo esc_html( $issued ); ?></strong>
+						</div>
+						<div>
+							<span><?php esc_html_e( 'Certificate ID', 'giga-class-market' ); ?></span>
+							<strong class="gcm-certificate__code"><?php echo esc_html( $cert->certificate_code ); ?></strong>
+						</div>
+					</div>
+
+					<div class="gcm-certificate__footer">
+						<div class="gcm-certificate__sign">
+							<span class="gcm-certificate__sign-line" aria-hidden="true"></span>
+							<strong><?php esc_html_e( 'Giga Class Market', 'giga-class-market' ); ?></strong>
+							<small><?php esc_html_e( 'Authorized Issuing Authority', 'giga-class-market' ); ?></small>
+						</div>
+						<div class="gcm-certificate__seal" aria-hidden="true">
+							<span><?php esc_html_e( 'Verified', 'giga-class-market' ); ?></span>
+						</div>
+					</div>
 				</div>
 			</div>
+			<?php if ( $is_email ) : ?>
+				<style type="text/css">
+					.gcm-certificate--email .gcm-certificate__frame {
+						background-image: linear-gradient(180deg, rgba(255,253,248,0.94) 0%, rgba(255,255,255,0.88) 48%, rgba(244,250,249,0.92) 100%), url('<?php echo esc_url( $buildings ); ?>') !important;
+						background-size: cover !important;
+						background-position: center bottom !important;
+					}
+					.gcm-certificate--email .gcm-certificate__skyline {
+						background-image: url('<?php echo esc_url( $buildings ); ?>') !important;
+						background-repeat: no-repeat !important;
+						background-position: center bottom !important;
+						background-size: 100% auto !important;
+						opacity: 0.5 !important;
+					}
+					.gcm-certificate--email .gcm-certificate__watermark {
+						background-image: url('<?php echo esc_url( $watermark ); ?>') !important;
+						background-repeat: no-repeat !important;
+						background-position: center 46% !important;
+						background-size: 280px auto !important;
+						opacity: 0.5 !important;
+					}
+					.gcm-certificate--email .gcm-certificate__logo {
+						display: block !important;
+						margin: 0 auto 0.35rem !important;
+					}
+					.gcm-certificate--email .gcm-certificate__ribbon {
+						display: inline-block !important;
+						padding: 0.4rem 1.2rem !important;
+						background: #0d3b45 !important;
+						color: #f7efd4 !important;
+						border-radius: 999px !important;
+						font-size: 11px !important;
+						font-weight: 700 !important;
+						letter-spacing: 0.14em !important;
+						text-transform: uppercase !important;
+					}
+					.gcm-certificate--email .gcm-certificate__seal {
+						background: #e0a045 !important;
+						border: 2px solid #fffdf8 !important;
+					}
+				</style>
+			<?php endif; ?>
 		</div>
 		<?php
+		unset( $uid );
 		return (string) ob_get_clean();
 	}
 }
