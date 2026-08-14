@@ -30,12 +30,12 @@
 					<svg viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<defs>
 							<linearGradient id="gcmLogoGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-								<stop stop-color="#E8D48B"/>
-								<stop offset="0.55" stop-color="#C9A227"/>
-								<stop offset="1" stop-color="#8C6B12"/>
+								<stop stop-color="#F0D08E"/>
+								<stop offset="0.55" stop-color="#E0A045"/>
+								<stop offset="1" stop-color="#A86B1E"/>
 							</linearGradient>
 						</defs>
-						<rect x="2" y="2" width="44" height="44" rx="14" fill="#0B1B33"/>
+						<rect x="2" y="2" width="44" height="44" rx="14" fill="#0D3B45"/>
 						<path d="M14 30.5V17.5h9.2c3.7 0 6.1 2.1 6.1 5.2 0 3.2-2.4 5.3-6.1 5.3H19.2V30.5H14zm5.2-7.3h3.7c1.5 0 2.4-.8 2.4-2.1s-.9-2.1-2.4-2.1h-3.7v4.2z" fill="url(#gcmLogoGrad)"/>
 						<path d="M33.8 17.5l-4.2 13h-3.9l4.2-13h3.9z" fill="url(#gcmLogoGrad)"/>
 					</svg>

@@ -1,7 +1,7 @@
 .gcm-admin-wrap {
-	--gcm-navy: #0b1f3a;
-	--gcm-gold: #d4af37;
-	--gcm-soft: #f7f4ea;
+	--gcm-navy: #0d3b45;
+	--gcm-gold: #e0a045;
+	--gcm-soft: #f2f6f6;
 }
 
 .gcm-admin-wrap h1 {
@@ -27,7 +27,7 @@
 }
 
 .gcm-stat-card {
-	background: linear-gradient(135deg, var(--gcm-navy), #123a67);
+	background: linear-gradient(135deg, var(--gcm-navy), #14555f);
 	color: #fff;
 	position: relative;
 	overflow: hidden;
@@ -176,7 +176,7 @@
 	font-size: 12px;
 	font-weight: 700;
 	background: #eef2f7;
-	color: #0b1f3a;
+	color: #0d3b45;
 }
 
 .gcm-status-active,

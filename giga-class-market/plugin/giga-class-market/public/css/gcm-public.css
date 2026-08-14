@@ -26,7 +26,7 @@
 }
 
 .gcm-price {
-	color: #0b1f3a;
+	color: #0d3b45;
 	font-size: 20px;
 	font-weight: 700;
 }
@@ -35,10 +35,10 @@
 .gcm-ajax-form button,
 .gcm-course-search button,
 .gcm-complete-lesson {
-	background: #0b1f3a;
+	background: #0d3b45;
 	border: 0;
 	border-radius: 999px;
-	color: #d4af37;
+	color: #e0a045;
 	cursor: pointer;
 	display: inline-block;
 	font-weight: 700;

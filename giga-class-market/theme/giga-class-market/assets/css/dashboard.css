@@ -202,7 +202,7 @@
 	margin: 1rem 0;
 	padding: 1rem;
 	border-radius: var(--gcm-radius);
-	background: linear-gradient(135deg, #0b1f3a, #1a3a66);
+	background: linear-gradient(135deg, var(--gcm-navy-deep), var(--gcm-navy));
 	color: #fff;
 }
 
@@ -219,7 +219,7 @@
 	padding: 0.5rem;
 	border: 1px solid var(--gcm-border);
 	border-radius: var(--gcm-radius);
-	background: color-mix(in srgb, var(--gcm-navy, #0b1f3a) 3%, white);
+	background: color-mix(in srgb, var(--gcm-navy) 3%, white);
 }
 
 .gcm-message {
@@ -230,7 +230,7 @@
 }
 
 .gcm-message.is-mine {
-	background: color-mix(in srgb, var(--gcm-gold, #d4af37) 18%, white);
+	background: color-mix(in srgb, var(--gcm-gold) 18%, white);
 	margin-left: 1.5rem;
 }
 
@@ -259,7 +259,7 @@
 }
 
 .gcm-status-scheduled {
-	color: #0b1f3a;
+	color: var(--gcm-navy);
 	font-weight: 600;
 }
 

@@ -56,8 +56,8 @@ class GCM_Settings_Service {
 				),
 			),
 			'website'  => array(
-				'theme_color'       => '#0b1f3a',
-				'accent_color'      => '#d4af37',
+				'theme_color'       => '#0d3b45',
+				'accent_color'      => '#e0a045',
 				'student_page_slug' => 'student-dashboard',
 				'currency_symbol'   => 'PKR ',
 			),
@@ -235,8 +235,8 @@ class GCM_Settings_Service {
 		}
 
 		if ( isset( $settings['website'] ) && is_array( $settings['website'] ) ) {
-			$clean['website']['theme_color']       = sanitize_hex_color( $settings['website']['theme_color'] ?? '' ) ?: '#0b1f3a';
-			$clean['website']['accent_color']      = sanitize_hex_color( $settings['website']['accent_color'] ?? '' ) ?: '#d4af37';
+			$clean['website']['theme_color']       = sanitize_hex_color( $settings['website']['theme_color'] ?? '' ) ?: '#0d3b45';
+			$clean['website']['accent_color']      = sanitize_hex_color( $settings['website']['accent_color'] ?? '' ) ?: '#e0a045';
 			$clean['website']['student_page_slug'] = sanitize_title( $settings['website']['student_page_slug'] ?? 'student-dashboard' );
 			$clean['website']['currency_symbol']   = sanitize_text_field( $settings['website']['currency_symbol'] ?? ( $clean['website']['currency_symbol'] ?? 'PKR ' ) );
 		}

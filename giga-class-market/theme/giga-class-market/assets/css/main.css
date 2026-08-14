@@ -1,28 +1,29 @@
 :root {
-	--gcm-navy: #0B1B33;
-	--gcm-navy-deep: #06101F;
-	--gcm-gold: #C9A227;
-	--gcm-gold-soft: #E8D48B;
-	--gcm-blue: #1E6BFF;
-	--gcm-bg: #F7F8FA;
+	/* Teal ink + warm amber — cool mist surfaces (not navy/gold, not cream/terracotta) */
+	--gcm-navy: #0D3B45;
+	--gcm-navy-deep: #07262E;
+	--gcm-gold: #E0A045;
+	--gcm-gold-soft: #F0D08E;
+	--gcm-blue: #1FA8A0;
+	--gcm-bg: #F2F6F6;
 	--gcm-surface: #FFFFFF;
-	--gcm-text: #0B1B33;
-	--gcm-muted: #5B677A;
-	--gcm-border: rgba(11,27,51,0.08);
+	--gcm-text: #0D2A2E;
+	--gcm-muted: #5A7075;
+	--gcm-border: rgba(13, 59, 69, 0.1);
 	--gcm-radius: 14px;
-	--gcm-shadow: 0 12px 40px rgba(11,27,51,0.08);
+	--gcm-shadow: 0 12px 40px rgba(7, 38, 46, 0.08);
 	--gcm-font-ui: "Outfit", sans-serif;
 	--gcm-font-display: "Fraunces", serif;
 	--gcm-header-height: 82px;
 }
 
 html[data-theme="dark"] {
-	--gcm-bg: #06101F;
-	--gcm-surface: #0B1B33;
-	--gcm-text: #F7F8FA;
-	--gcm-muted: #BAC4D3;
-	--gcm-border: rgba(232,212,139,0.18);
-	--gcm-shadow: 0 18px 50px rgba(0,0,0,0.35);
+	--gcm-bg: #07262E;
+	--gcm-surface: #0D3B45;
+	--gcm-text: #F2F6F6;
+	--gcm-muted: #A8C0C4;
+	--gcm-border: rgba(240, 208, 142, 0.18);
+	--gcm-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
 *,
@@ -37,7 +38,10 @@ html {
 
 body {
 	margin: 0;
-	background: var(--gcm-bg);
+	background:
+		radial-gradient(1200px 500px at 10% -10%, rgba(31, 168, 160, 0.12), transparent 55%),
+		radial-gradient(900px 420px at 95% 0%, rgba(224, 160, 69, 0.1), transparent 50%),
+		var(--gcm-bg);
 	color: var(--gcm-text);
 	font-family: var(--gcm-font-ui);
 	font-size: 17px;
@@ -139,7 +143,7 @@ textarea {
 	height: 42px;
 	object-fit: contain;
 	border-radius: 14px;
-	background: #0B1B33;
+	background: #0D3B45;
 }
 
 .gcm-brand__mark {
@@ -690,7 +694,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	padding: 0.28rem 0.7rem;
 	border-radius: 999px;
 	background: rgba(201,162,39,0.12);
-	color: #8C6B12;
+	color: #A86B1E;
 	font-size: 0.78rem;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -932,59 +936,59 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 }
 
 .gcm-about-card--gold {
-	background: linear-gradient(160deg, #FFF8E8 0%, #FFFFFF 48%, #F7F1DF 100%);
-	border-color: rgba(201,162,39,0.28);
+	background: linear-gradient(160deg, #FFF6E8 0%, #FFFFFF 48%, #F5EFE0 100%);
+	border-color: rgba(224, 160, 69, 0.28);
 }
 
 .gcm-about-card--gold .gcm-about-card__icon {
-	background: linear-gradient(145deg, #C9A227, #E8D48B);
-	color: #0B1B33;
+	background: linear-gradient(145deg, #E0A045, #F0D08E);
+	color: #07262E;
 }
 
 .gcm-about-card--gold::after {
-	background: radial-gradient(circle, rgba(201,162,39,0.35), transparent 70%);
+	background: radial-gradient(circle, rgba(224, 160, 69, 0.35), transparent 70%);
 }
 
 .gcm-about-card--navy {
-	background: linear-gradient(160deg, #0B1B33 0%, #132744 55%, #0B1B33 100%);
-	color: #F7F8FA;
-	border-color: rgba(232,212,139,0.22);
+	background: linear-gradient(160deg, #0D3B45 0%, #14555F 55%, #07262E 100%);
+	color: #F2F6F6;
+	border-color: rgba(240, 208, 142, 0.22);
 }
 
 .gcm-about-card--navy .gcm-eyebrow,
 .gcm-about-card--navy .gcm-about-card__icon {
-	color: #E8D48B;
+	color: #F0D08E;
 }
 
 .gcm-about-card--navy .gcm-about-card__icon {
-	background: rgba(232,212,139,0.12);
-	box-shadow: inset 0 0 0 1px rgba(232,212,139,0.28);
+	background: rgba(240, 208, 142, 0.12);
+	box-shadow: inset 0 0 0 1px rgba(240, 208, 142, 0.28);
 }
 
 .gcm-about-card--navy p {
-	color: rgba(247,248,250,0.74);
+	color: rgba(242, 246, 246, 0.74);
 }
 
 .gcm-about-card--navy::after {
-	background: radial-gradient(circle, rgba(30,107,255,0.35), transparent 70%);
+	background: radial-gradient(circle, rgba(31, 168, 160, 0.35), transparent 70%);
 }
 
 .gcm-about-card--blue {
-	background: linear-gradient(160deg, #EAF1FF 0%, #FFFFFF 50%, #DEE9FF 100%);
-	border-color: rgba(30,107,255,0.22);
+	background: linear-gradient(160deg, #E6F7F5 0%, #FFFFFF 50%, #D8F0ED 100%);
+	border-color: rgba(31, 168, 160, 0.22);
 }
 
 .gcm-about-card--blue .gcm-about-card__icon {
-	background: linear-gradient(145deg, #1E6BFF, #6EA0FF);
+	background: linear-gradient(145deg, #1FA8A0, #5BC9C2);
 	color: #fff;
 }
 
 .gcm-about-card--blue .gcm-eyebrow {
-	color: #1E6BFF;
+	color: #1FA8A0;
 }
 
 .gcm-about-card--blue::after {
-	background: radial-gradient(circle, rgba(30,107,255,0.28), transparent 70%);
+	background: radial-gradient(circle, rgba(31, 168, 160, 0.28), transparent 70%);
 }
 
 .gcm-about-card--emerald {

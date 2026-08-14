@@ -271,8 +271,8 @@ class GCM_Installer {
 					),
 				),
 				'website'  => array(
-					'theme_color'      => '#0b1f3a',
-					'accent_color'     => '#d4af37',
+					'theme_color'      => '#0d3b45',
+					'accent_color'     => '#e0a045',
 					'student_page_slug' => 'student-dashboard',
 				),
 				'course'   => array(
@@ -331,6 +331,13 @@ class GCM_Installer {
 				'client_secret' => '',
 			);
 		}
+
+		// Refresh site palette to teal ink + amber (theme CSS is source of truth; keep settings in sync).
+		if ( empty( $settings['website'] ) || ! is_array( $settings['website'] ) ) {
+			$settings['website'] = array();
+		}
+		$settings['website']['theme_color']  = '#0d3b45';
+		$settings['website']['accent_color'] = '#e0a045';
 
 		// Normalize existing students to GCM-only identity (not Subscriber + Student).
 		// Also strip accidental gcm_student role from administrators so all admins remain visible.
