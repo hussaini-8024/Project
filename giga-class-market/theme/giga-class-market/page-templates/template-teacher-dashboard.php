@@ -111,6 +111,14 @@ get_header();
 					<?php else : ?>
 						<ul class="gcm-teacher-class-list">
 							<?php foreach ( $upcoming as $class ) : ?>
+								<?php
+								if ( 'live' === $class->status && class_exists( 'GCM_Class_Service' ) ) {
+									$fixed = GCM_Class_Service::ensure_meeting_links( (int) $class->id );
+									if ( ! is_wp_error( $fixed ) ) {
+										$class = $fixed;
+									}
+								}
+								?>
 								<li class="gcm-teacher-class gcm-teacher-class--<?php echo esc_attr( $class->status ); ?>">
 									<div>
 										<strong><?php echo esc_html( $class->title ); ?></strong>
@@ -129,8 +137,10 @@ get_header();
 										<?php if ( 'scheduled' === $class->status ) : ?>
 											<button type="button" class="gcm-button gcm-button--gold gcm-teacher-action" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Start class', 'giga-class-market' ); ?></button>
 										<?php elseif ( 'live' === $class->status ) : ?>
-											<?php if ( ! empty( $class->zoom_start_url ) ) : ?>
-												<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $class->zoom_start_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open Zoom', 'giga-class-market' ); ?></a>
+											<?php if ( ! empty( $class->zoom_start_url ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_usable_meeting_url( $class->zoom_start_url ) ) : ?>
+												<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $class->zoom_start_url ); ?>"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></a>
+											<?php else : ?>
+												<button type="button" class="gcm-button gcm-button--gold gcm-teacher-action" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></button>
 											<?php endif; ?>
 											<button type="button" class="gcm-button gcm-button--outline gcm-teacher-action" data-action="gcm_end_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'End class', 'giga-class-market' ); ?></button>
 										<?php endif; ?>

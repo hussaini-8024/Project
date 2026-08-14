@@ -68,10 +68,11 @@
 			return response.json();
 		}).then(function (json) {
 			if (json.success && json.data && json.data.join_url) {
-				window.open(json.data.join_url, '_blank', 'noopener');
-			} else {
-				window.alert((json.data && json.data.message) || 'Unable to join class.');
+				// Same-tab navigation avoids popup blockers and broken blank tabs.
+				window.location.assign(json.data.join_url);
+				return;
 			}
+			window.alert((json.data && json.data.message) || 'Unable to join class.');
 			joinBtn.disabled = false;
 		}).catch(function () {
 			window.alert('Unable to join class.');
@@ -103,17 +104,19 @@
 		}).then(function (response) {
 			return response.json();
 		}).then(function (json) {
-			if (json.success && json.data && json.data.start_url) {
-				window.open(json.data.start_url, '_blank', 'noopener');
-			}
-			if (json.success) {
-				window.setTimeout(function () {
-					window.location.reload();
-				}, 400);
-			} else {
+			if (!json.success) {
 				window.alert((json.data && json.data.message) || 'Request failed.');
 				button.disabled = false;
+				return;
 			}
+			var meetingUrl = (json.data && (json.data.start_url || json.data.join_url)) || '';
+			if (meetingUrl && button.getAttribute('data-action') === 'gcm_start_class') {
+				window.location.assign(meetingUrl);
+				return;
+			}
+			window.setTimeout(function () {
+				window.location.reload();
+			}, 400);
 		}).catch(function () {
 			window.alert('Request failed.');
 			button.disabled = false;

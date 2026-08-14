@@ -76,6 +76,11 @@ class GCM_Activator {
 				'content'  => '',
 				'template' => 'page-templates/template-teacher-dashboard.php',
 			),
+			'live-class'           => array(
+				'title'    => __( 'Live Class', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-live-class.php',
+			),
 			'course-learn'         => array(
 				'title'    => __( 'Course Learn', 'giga-class-market' ),
 				'content'  => '',

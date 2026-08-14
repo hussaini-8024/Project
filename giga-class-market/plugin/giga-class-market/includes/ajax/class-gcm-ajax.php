@@ -467,10 +467,15 @@ class GCM_Ajax {
 		GCM_Security::verify_ajax_nonce();
 		$this->require_teacher_or_admin();
 
-		$result = GCM_Class_Service::start(
-			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
-			get_current_user_id()
-		);
+		$class_id = isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0;
+		$existing = GCM_Class_Service::get( $class_id );
+
+		// If already live with a broken link, repair and return URLs.
+		if ( $existing && 'live' === $existing->status ) {
+			$result = GCM_Class_Service::ensure_meeting_links( $class_id );
+		} else {
+			$result = GCM_Class_Service::start( $class_id, get_current_user_id() );
+		}
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
@@ -478,9 +483,9 @@ class GCM_Ajax {
 
 		wp_send_json_success(
 			array(
-				'message'   => __( 'Class started. Zoom link is live for students.', 'giga-class-market' ),
+				'message'   => __( 'Class started. Opening the live meeting…', 'giga-class-market' ),
 				'join_url'  => $result->zoom_join_url ?? '',
-				'start_url' => $result->zoom_start_url ?? '',
+				'start_url' => ! empty( $result->zoom_start_url ) ? $result->zoom_start_url : ( $result->zoom_join_url ?? '' ),
 				'id'        => (int) $result->id,
 			)
 		);

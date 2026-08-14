@@ -74,6 +74,7 @@ class GCM_Settings_Service {
 				'account_id'    => '',
 				'client_id'     => '',
 				'client_secret' => '',
+				'host_email'    => '',
 			),
 		);
 	}
@@ -256,6 +257,7 @@ class GCM_Settings_Service {
 			$clean['zoom']['account_id']    = sanitize_text_field( $settings['zoom']['account_id'] ?? '' );
 			$clean['zoom']['client_id']     = sanitize_text_field( $settings['zoom']['client_id'] ?? '' );
 			$clean['zoom']['client_secret'] = sanitize_text_field( $settings['zoom']['client_secret'] ?? '' );
+			$clean['zoom']['host_email']    = sanitize_email( $settings['zoom']['host_email'] ?? '' );
 		}
 
 		return $clean;

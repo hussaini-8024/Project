@@ -17,6 +17,12 @@ $user_id    = get_current_user_id();
 $has_access = gcm_user_can_access_course( $course_id, $user_id );
 
 $live_class     = ( $course_id && $has_access && class_exists( 'GCM_Class_Service' ) ) ? GCM_Class_Service::get_live_for_course( $course_id ) : null;
+if ( $live_class && class_exists( 'GCM_Class_Service' ) ) {
+	$fixed_live = GCM_Class_Service::ensure_meeting_links( (int) $live_class->id );
+	if ( ! is_wp_error( $fixed_live ) ) {
+		$live_class = $fixed_live;
+	}
+}
 $course_classes = ( $course_id && $has_access && class_exists( 'GCM_Class_Service' ) ) ? GCM_Class_Service::get_for_course( $course_id ) : array();
 $course_notes   = ( $course_id && $has_access && class_exists( 'GCM_Notes_Service' ) ) ? GCM_Notes_Service::get_for_course( $course_id ) : array();
 $course_messages = ( $course_id && $has_access && class_exists( 'GCM_Message_Service' ) ) ? GCM_Message_Service::get_thread( $course_id, $user_id ) : array();

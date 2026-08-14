@@ -124,7 +124,7 @@ class GCM_Class_Service {
 		}
 
 		$duration = self::duration_minutes( $class );
-		$zoom     = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, $duration );
+		$zoom     = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, $duration, (int) $class->id );
 
 		if ( is_wp_error( $zoom ) ) {
 			return $zoom;
@@ -134,8 +134,11 @@ class GCM_Class_Service {
 		$start_url  = isset( $zoom['start_url'] ) ? (string) $zoom['start_url'] : $join_url;
 		$meeting_id = isset( $zoom['meeting_id'] ) ? (string) $zoom['meeting_id'] : '';
 
-		if ( '' === $join_url ) {
-			return new WP_Error( 'gcm_zoom_missing', __( 'Zoom meeting link was not created.', 'giga-class-market' ) );
+		if ( '' === $join_url || ! GCM_Zoom_Service::is_usable_meeting_url( $join_url ) ) {
+			$zoom       = GCM_Zoom_Service::create_jitsi_meeting( $class->title, (int) $class->id );
+			$join_url   = $zoom['join_url'];
+			$start_url  = $zoom['start_url'];
+			$meeting_id = $zoom['meeting_id'];
 		}
 
 		$wpdb->update(
@@ -149,6 +152,49 @@ class GCM_Class_Service {
 			),
 			array( 'id' => absint( $class_id ) ),
 			array( '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		return self::get( $class_id );
+	}
+
+	/**
+	 * Ensure a live class has a usable Zoom/Jitsi URL (repairs legacy /live-class/ 404 links).
+	 *
+	 * @param int $class_id Class ID.
+	 * @return object|WP_Error
+	 */
+	public static function ensure_meeting_links( $class_id ) {
+		global $wpdb;
+
+		$class = self::get( $class_id );
+		if ( ! $class ) {
+			return new WP_Error( 'gcm_invalid_class', __( 'Class not found.', 'giga-class-market' ) );
+		}
+
+		if ( GCM_Zoom_Service::is_usable_meeting_url( $class->zoom_join_url ?? '' ) ) {
+			return $class;
+		}
+
+		$meeting = GCM_Zoom_Service::create_meeting(
+			$class->title,
+			$class->scheduled_at,
+			self::duration_minutes( $class ),
+			(int) $class->id
+		);
+		if ( is_wp_error( $meeting ) ) {
+			$meeting = GCM_Zoom_Service::create_jitsi_meeting( $class->title, (int) $class->id );
+		}
+
+		$wpdb->update(
+			$wpdb->prefix . 'gcm_classes',
+			array(
+				'zoom_meeting_id' => $meeting['meeting_id'],
+				'zoom_join_url'   => $meeting['join_url'],
+				'zoom_start_url'  => $meeting['start_url'],
+			),
+			array( 'id' => absint( $class_id ) ),
+			array( '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 

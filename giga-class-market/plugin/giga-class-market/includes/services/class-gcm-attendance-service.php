@@ -28,7 +28,20 @@ class GCM_Attendance_Service {
 		$user_id  = $user_id ? absint( $user_id ) : get_current_user_id();
 		$class    = GCM_Class_Service::get( $class_id );
 
-		if ( ! $class || 'live' !== $class->status || empty( $class->zoom_join_url ) ) {
+		if ( ! $class || 'live' !== $class->status ) {
+			return new WP_Error( 'gcm_not_live', __( 'This class is not live yet.', 'giga-class-market' ) );
+		}
+
+		// Repair broken legacy /live-class/ placeholder URLs.
+		$class = GCM_Class_Service::ensure_meeting_links( $class_id );
+		if ( is_wp_error( $class ) ) {
+			return $class;
+		}
+		if ( 'live' !== $class->status ) {
+			return new WP_Error( 'gcm_not_live', __( 'This class is not live yet.', 'giga-class-market' ) );
+		}
+
+		if ( empty( $class->zoom_join_url ) ) {
 			return new WP_Error( 'gcm_not_live', __( 'This class is not live yet.', 'giga-class-market' ) );
 		}
 		if ( ! $user_id ) {

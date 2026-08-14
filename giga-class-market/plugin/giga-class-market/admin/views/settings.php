@@ -81,6 +81,8 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Account ID', 'giga-class-market' ); ?><input type="text" name="settings[zoom][account_id]" value="<?php echo esc_attr( $settings['zoom']['account_id'] ?? '' ); ?>" autocomplete="off" /></label>
 			<label><?php esc_html_e( 'Client ID', 'giga-class-market' ); ?><input type="text" name="settings[zoom][client_id]" value="<?php echo esc_attr( $settings['zoom']['client_id'] ?? '' ); ?>" autocomplete="off" /></label>
 			<label><?php esc_html_e( 'Client Secret', 'giga-class-market' ); ?><input type="password" name="settings[zoom][client_secret]" value="<?php echo esc_attr( $settings['zoom']['client_secret'] ?? '' ); ?>" autocomplete="new-password" /></label>
+			<label><?php esc_html_e( 'Host email (Zoom user)', 'giga-class-market' ); ?><input type="email" name="settings[zoom][host_email]" value="<?php echo esc_attr( $settings['zoom']['host_email'] ?? '' ); ?>" placeholder="teacher@example.com" autocomplete="off" /></label>
+			<p class="description"><?php esc_html_e( 'If Zoom keys are empty, Start Class opens a working Jitsi Meet room so teachers and students are never sent to a broken page. With Zoom configured, a real Zoom meeting is created automatically.', 'giga-class-market' ); ?></p>
 		</section>
 
 		<p>
