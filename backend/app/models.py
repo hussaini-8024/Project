@@ -256,7 +256,9 @@ class Machine(Base):
     lab: Mapped[StudentLab] = relationship(back_populates="machines")
     template: Mapped[MachineTemplate | None] = relationship()
     node: Mapped[ComputeNode | None] = relationship()
-    interfaces: Mapped[list[NetworkInterface]] = relationship(back_populates="machine")
+    interfaces: Mapped[list[NetworkInterface]] = relationship(
+        back_populates="machine", cascade="all, delete-orphan"
+    )
     snapshots: Mapped[list[Snapshot]] = relationship(back_populates="machine")
 
 
