@@ -3,10 +3,11 @@
 	--folio-bg: #070b12;
 	--folio-panel: #0d1520;
 	--folio-line: rgba(62, 255, 163, 0.22);
-	--folio-green: #3effa3;
-	--folio-cyan: #49d6ff;
-	--folio-text: #e8f2f7;
-	--folio-muted: #8aa0b2;
+	--folio-green: #5dffb4;
+	--folio-cyan: #6ae0ff;
+	--folio-text: #f3f8fc;
+	--folio-muted: #c5d5e3;
+	--folio-soft: #d7e4ef;
 	--folio-danger: #ff6b6b;
 	position: relative;
 	color: var(--folio-text);
@@ -107,10 +108,11 @@
 	line-height: 1.25;
 	margin: 0 0 1rem;
 	max-width: 34ch;
+	color: var(--folio-text);
 }
 
 .gcm-folio-intro {
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 	font-size: 1.05rem;
 	line-height: 1.65;
 	max-width: 48ch;
@@ -170,7 +172,7 @@
 	gap: 0.45rem;
 	font-family: "IBM Plex Mono", ui-monospace, monospace;
 	font-size: 0.82rem;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 }
 
 .gcm-folio-meta span {
@@ -260,7 +262,7 @@
 	font-size: 0.68rem;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 }
 
 .gcm-folio-section__head h2 {
@@ -268,11 +270,12 @@
 	font-size: clamp(1.7rem, 3vw, 2.35rem);
 	margin: 0;
 	letter-spacing: -0.02em;
+	color: #ffffff;
 }
 
 .gcm-folio-about__text {
 	max-width: 62ch;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 	font-size: 1.08rem;
 	line-height: 1.7;
 	margin: 1.25rem 0 0;
@@ -337,6 +340,7 @@
 	margin: 0;
 	font-family: "Space Grotesk", sans-serif;
 	font-size: 1.05rem;
+	color: #ffffff;
 }
 
 .gcm-folio-skill ul {
@@ -349,7 +353,7 @@
 
 .gcm-folio-skill li {
 	font-size: 0.92rem;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 	padding-left: 0.95rem;
 	position: relative;
 }
@@ -373,9 +377,9 @@
 	font-size: 0.78rem;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 	background: transparent;
-	border: 1px solid rgba(138, 160, 178, 0.35);
+	border: 1px solid rgba(197, 213, 227, 0.45);
 	border-radius: 999px;
 	padding: 0.55rem 0.95rem;
 	cursor: pointer;
@@ -445,7 +449,7 @@
 	place-items: center;
 	font-family: "IBM Plex Mono", monospace;
 	letter-spacing: 0.14em;
-	color: rgba(62, 255, 163, 0.55);
+	color: rgba(93, 255, 180, 0.85);
 	background:
 		linear-gradient(135deg, rgba(62, 255, 163, 0.08), transparent 45%),
 		repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(73, 214, 255, 0.05) 10px, rgba(73, 214, 255, 0.05) 11px);
@@ -479,7 +483,7 @@
 .gcm-folio-year {
 	font-family: "IBM Plex Mono", monospace;
 	font-size: 0.75rem;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 }
 
 .gcm-folio-card h3 {
@@ -487,11 +491,12 @@
 	font-family: "Space Grotesk", sans-serif;
 	font-size: 1.2rem;
 	letter-spacing: -0.01em;
+	color: #ffffff;
 }
 
 .gcm-folio-card p {
 	margin: 0;
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 	font-size: 0.95rem;
 	line-height: 1.55;
 }
@@ -508,9 +513,9 @@
 .gcm-folio-tech li {
 	font-family: "IBM Plex Mono", monospace;
 	font-size: 0.68rem;
-	color: #b7c9d6;
-	background: rgba(255, 255, 255, 0.04);
-	border: 1px solid rgba(138, 160, 178, 0.22);
+	color: #e8f1f8;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(197, 213, 227, 0.35);
 	border-radius: 0.3rem;
 	padding: 0.2rem 0.4rem;
 }
@@ -541,10 +546,11 @@
 	font-family: "Space Grotesk", sans-serif;
 	font-size: clamp(1.6rem, 3vw, 2.2rem);
 	margin: 0 0 0.65rem;
+	color: #ffffff;
 }
 
 .gcm-folio-cta p {
-	color: var(--folio-muted);
+	color: var(--folio-soft);
 	margin: 0 0 1.25rem;
 }
 
@@ -606,8 +612,18 @@
 }
 
 body.gcm-page-portfolio .gcm-site-header {
-	background: rgba(7, 11, 18, 0.88);
+	background: rgba(7, 11, 18, 0.92);
 	border-bottom-color: rgba(62, 255, 163, 0.15);
+}
+
+body.gcm-page-portfolio .gcm-site-header a,
+body.gcm-page-portfolio .gcm-menu a {
+	color: #f0f6fb;
+}
+
+body.gcm-page-portfolio .gcm-menu a:hover,
+body.gcm-page-portfolio .gcm-menu a:focus {
+	color: var(--folio-cyan, #6ae0ff);
 }
 
 body.gcm-page-portfolio .gcm-main {
