@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.8.1' );
+define( 'GCM_THEME_VERSION', '1.9.0' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -67,7 +67,7 @@ function gcm_enqueue_assets() {
 
 	wp_enqueue_style(
 		'gcm-fonts',
-		'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Outfit:wght@500;600;700;800&display=swap',
+		'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap',
 		array(),
 		null
 	);
@@ -85,6 +85,22 @@ function gcm_enqueue_assets() {
 			GCM_THEME_URI . '/assets/css/dashboard.css',
 			array( 'gcm-main' ),
 			$asset_ver
+		);
+	}
+
+	if ( is_page_template( 'page-templates/template-portfolio.php' ) ) {
+		wp_enqueue_style(
+			'gcm-portfolio',
+			GCM_THEME_URI . '/assets/css/portfolio.css',
+			array( 'gcm-main' ),
+			$asset_ver
+		);
+		wp_enqueue_script(
+			'gcm-portfolio',
+			GCM_THEME_URI . '/assets/js/portfolio.js',
+			array(),
+			$asset_ver,
+			true
 		);
 	}
 
@@ -394,6 +410,10 @@ function gcm_body_classes( $classes ) {
 
 	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) || is_page_template( 'page-templates/template-teacher-dashboard.php' ) ) {
 		$classes[] = 'gcm-student-area';
+	}
+
+	if ( is_page_template( 'page-templates/template-portfolio.php' ) ) {
+		$classes[] = 'gcm-page-portfolio';
 	}
 
 	return $classes;

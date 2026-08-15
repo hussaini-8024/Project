@@ -93,6 +93,7 @@ class GCM_Settings_Service {
 				'host_email'    => '',
 			),
 			'seo'      => class_exists( 'GCM_SEO' ) ? GCM_SEO::defaults() : array(),
+			'portfolio'=> class_exists( 'GCM_Portfolio_Service' ) ? GCM_Portfolio_Service::profile_defaults() : array(),
 		);
 	}
 
@@ -310,6 +311,10 @@ class GCM_Settings_Service {
 			$clean['seo']['organization_description'] = sanitize_textarea_field( $settings['seo']['organization_description'] ?? ( $seo_defaults['organization_description'] ?? '' ) );
 			$clean['seo']['google_site_verification'] = sanitize_text_field( $settings['seo']['google_site_verification'] ?? '' );
 			$clean['seo']['bing_site_verification']   = sanitize_text_field( $settings['seo']['bing_site_verification'] ?? '' );
+		}
+
+		if ( isset( $settings['portfolio'] ) && is_array( $settings['portfolio'] ) && class_exists( 'GCM_Portfolio_Service' ) ) {
+			$clean['portfolio'] = GCM_Portfolio_Service::sanitize_profile( $settings['portfolio'] );
 		}
 
 		return $clean;

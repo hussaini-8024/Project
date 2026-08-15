@@ -32,6 +32,8 @@ class GCM_Core {
 		add_action( 'init', array( $post_types, 'register' ) );
 		add_action( 'init', array( $frontend, 'register_rewrites' ) );
 		add_action( 'init', array( $frontend, 'register_shortcodes' ) );
+		add_action( 'admin_init', array( 'GCM_Portfolio_Service', 'maybe_seed_projects' ) );
+		add_action( 'admin_init', array( 'GCM_Portfolio_Service', 'ensure_portfolio_page' ) );
 		add_action( 'template_redirect', array( $frontend, 'protect_student_pages' ) );
 		add_action( 'template_redirect', array( $frontend, 'serve_private_screenshot' ) );
 		add_action( 'template_redirect', array( $frontend, 'serve_promo_popup_json' ), 0 );
@@ -52,6 +54,7 @@ class GCM_Core {
 		add_action( 'add_meta_boxes', array( $post_types, 'register_meta_boxes' ) );
 		add_action( 'add_meta_boxes', array( $post_types, 'promote_course_thumbnail_box' ), 20 );
 		add_action( 'save_post_gcm_course', array( $post_types, 'save_course_meta' ), 10, 2 );
+		add_action( 'save_post_gcm_portfolio_item', array( $post_types, 'save_portfolio_meta' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( $post_types, 'require_course_thumbnail_on_publish' ), 20, 2 );
 		add_action( 'admin_notices', array( $post_types, 'course_thumbnail_admin_notices' ) );
 		add_filter( 'manage_gcm_course_posts_columns', array( $post_types, 'course_list_columns' ) );

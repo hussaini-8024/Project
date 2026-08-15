@@ -69,6 +69,29 @@ class GCM_Post_Types {
 			)
 		);
 
+		register_post_type(
+			'gcm_portfolio_item',
+			array(
+				'labels'              => array(
+					'name'               => __( 'Portfolio Projects', 'giga-class-market' ),
+					'singular_name'      => __( 'Portfolio Project', 'giga-class-market' ),
+					'add_new_item'       => __( 'Add Portfolio Project', 'giga-class-market' ),
+					'edit_item'          => __( 'Edit Portfolio Project', 'giga-class-market' ),
+					'new_item'           => __( 'New Portfolio Project', 'giga-class-market' ),
+					'view_item'          => __( 'View Portfolio Project', 'giga-class-market' ),
+					'search_items'       => __( 'Search Portfolio Projects', 'giga-class-market' ),
+					'not_found'          => __( 'No portfolio projects found.', 'giga-class-market' ),
+					'not_found_in_trash' => __( 'No portfolio projects found in Trash.', 'giga-class-market' ),
+				),
+				'public'              => false,
+				'show_ui'             => true,
+				'show_in_menu'        => false,
+				'supports'            => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes' ),
+				'show_in_rest'        => true,
+				'capability_type'     => 'post',
+			)
+		);
+
 		register_taxonomy(
 			'gcm_category',
 			array( 'gcm_course' ),
@@ -205,6 +228,91 @@ class GCM_Post_Types {
 			'normal',
 			'default'
 		);
+
+		add_meta_box(
+			'gcm_portfolio_details',
+			__( 'Portfolio Details', 'giga-class-market' ),
+			array( $this, 'render_portfolio_meta_box' ),
+			'gcm_portfolio_item',
+			'normal',
+			'high'
+		);
+	}
+
+	/**
+	 * Render portfolio project meta box.
+	 *
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function render_portfolio_meta_box( $post ) {
+		wp_nonce_field( 'gcm_save_portfolio_meta', 'gcm_portfolio_meta_nonce' );
+		$category = (string) get_post_meta( $post->ID, '_gcm_portfolio_category', true );
+		$tech     = (string) get_post_meta( $post->ID, '_gcm_portfolio_tech', true );
+		$url      = (string) get_post_meta( $post->ID, '_gcm_portfolio_url', true );
+		$year     = (string) get_post_meta( $post->ID, '_gcm_portfolio_year', true );
+		$featured = (int) get_post_meta( $post->ID, '_gcm_portfolio_featured', true );
+		$cats     = class_exists( 'GCM_Portfolio_Service' ) ? GCM_Portfolio_Service::categories() : array();
+		?>
+		<p class="description"><?php esc_html_e( 'Set a Featured Image for the project photo. Title, excerpt, and content are fully editable.', 'giga-class-market' ); ?></p>
+		<p>
+			<label for="gcm_portfolio_category"><strong><?php esc_html_e( 'Category', 'giga-class-market' ); ?></strong></label>
+			<select name="gcm_portfolio_category" id="gcm_portfolio_category" class="widefat">
+				<?php foreach ( $cats as $slug => $label ) : ?>
+					<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $category, $slug ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</p>
+		<p>
+			<label for="gcm_portfolio_tech"><strong><?php esc_html_e( 'Technologies (comma-separated)', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_portfolio_tech" name="gcm_portfolio_tech" value="<?php echo esc_attr( $tech ); ?>" placeholder="WordPress, PHP, Networking" />
+		</p>
+		<p>
+			<label for="gcm_portfolio_url"><strong><?php esc_html_e( 'Project URL (optional)', 'giga-class-market' ); ?></strong></label>
+			<input type="url" class="widefat" id="gcm_portfolio_url" name="gcm_portfolio_url" value="<?php echo esc_attr( $url ); ?>" placeholder="https://" />
+		</p>
+		<p>
+			<label for="gcm_portfolio_year"><strong><?php esc_html_e( 'Year', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_portfolio_year" name="gcm_portfolio_year" value="<?php echo esc_attr( $year ); ?>" placeholder="2026" />
+		</p>
+		<p>
+			<label>
+				<input type="checkbox" name="gcm_portfolio_featured" value="1" <?php checked( $featured, 1 ); ?> />
+				<?php esc_html_e( 'Featured project', 'giga-class-market' ); ?>
+			</label>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Save portfolio project meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function save_portfolio_meta( $post_id, $post ) {
+		if ( ! isset( $_POST['gcm_portfolio_meta_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcm_portfolio_meta_nonce'] ) ), 'gcm_save_portfolio_meta' ) ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) || 'gcm_portfolio_item' !== $post->post_type ) {
+			return;
+		}
+
+		$cats     = class_exists( 'GCM_Portfolio_Service' ) ? array_keys( GCM_Portfolio_Service::categories() ) : array( 'cyber', 'networking', 'web', 'animation' );
+		$category = isset( $_POST['gcm_portfolio_category'] ) ? sanitize_key( wp_unslash( $_POST['gcm_portfolio_category'] ) ) : 'web';
+		if ( ! in_array( $category, $cats, true ) ) {
+			$category = 'web';
+		}
+
+		update_post_meta( $post_id, '_gcm_portfolio_category', $category );
+		update_post_meta( $post_id, '_gcm_portfolio_tech', isset( $_POST['gcm_portfolio_tech'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_portfolio_tech'] ) ) : '' );
+		update_post_meta( $post_id, '_gcm_portfolio_url', isset( $_POST['gcm_portfolio_url'] ) ? esc_url_raw( wp_unslash( $_POST['gcm_portfolio_url'] ) ) : '' );
+		update_post_meta( $post_id, '_gcm_portfolio_year', isset( $_POST['gcm_portfolio_year'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_portfolio_year'] ) ) : '' );
+		update_post_meta( $post_id, '_gcm_portfolio_featured', isset( $_POST['gcm_portfolio_featured'] ) ? 1 : 0 );
 	}
 
 	/**

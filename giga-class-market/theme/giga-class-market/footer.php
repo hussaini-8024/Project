@@ -38,6 +38,7 @@ $socials  = array(
 			<h2><?php esc_html_e( 'Quick links', 'giga-class-market' ); ?></h2>
 			<ul>
 				<li><a href="<?php echo esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ); ?>"><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( home_url( '/portfolio/' ) ); ?>"><?php esc_html_e( 'Portfolio', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php esc_html_e( 'Contact Us', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php esc_html_e( 'About Us', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Student Login', 'giga-class-market' ); ?></a></li>
