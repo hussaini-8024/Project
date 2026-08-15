@@ -1,0 +1,104 @@
+.gcm-course-grid {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	margin-top: 20px;
+}
+
+.gcm-course-card,
+.gcm-card,
+.gcm-dashboard-course,
+.gcm-module,
+.gcm-lesson,
+.gcm-payment-method {
+	background: #fff;
+	border: 1px solid #ece7d9;
+	border-radius: 12px;
+	box-shadow: 0 8px 22px rgba(11, 31, 58, 0.06);
+	padding: 18px;
+}
+
+.gcm-course-card img {
+	border-radius: 10px;
+	height: 170px;
+	object-fit: cover;
+	width: 100%;
+}
+
+.gcm-price {
+	color: #0b1f3a;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.gcm-button,
+.gcm-ajax-form button,
+.gcm-course-search button,
+.gcm-complete-lesson {
+	background: #0b1f3a;
+	border: 0;
+	border-radius: 999px;
+	color: #d4af37;
+	cursor: pointer;
+	display: inline-block;
+	font-weight: 700;
+	padding: 10px 18px;
+	text-decoration: none;
+}
+
+.gcm-ajax-form label,
+.gcm-course-search label {
+	display: block;
+	font-weight: 600;
+	margin: 12px 0;
+}
+
+.gcm-ajax-form input,
+.gcm-ajax-form select,
+.gcm-ajax-form textarea,
+.gcm-course-search input,
+.gcm-course-search select {
+	border: 1px solid #d8d8d8;
+	border-radius: 8px;
+	box-sizing: border-box;
+	display: block;
+	margin-top: 6px;
+	max-width: 680px;
+	padding: 10px;
+	width: 100%;
+}
+
+.gcm-course-search {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(180px, 1fr) minmax(160px, 240px) auto;
+}
+
+.gcm-form-message {
+	font-weight: 700;
+	margin-top: 12px;
+}
+
+.gcm-form-message.success {
+	color: #136f2d;
+}
+
+.gcm-form-message.error {
+	color: #a31414;
+}
+
+.gcm-student-dashboard {
+	display: grid;
+	gap: 22px;
+}
+
+.gcm-module,
+.gcm-lesson {
+	margin-top: 12px;
+}
+
+@media (max-width: 700px) {
+	.gcm-course-search {
+		grid-template-columns: 1fr;
+	}
+}
