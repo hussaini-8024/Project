@@ -70,7 +70,7 @@ TEMPLATES = [
         "image_ref": "cyberrange/kali-training:latest",
         "default_vcpu": 2,
         "default_ram_mb": 1024,
-        "default_disk_gb": 4,
+        "default_disk_gb": 2,
         "tools": ["nmap", "wireshark", "burpsuite", "owasp-zap", "metasploit", "openssh"],
         "description": "Approved security-training workstation. Tools operate only inside the student lab.",
         "category": "attacker",

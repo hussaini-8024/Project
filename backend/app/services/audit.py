@@ -23,7 +23,7 @@ def record(
         username=user.username if user else "system",
         role=user.role.value if user else "system",
         session_id=session_id,
-        lab_id=lab_id or (user.lab.public_id if user and user.lab else ""),
+        lab_id=lab_id,
         ip=ip,
         action=action,
         resource=resource,

@@ -20,14 +20,22 @@ export function Terminal() {
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.open(ref.current);
-    fit.fit();
+    const tryFit = () => {
+      try {
+        if (ref.current && ref.current.clientHeight > 0) fit.fit();
+      } catch {
+        /* terminal not measured yet */
+      }
+    };
+    requestAnimationFrame(tryFit);
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(`${proto}://${window.location.host}/ws/terminal/${id}?token=${getToken()}`);
     ws.onmessage = (ev) => term.write(ev.data);
+    ws.onerror = () => term.writeln("\r\n\x1b[31mGateway connection failed.\x1b[0m");
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(data);
     });
-    const onResize = () => fit.fit();
+    const onResize = () => tryFit();
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);

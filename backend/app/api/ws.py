@@ -7,6 +7,8 @@ from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from jose import JWTError
 
+from sqlalchemy.orm import joinedload
+
 from app.database import SessionLocal
 from app.models import ConsoleSession, Machine, Role, TerminalSession, User
 from app.security import decode_token
@@ -26,7 +28,7 @@ def _user_from_ws(ws: WebSocket) -> User | None:
         return None
     db = SessionLocal()
     try:
-        return db.get(User, payload.get("sub"))
+        return db.query(User).options(joinedload(User.lab)).filter(User.id == payload.get("sub")).first()
     finally:
         db.close()
 
@@ -98,24 +100,40 @@ async def terminal(ws: WebSocket, machine_id: str) -> None:
         await ws.close(code=4401)
         return
     db = SessionLocal()
-    machine = db.query(Machine).filter((Machine.id == machine_id) | (Machine.public_id == machine_id)).first()
+    machine = (
+        db.query(Machine)
+        .options(joinedload(Machine.lab))
+        .filter((Machine.id == machine_id) | (Machine.public_id == machine_id))
+        .first()
+    )
     if not machine or (user.role == Role.STUDENT and machine.owner_id != user.id):
         db.close()
         await ws.close(code=4403)
         return
+    name = machine.name
+    public_id = machine.public_id
+    kind = machine.kind.value
+    lab_public = machine.lab.public_id if machine.lab else ""
     sess = TerminalSession(user_id=user.id, machine_id=machine.id)
     db.add(sess)
-    audit.record(db, user=user, action="terminal.open", resource=machine.public_id, machine=machine.name)
+    audit.record(
+        db,
+        user=user,
+        action="terminal.open",
+        resource=public_id,
+        machine=name,
+        lab_id=lab_public,
+    )
     db.commit()
     db.close()
     await ws.accept()
     banner = (
         f"\r\n\x1b[36mUniversity Cyber Range\x1b[0m — isolated lab terminal\r\n"
-        f"Machine: {machine.name} ({machine.public_id})  Kind: {machine.kind.value}\r\n"
+        f"Machine: {name} ({public_id})  Kind: {kind}\r\n"
         f"This session is proxied through the terminal gateway. "
         f"The virtualization host is not reachable.\r\n"
         f"Security testing is limited to your own laboratory.\r\n\r\n"
-        f"{machine.name.lower().replace(' ', '-')}$ "
+        f"{name.lower().replace(' ', '-')}$ "
     )
     await ws.send_text(banner)
     buffer = ""
@@ -125,8 +143,8 @@ async def terminal(ws: WebSocket, machine_id: str) -> None:
             if data in ("\r", "\n"):
                 cmd = buffer.strip()
                 buffer = ""
-                reply = _simulate_shell(cmd, machine.name)
-                await ws.send_text(f"\r\n{reply}\r\n{machine.name.lower().replace(' ', '-')}$ ")
+                reply = _simulate_shell(cmd, name)
+                await ws.send_text(f"\r\n{reply}\r\n{name.lower().replace(' ', '-')}$ ")
             elif data in ("\x7f", "\b"):
                 buffer = buffer[:-1]
                 await ws.send_text("\b \b")
@@ -162,13 +180,29 @@ async def console(ws: WebSocket, machine_id: str) -> None:
         await ws.close(code=4401)
         return
     db = SessionLocal()
-    machine = db.query(Machine).filter((Machine.id == machine_id) | (Machine.public_id == machine_id)).first()
+    machine = (
+        db.query(Machine)
+        .options(joinedload(Machine.lab))
+        .filter((Machine.id == machine_id) | (Machine.public_id == machine_id))
+        .first()
+    )
     if not machine or (user.role == Role.STUDENT and machine.owner_id != user.id):
         db.close()
         await ws.close(code=4403)
         return
+    name = machine.name
+    kind = machine.kind.value
+    public_id = machine.public_id
+    lab_public = machine.lab.public_id if machine.lab else ""
     db.add(ConsoleSession(user_id=user.id, machine_id=machine.id))
-    audit.record(db, user=user, action="console.open", resource=machine.public_id, machine=machine.name)
+    audit.record(
+        db,
+        user=user,
+        action="console.open",
+        resource=public_id,
+        machine=name,
+        lab_id=lab_public,
+    )
     db.commit()
     db.close()
     await ws.accept()
@@ -177,8 +211,8 @@ async def console(ws: WebSocket, machine_id: str) -> None:
             {
                 "type": "console",
                 "protocol": "novnc-gateway",
-                "machine": machine.name,
-                "kind": machine.kind.value,
+                "machine": name,
+                "kind": kind,
                 "message": "Secure console gateway attached. Production uses noVNC/SPICE to KVM.",
             }
         )

@@ -152,6 +152,11 @@ def create_machine(
     if decision.queued:
         db.commit()
         return machine, {"decision": decision.__dict__}
+    if not decision.allowed:
+        machine.status = MachineStatus.ERROR
+        machine.error_message = decision.reason
+        db.commit()
+        return machine, {"decision": decision.__dict__}
 
     machine.status = MachineStatus.STOPPED
     db.commit()

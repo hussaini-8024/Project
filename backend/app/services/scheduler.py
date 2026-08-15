@@ -49,21 +49,35 @@ def student_quota(user: User) -> QuotaProfile:
     )
 
 
-def quota_ok(db: Session, user: User, kind: MachineKind, ram_mb: int, vcpu: int, disk_gb: int) -> str | None:
+def quota_ok(
+    db: Session,
+    user: User,
+    kind: MachineKind,
+    ram_mb: int,
+    vcpu: int,
+    disk_gb: int,
+    existing: Machine | None = None,
+) -> str | None:
     q = student_quota(user)
     machines = db.query(Machine).filter(Machine.owner_id == user.id).all()
-    running = [m for m in machines if m.status in (MachineStatus.RUNNING, MachineStatus.STARTING, MachineStatus.PAUSED)]
-    containers = [m for m in machines if m.kind == MachineKind.CONTAINER]
-    vms = [m for m in machines if m.kind == MachineKind.VM]
-    if kind == MachineKind.CONTAINER and len(containers) >= q.max_containers:
+    others = [m for m in machines if not existing or m.id != existing.id]
+    running = [
+        m
+        for m in others
+        if m.status in (MachineStatus.RUNNING, MachineStatus.STARTING, MachineStatus.PAUSED)
+    ]
+    containers = [m for m in others if m.kind == MachineKind.CONTAINER]
+    vms = [m for m in others if m.kind == MachineKind.VM]
+    if kind == MachineKind.CONTAINER and len(containers) + 1 > q.max_containers:
         return f"Container quota reached ({q.max_containers})"
-    if kind == MachineKind.VM and len(vms) >= q.max_vms:
+    if kind == MachineKind.VM and len(vms) + 1 > q.max_vms:
         return f"VM quota reached ({q.max_vms})"
-    if kind == MachineKind.CONTAINER and len([m for m in running if m.kind == MachineKind.CONTAINER]) >= q.max_running_containers:
+    running_containers = len([m for m in running if m.kind == MachineKind.CONTAINER])
+    if kind == MachineKind.CONTAINER and running_containers + 1 > q.max_running_containers:
         return f"Running container quota reached ({q.max_running_containers})"
     used_ram = sum(m.ram_mb for m in running) + ram_mb
     used_cpu = sum(m.vcpu for m in running) + vcpu
-    used_disk = sum(m.disk_gb for m in machines) + disk_gb
+    used_disk = sum(m.disk_gb for m in others) + disk_gb
     if used_ram > q.max_ram_mb:
         return f"RAM quota exceeded ({used_ram} > {q.max_ram_mb} MB)"
     if used_cpu > q.max_vcpu:
@@ -117,11 +131,12 @@ def evaluate(
     vcpu: int,
     disk_gb: int,
     template: MachineTemplate | None,
+    existing: Machine | None = None,
 ) -> ScheduleDecision:
     settings = get_settings()
     recommended, alts = recommend_kind(template, kind)
     kind = recommended
-    qerr = quota_ok(db, user, kind, ram_mb, vcpu, disk_gb)
+    qerr = quota_ok(db, user, kind, ram_mb, vcpu, disk_gb, existing=existing)
     if qerr:
         return ScheduleDecision(False, False, qerr, None, alts + ["Stop another machine to free quota"], 0, None, ram_mb, vcpu, disk_gb, kind.value)
 
@@ -167,6 +182,7 @@ def start_machine(db: Session, machine: Machine, user: User) -> ScheduleDecision
         vcpu=machine.vcpu,
         disk_gb=machine.disk_gb,
         template=template,
+        existing=machine,
     )
     if decision.queued:
         machine.status = MachineStatus.QUEUED

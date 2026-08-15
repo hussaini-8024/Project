@@ -1,4 +1,4 @@
-from app.models import MachineKind, MachineTemplate, EnvironmentKind
+from app.models import EnvironmentKind, MachineKind, MachineTemplate
 from app.services.scheduler import recommend_kind
 
 
