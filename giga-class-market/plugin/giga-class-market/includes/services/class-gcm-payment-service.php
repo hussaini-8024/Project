@@ -48,6 +48,21 @@ class GCM_Payment_Service {
 			return new WP_Error( 'gcm_missing_transaction', __( 'Transaction ID is required.', 'giga-class-market' ) );
 		}
 
+		$amount         = class_exists( 'GCM_Coupon_Service' ) ? GCM_Coupon_Service::get_course_price( $course_id ) : (float) $course['price'];
+		$coupon_code    = sanitize_text_field( $data['coupon_code'] ?? '' );
+		$coupon_id      = 0;
+		$discount_amount = 0.0;
+
+		if ( '' !== $coupon_code && class_exists( 'GCM_Coupon_Service' ) ) {
+			$validated = GCM_Coupon_Service::validate_for_course( $coupon_code, $course_id, get_current_user_id() );
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+			$coupon_id       = (int) $validated['coupon']->id;
+			$discount_amount = (float) $validated['discount_amount'];
+			$amount          = (float) $validated['final_price'];
+		}
+
 		$inserted = $wpdb->insert(
 			$wpdb->prefix . 'gcm_payments',
 			array(
@@ -59,7 +74,7 @@ class GCM_Payment_Service {
 				'address'          => sanitize_textarea_field( $data['address'] ?? '' ),
 				'transaction_id'   => $transaction_id,
 				'payment_method'   => sanitize_text_field( $data['payment_method'] ?? '' ),
-				'amount'           => (float) $course['price'],
+				'amount'           => $amount,
 				'screenshot_id'    => $screenshot_id ? absint( $screenshot_id ) : null,
 				'status'           => 'under_review',
 				'rejection_reason' => null,
@@ -77,7 +92,12 @@ class GCM_Payment_Service {
 		}
 
 		$payment_id = (int) $wpdb->insert_id;
-		GCM_Audit_Service::log( 'payment_submitted', 'payment', $payment_id, array( 'course_id' => $course_id ), 0 );
+
+		if ( $coupon_id && class_exists( 'GCM_Coupon_Service' ) ) {
+			GCM_Coupon_Service::apply_to_payment( $coupon_id, $payment_id, get_current_user_id(), $course_id, $discount_amount );
+		}
+
+		GCM_Audit_Service::log( 'payment_submitted', 'payment', $payment_id, array( 'course_id' => $course_id, 'coupon_id' => $coupon_id ), 0 );
 
 		return $payment_id;
 	}
@@ -394,32 +414,39 @@ class GCM_Payment_Service {
 	 * @param string $status Status.
 	 * @param int    $limit Limit.
 	 * @param int    $offset Offset.
+	 * @param string $search Optional email/name search.
 	 * @return array
 	 */
-	public static function get_by_status( $status = '', $limit = 50, $offset = 0 ) {
+	public static function get_by_status( $status = '', $limit = 50, $offset = 0, $search = '' ) {
 		global $wpdb;
 
 		$limit  = min( 200, max( 1, absint( $limit ) ) );
 		$offset = max( 0, absint( $offset ) );
+		$search = sanitize_text_field( $search );
+		$table  = $wpdb->prefix . 'gcm_payments';
+
+		$where  = array( '1=1' );
+		$params = array();
 
 		if ( $status ) {
-			return $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}gcm_payments WHERE status = %s ORDER BY submitted_at DESC LIMIT %d OFFSET %d",
-					self::sanitize_status( $status ),
-					$limit,
-					$offset
-				)
-			);
+			$where[]  = 'status = %s';
+			$params[] = self::sanitize_status( $status );
 		}
 
-		return $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$wpdb->prefix}gcm_payments ORDER BY submitted_at DESC LIMIT %d OFFSET %d",
-				$limit,
-				$offset
-			)
-		);
+		if ( '' !== $search ) {
+			$like     = '%' . $wpdb->esc_like( $search ) . '%';
+			$where[]  = '(email LIKE %s OR full_name LIKE %s OR transaction_id LIKE %s)';
+			$params[] = $like;
+			$params[] = $like;
+			$params[] = $like;
+		}
+
+		$params[] = $limit;
+		$params[] = $offset;
+
+		$sql = 'SELECT * FROM ' . $table . ' WHERE ' . implode( ' AND ', $where ) . ' ORDER BY submitted_at DESC LIMIT %d OFFSET %d';
+
+		return $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 	}
 
 	/**

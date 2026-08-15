@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: GCM Course Details (single uses this structure)
+ * Single course template.
  *
  * @package GigaClassMarket
  */
@@ -12,17 +12,54 @@ get_header();
 	<?php
 	$course_id  = get_the_ID();
 	$duration   = gcm_course_meta( $course_id, 'duration', __( 'Self-paced', 'giga-class-market' ) );
-	$price      = gcm_course_meta( $course_id, 'price', '' );
+	$price      = (float) gcm_course_meta( $course_id, 'price', 0 );
+	$sale_price = (float) get_post_meta( $course_id, '_gcm_discount_price', true );
+	$sale_label = (string) get_post_meta( $course_id, '_gcm_sale_label', true );
+	$on_sale    = $sale_price > 0 && $sale_price < $price;
+	$display_price = $on_sale ? $sale_price : $price;
 	$rating     = gcm_course_meta( $course_id, 'rating', '5.0' );
 	$instructor = gcm_course_meta( $course_id, 'instructor', __( 'Giga Class Market Faculty', 'giga-class-market' ) );
 	$learn      = gcm_course_meta( $course_id, 'what_you_learn', '' );
 	$require    = gcm_course_meta( $course_id, 'requirements', '' );
+	$faq_raw    = (string) get_post_meta( $course_id, '_gcm_faq', true );
+	$bundle_raw = (string) get_post_meta( $course_id, '_gcm_bundle_ids', true );
+	$community  = (string) get_post_meta( $course_id, '_gcm_community_whatsapp', true );
+	if ( ! $community && class_exists( 'GCM_Settings_Service' ) ) {
+		$settings  = GCM_Settings_Service::get_settings();
+		$community = (string) ( $settings['website']['community_whatsapp'] ?? '' );
+	}
 	$curriculum = class_exists( 'GCM_Curriculum_Service' ) ? GCM_Curriculum_Service::get_course_curriculum( $course_id ) : array();
 	$learn_items = array_filter( array_map( 'trim', preg_split( "/\r\n|\n|\r/", (string) $learn ) ) );
 	$req_items   = array_filter( array_map( 'trim', preg_split( "/\r\n|\n|\r/", (string) $require ) ) );
-	$cta_label   = __( 'Buy Now', 'giga-class-market' );
-	$cta_url     = gcm_course_purchase_url( $course_id );
-	$cta_note    = __( 'Access after payment verification', 'giga-class-market' );
+
+	$faq_items = array();
+	foreach ( preg_split( "/\r\n|\n|\r/", $faq_raw ) as $line ) {
+		$line = trim( $line );
+		if ( '' === $line || false === strpos( $line, '|' ) ) {
+			continue;
+		}
+		$parts = array_map( 'trim', explode( '|', $line, 2 ) );
+		if ( count( $parts ) === 2 && '' !== $parts[0] && '' !== $parts[1] ) {
+			$faq_items[] = array( 'q' => $parts[0], 'a' => $parts[1] );
+		}
+	}
+
+	$bundle_ids = array_filter( array_map( 'absint', preg_split( '/[\s,]+/', $bundle_raw ) ) );
+	$reviews    = class_exists( 'GCM_Review_Service' ) ? GCM_Review_Service::get_for_course( $course_id, 'approved' ) : array();
+	$is_enrolled = is_user_logged_in() && class_exists( 'GCM_Enrollment_Service' ) && GCM_Enrollment_Service::has_access( get_current_user_id(), $course_id );
+
+	$community_url = '';
+	if ( $community ) {
+		if ( 0 === strpos( $community, 'http' ) ) {
+			$community_url = $community;
+		} else {
+			$community_url = 'https://wa.me/' . preg_replace( '/[^0-9]/', '', $community );
+		}
+	}
+
+	$cta_label = __( 'Buy Now', 'giga-class-market' );
+	$cta_url   = gcm_course_purchase_url( $course_id );
+	$cta_note  = __( 'Access after payment verification', 'giga-class-market' );
 	if ( is_user_logged_in() && class_exists( 'GCM_Payment_Service' ) ) {
 		$state     = GCM_Payment_Service::get_course_access_state( get_current_user_id(), $course_id );
 		$cta_url   = $state['url'];
@@ -59,8 +96,21 @@ get_header();
 						</div>
 					<?php endif; ?>
 					<div class="gcm-course-buy-card__body">
-						<strong><?php echo esc_html( gcm_format_price( $price ) ); ?></strong>
+						<?php if ( $on_sale ) : ?>
+							<?php if ( $sale_label ) : ?>
+								<span class="gcm-sale-label"><?php echo esc_html( $sale_label ); ?></span>
+							<?php endif; ?>
+							<strong>
+								<s style="opacity:.65;font-weight:500;"><?php echo esc_html( gcm_format_price( $price ) ); ?></s>
+								<?php echo esc_html( gcm_format_price( $display_price ) ); ?>
+							</strong>
+						<?php else : ?>
+							<strong><?php echo esc_html( gcm_format_price( $display_price ) ); ?></strong>
+						<?php endif; ?>
 						<a class="gcm-button gcm-button--gold gcm-button--full" href="<?php echo esc_url( $cta_url ); ?>"><?php echo esc_html( $cta_label ); ?></a>
+						<?php if ( $community_url ) : ?>
+							<a class="gcm-button gcm-button--outline gcm-button--full" href="<?php echo esc_url( $community_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Join community WhatsApp', 'giga-class-market' ); ?></a>
+						<?php endif; ?>
 						<ul>
 							<li><?php echo esc_html( sprintf( __( 'Instructor: %s', 'giga-class-market' ), $instructor ) ); ?></li>
 							<li><?php echo esc_html( sprintf( __( 'Duration: %s', 'giga-class-market' ), $duration ) ); ?></li>
@@ -94,6 +144,73 @@ get_header();
 							<?php endforeach; ?>
 						</ul>
 					<?php endif; ?>
+
+					<?php if ( $faq_items ) : ?>
+						<h2><?php esc_html_e( 'FAQ', 'giga-class-market' ); ?></h2>
+						<div class="gcm-faq-list">
+							<?php foreach ( $faq_items as $faq ) : ?>
+								<details class="gcm-faq-item">
+									<summary><?php echo esc_html( $faq['q'] ); ?></summary>
+									<p><?php echo esc_html( $faq['a'] ); ?></p>
+								</details>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+
+					<?php if ( $bundle_ids ) : ?>
+						<h2><?php esc_html_e( 'Included / bundle courses', 'giga-class-market' ); ?></h2>
+						<ul>
+							<?php foreach ( $bundle_ids as $bundle_id ) : ?>
+								<?php if ( get_post( $bundle_id ) ) : ?>
+									<li><a href="<?php echo esc_url( get_permalink( $bundle_id ) ); ?>"><?php echo esc_html( get_the_title( $bundle_id ) ); ?></a></li>
+								<?php endif; ?>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+
+					<h2><?php esc_html_e( 'Student reviews', 'giga-class-market' ); ?></h2>
+					<?php if ( empty( $reviews ) ) : ?>
+						<p><?php esc_html_e( 'No approved reviews yet.', 'giga-class-market' ); ?></p>
+					<?php else : ?>
+						<ul class="gcm-review-list">
+							<?php foreach ( $reviews as $review ) : ?>
+								<li>
+									<strong><?php echo esc_html( $review->author_name ); ?></strong>
+									<span>★ <?php echo esc_html( (int) $review->rating ); ?></span>
+									<?php if ( ! empty( $review->review_title ) ) : ?>
+										<em><?php echo esc_html( $review->review_title ); ?></em>
+									<?php endif; ?>
+									<p><?php echo esc_html( $review->review_body ); ?></p>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+
+					<?php if ( $is_enrolled ) : ?>
+						<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+							<input type="hidden" name="action" value="gcm_submit_review">
+							<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
+							<input type="hidden" name="course_id" value="<?php echo esc_attr( $course_id ); ?>">
+							<label>
+								<span><?php esc_html_e( 'Your rating', 'giga-class-market' ); ?></span>
+								<select name="rating" required>
+									<?php for ( $i = 5; $i >= 1; $i-- ) : ?>
+										<option value="<?php echo esc_attr( $i ); ?>"><?php echo esc_html( $i ); ?></option>
+									<?php endfor; ?>
+								</select>
+							</label>
+							<label>
+								<span><?php esc_html_e( 'Title', 'giga-class-market' ); ?></span>
+								<input type="text" name="review_title">
+							</label>
+							<label>
+								<span><?php esc_html_e( 'Review', 'giga-class-market' ); ?></span>
+								<textarea name="review_body" rows="3" required></textarea>
+							</label>
+							<button class="gcm-button gcm-button--gold" type="submit"><?php esc_html_e( 'Submit review', 'giga-class-market' ); ?></button>
+							<p class="gcm-form-status" role="status" aria-live="polite"></p>
+						</form>
+					<?php endif; ?>
 				</div>
 				<aside class="gcm-curriculum-card">
 					<h2><?php esc_html_e( 'Course curriculum', 'giga-class-market' ); ?></h2>
@@ -104,7 +221,12 @@ get_header();
 								<ol>
 									<?php foreach ( (array) ( $module['lessons'] ?? array() ) as $lesson ) : ?>
 										<?php $lesson = is_array( $lesson ) ? $lesson : (array) $lesson; ?>
-										<li><?php echo esc_html( $lesson['title'] ?? '' ); ?></li>
+										<li>
+											<?php echo esc_html( $lesson['title'] ?? '' ); ?>
+											<?php if ( ! empty( $lesson['is_preview'] ) ) : ?>
+												<span class="gcm-preview-badge"><?php esc_html_e( 'Preview', 'giga-class-market' ); ?></span>
+											<?php endif; ?>
+										</li>
 									<?php endforeach; ?>
 								</ol>
 							</div>

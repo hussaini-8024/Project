@@ -56,15 +56,17 @@ class GCM_Settings_Service {
 				),
 			),
 			'website'  => array(
-				'theme_color'       => '#0d3b45',
-				'accent_color'      => '#e0a045',
-				'student_page_slug' => 'student-dashboard',
-				'currency_symbol'   => 'PKR ',
+				'theme_color'         => '#0d3b45',
+				'accent_color'        => '#e0a045',
+				'student_page_slug'   => 'student-dashboard',
+				'currency_symbol'     => 'PKR ',
+				'community_whatsapp'  => '',
 			),
 			'course'   => array(
 				'featured_count'   => 3,
 				'default_duration' => '',
 				'default_rating'   => '5.0',
+				'reminder_hours'   => 2,
 			),
 			'security' => array(
 				'default_password' => 'Student@giga',
@@ -236,16 +238,18 @@ class GCM_Settings_Service {
 		}
 
 		if ( isset( $settings['website'] ) && is_array( $settings['website'] ) ) {
-			$clean['website']['theme_color']       = sanitize_hex_color( $settings['website']['theme_color'] ?? '' ) ?: '#0d3b45';
-			$clean['website']['accent_color']      = sanitize_hex_color( $settings['website']['accent_color'] ?? '' ) ?: '#e0a045';
-			$clean['website']['student_page_slug'] = sanitize_title( $settings['website']['student_page_slug'] ?? 'student-dashboard' );
-			$clean['website']['currency_symbol']   = sanitize_text_field( $settings['website']['currency_symbol'] ?? ( $clean['website']['currency_symbol'] ?? 'PKR ' ) );
+			$clean['website']['theme_color']         = sanitize_hex_color( $settings['website']['theme_color'] ?? '' ) ?: '#0d3b45';
+			$clean['website']['accent_color']        = sanitize_hex_color( $settings['website']['accent_color'] ?? '' ) ?: '#e0a045';
+			$clean['website']['student_page_slug']   = sanitize_title( $settings['website']['student_page_slug'] ?? 'student-dashboard' );
+			$clean['website']['currency_symbol']     = sanitize_text_field( $settings['website']['currency_symbol'] ?? ( $clean['website']['currency_symbol'] ?? 'PKR ' ) );
+			$clean['website']['community_whatsapp']  = sanitize_text_field( $settings['website']['community_whatsapp'] ?? '' );
 		}
 
 		if ( isset( $settings['course'] ) && is_array( $settings['course'] ) ) {
 			$clean['course']['featured_count']   = min( 3, max( 1, absint( $settings['course']['featured_count'] ?? 3 ) ) );
 			$clean['course']['default_duration'] = sanitize_text_field( $settings['course']['default_duration'] ?? '' );
 			$clean['course']['default_rating']   = (string) min( 5, max( 0, (float) ( $settings['course']['default_rating'] ?? 5 ) ) );
+			$clean['course']['reminder_hours']   = min( 72, max( 1, absint( $settings['course']['reminder_hours'] ?? 2 ) ) );
 		}
 
 		if ( isset( $settings['security'] ) && is_array( $settings['security'] ) ) {

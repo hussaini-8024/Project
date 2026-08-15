@@ -49,12 +49,14 @@ class GCM_Installer {
 			video_url TEXT NULL,
 			video_attachment_id BIGINT(20) UNSIGNED NULL,
 			duration_minutes INT(11) NOT NULL DEFAULT 0,
+			is_preview TINYINT(1) NOT NULL DEFAULT 0,
 			sort_order INT(11) NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY  (id),
 			KEY module_id (module_id),
 			KEY course_id (course_id),
-			KEY sort_order (sort_order)
+			KEY sort_order (sort_order),
+			KEY is_preview (is_preview)
 		) {$charset_collate};";
 
 		$sql[] = "CREATE TABLE {$prefix}gcm_enrollments (
@@ -248,6 +250,150 @@ class GCM_Installer {
 			UNIQUE KEY user_course (user_id, course_id),
 			KEY course_id (course_id),
 			KEY issued_at (issued_at)
+		) {$charset_collate};";
+
+
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_coupons (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			code VARCHAR(60) NOT NULL,
+			description VARCHAR(255) NULL,
+			discount_type VARCHAR(20) NOT NULL DEFAULT 'percent',
+			discount_value DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+			course_id BIGINT(20) UNSIGNED NULL,
+			max_uses INT(11) NOT NULL DEFAULT 0,
+			used_count INT(11) NOT NULL DEFAULT 0,
+			min_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+			starts_at DATETIME NULL,
+			expires_at DATETIME NULL,
+			is_active TINYINT(1) NOT NULL DEFAULT 1,
+			created_by BIGINT(20) UNSIGNED NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY code (code),
+			KEY course_id (course_id),
+			KEY is_active (is_active)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_coupon_uses (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			coupon_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED NULL,
+			payment_id BIGINT(20) UNSIGNED NULL,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+			used_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY coupon_id (coupon_id),
+			KEY user_id (user_id),
+			KEY payment_id (payment_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_reviews (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			rating TINYINT(1) NOT NULL DEFAULT 5,
+			review_title VARCHAR(190) NULL,
+			review_body LONGTEXT NULL,
+			status VARCHAR(20) NOT NULL DEFAULT 'approved',
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY course_user (course_id, user_id),
+			KEY status (status),
+			KEY rating (rating)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_quizzes (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			module_id BIGINT(20) UNSIGNED NULL,
+			title VARCHAR(255) NOT NULL,
+			pass_score INT(11) NOT NULL DEFAULT 70,
+			is_active TINYINT(1) NOT NULL DEFAULT 1,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id),
+			KEY module_id (module_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_quiz_questions (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			quiz_id BIGINT(20) UNSIGNED NOT NULL,
+			question LONGTEXT NOT NULL,
+			options_json LONGTEXT NOT NULL,
+			correct_index INT(11) NOT NULL DEFAULT 0,
+			sort_order INT(11) NOT NULL DEFAULT 0,
+			PRIMARY KEY  (id),
+			KEY quiz_id (quiz_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_quiz_attempts (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			quiz_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			score INT(11) NOT NULL DEFAULT 0,
+			passed TINYINT(1) NOT NULL DEFAULT 0,
+			answers_json LONGTEXT NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY quiz_user (quiz_id, user_id),
+			KEY user_id (user_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_recordings (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			class_id BIGINT(20) UNSIGNED NULL,
+			teacher_id BIGINT(20) UNSIGNED NOT NULL,
+			title VARCHAR(255) NOT NULL,
+			video_url TEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id),
+			KEY class_id (class_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_announcements (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			teacher_id BIGINT(20) UNSIGNED NOT NULL,
+			title VARCHAR(255) NOT NULL,
+			body LONGTEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_assignments (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			teacher_id BIGINT(20) UNSIGNED NOT NULL,
+			title VARCHAR(255) NOT NULL,
+			instructions LONGTEXT NULL,
+			due_at DATETIME NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY course_id (course_id)
+		) {$charset_collate};";
+
+		$sql[] = "CREATE TABLE {$prefix}gcm_assignment_submissions (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			assignment_id BIGINT(20) UNSIGNED NOT NULL,
+			course_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			file_id BIGINT(20) UNSIGNED NULL,
+			notes LONGTEXT NULL,
+			grade VARCHAR(20) NULL,
+			feedback LONGTEXT NULL,
+			status VARCHAR(20) NOT NULL DEFAULT 'submitted',
+			submitted_at DATETIME NOT NULL,
+			graded_at DATETIME NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY assignment_user (assignment_id, user_id),
+			KEY course_id (course_id),
+			KEY user_id (user_id)
 		) {$charset_collate};";
 
 

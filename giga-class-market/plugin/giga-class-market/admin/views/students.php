@@ -16,6 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<a class="button button-secondary" href="<?php echo esc_url( home_url( '/verify-certificate/' ) ); ?>" target="_blank" rel="noopener">
 			<?php esc_html_e( 'Open certificate verification page', 'giga-class-market' ); ?>
 		</a>
+		<button type="button" class="button button-primary gcm-ajax-button" data-action="gcm_bulk_generate_certificates">
+			<?php esc_html_e( 'Bulk generate certificates for completed enrollments', 'giga-class-market' ); ?>
+		</button>
 	</p>
 	<form method="get" class="gcm-admin-search">
 		<input type="hidden" name="page" value="gcm-students" />

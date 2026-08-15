@@ -25,6 +25,56 @@ $pending   = array_values(
 $whatsapp = get_user_meta( $user_id, 'gcm_whatsapp', true );
 $address  = get_user_meta( $user_id, 'gcm_address', true );
 
+$announcements = array();
+$recordings    = array();
+$assignments   = array();
+$quizzes       = array();
+$live_now      = array();
+
+foreach ( $courses as $course ) {
+	$cid = absint( $course['id'] ?? 0 );
+	if ( ! $cid ) {
+		continue;
+	}
+	$live = class_exists( 'GCM_Class_Service' ) ? GCM_Class_Service::get_live_for_course( $cid ) : null;
+	if ( $live ) {
+		$live_now[] = array(
+			'course_id' => $cid,
+			'title'     => $course['title'] ?? get_the_title( $cid ),
+			'class'     => $live,
+		);
+	}
+	if ( class_exists( 'GCM_Announcement_Service' ) ) {
+		foreach ( GCM_Announcement_Service::get_for_course( $cid ) as $row ) {
+			$row->course_title = $course['title'] ?? get_the_title( $cid );
+			$announcements[]   = $row;
+		}
+	}
+	if ( class_exists( 'GCM_Recording_Service' ) ) {
+		foreach ( GCM_Recording_Service::get_for_course( $cid ) as $row ) {
+			$row->course_title = $course['title'] ?? get_the_title( $cid );
+			$recordings[]      = $row;
+		}
+	}
+	if ( class_exists( 'GCM_Assignment_Service' ) ) {
+		foreach ( GCM_Assignment_Service::get_for_course( $cid ) as $row ) {
+			$row->course_title = $course['title'] ?? get_the_title( $cid );
+			$assignments[]     = $row;
+		}
+	}
+	if ( class_exists( 'GCM_Quiz_Service' ) ) {
+		foreach ( GCM_Quiz_Service::get_for_course( $cid ) as $row ) {
+			$row->course_title = $course['title'] ?? get_the_title( $cid );
+			$quizzes[]         = $row;
+		}
+	}
+}
+
+$announcements = array_slice( $announcements, 0, 8 );
+$recordings    = array_slice( $recordings, 0, 8 );
+$assignments   = array_slice( $assignments, 0, 8 );
+$quizzes       = array_slice( $quizzes, 0, 8 );
+
 get_header();
 ?>
 <section class="gcm-dashboard-hero">
@@ -38,6 +88,21 @@ get_header();
 <section class="gcm-dashboard">
 	<div class="gcm-container gcm-dashboard__grid">
 		<div class="gcm-dashboard__main">
+			<?php if ( ! empty( $live_now ) ) : ?>
+				<div class="gcm-dashboard-card gcm-dashboard-card--accent">
+					<h2><?php esc_html_e( 'Live class now', 'giga-class-market' ); ?></h2>
+					<?php foreach ( $live_now as $item ) : ?>
+						<p>
+							<strong><?php echo esc_html( $item['title'] ); ?></strong>
+							— <?php echo esc_html( $item['class']->title ); ?>
+						</p>
+						<button type="button" class="gcm-button gcm-button--gold gcm-join-live" data-class-id="<?php echo esc_attr( $item['class']->id ); ?>">
+							<?php esc_html_e( 'Join Live Class', 'giga-class-market' ); ?>
+						</button>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+
 			<div class="gcm-dashboard-card">
 				<div class="gcm-dashboard-card__heading">
 					<h2><?php esc_html_e( 'My Courses', 'giga-class-market' ); ?></h2>
@@ -60,6 +125,7 @@ get_header();
 								? __( 'Completed', 'giga-class-market' )
 								: ( 'frozen' === $status ? __( 'Frozen', 'giga-class-market' ) : __( 'Active', 'giga-class-market' ) );
 							$live = class_exists( 'GCM_Class_Service' ) ? GCM_Class_Service::get_live_for_course( $course_id ) : null;
+							$progress = class_exists( 'GCM_Progress_Service' ) ? (int) GCM_Progress_Service::get_percentage( $user_id, $course_id ) : 0;
 							?>
 							<article class="gcm-dashboard-course">
 								<div class="gcm-dashboard-course__media">
@@ -77,13 +143,20 @@ get_header();
 											<span class="gcm-status gcm-status-live"><?php esc_html_e( 'Live now', 'giga-class-market' ); ?></span>
 										<?php endif; ?>
 									</p>
-									<p><?php esc_html_e( 'Join classes · Study material · Course chat', 'giga-class-market' ); ?></p>
+									<p><strong><?php echo esc_html( sprintf( __( '%d%% complete', 'giga-class-market' ), $progress ) ); ?></strong></p>
+									<div class="gcm-progress-bar" aria-hidden="true" style="height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;max-width:220px;">
+										<span style="display:block;height:100%;width:<?php echo esc_attr( min( 100, $progress ) ); ?>%;background:var(--gcm-accent,#e0a045);"></span>
+									</div>
 								</div>
 								<?php if ( 'frozen' === $status ) : ?>
 									<span class="gcm-button gcm-button--outline" aria-disabled="true"><?php esc_html_e( 'Access frozen', 'giga-class-market' ); ?></span>
+								<?php elseif ( $live ) : ?>
+									<button type="button" class="gcm-button gcm-button--gold gcm-join-live" data-class-id="<?php echo esc_attr( $live->id ); ?>">
+										<?php esc_html_e( 'Join Live Class', 'giga-class-market' ); ?>
+									</button>
 								<?php else : ?>
 									<a class="gcm-button gcm-button--outline" href="<?php echo esc_url( $learn_url ); ?>">
-										<?php echo esc_html( $live ? __( 'Join class room', 'giga-class-market' ) : __( 'Open course', 'giga-class-market' ) ); ?>
+										<?php esc_html_e( 'Open course', 'giga-class-market' ); ?>
 									</a>
 								<?php endif; ?>
 							</article>
@@ -96,6 +169,100 @@ get_header();
 					</div>
 				<?php endif; ?>
 			</div>
+
+			<?php if ( ! empty( $announcements ) ) : ?>
+				<div class="gcm-dashboard-card">
+					<h2><?php esc_html_e( 'Announcements', 'giga-class-market' ); ?></h2>
+					<ul class="gcm-dashboard-pending-list">
+						<?php foreach ( $announcements as $row ) : ?>
+							<li>
+								<strong><?php echo esc_html( $row->title ); ?></strong>
+								<small><?php echo esc_html( $row->course_title ); ?></small>
+								<span><?php echo wp_kses_post( wp_trim_words( wp_strip_all_tags( $row->body ), 18 ) ); ?></span>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $recordings ) ) : ?>
+				<div class="gcm-dashboard-card">
+					<h2><?php esc_html_e( 'Recordings', 'giga-class-market' ); ?></h2>
+					<ul class="gcm-dashboard-pending-list">
+						<?php foreach ( $recordings as $row ) : ?>
+							<li>
+								<strong><?php echo esc_html( $row->title ); ?></strong>
+								<small><?php echo esc_html( $row->course_title ); ?></small>
+								<a href="<?php echo esc_url( $row->video_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Watch', 'giga-class-market' ); ?></a>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $assignments ) ) : ?>
+				<div class="gcm-dashboard-card">
+					<h2><?php esc_html_e( 'Assignments', 'giga-class-market' ); ?></h2>
+					<ul class="gcm-dashboard-pending-list">
+						<?php foreach ( $assignments as $row ) : ?>
+							<li>
+								<strong><?php echo esc_html( $row->title ); ?></strong>
+								<small><?php echo esc_html( $row->course_title ); ?></small>
+								<?php if ( ! empty( $row->due_at ) ) : ?>
+									<span><?php echo esc_html( sprintf( __( 'Due %s', 'giga-class-market' ), mysql2date( get_option( 'date_format' ), $row->due_at ) ) ); ?></span>
+								<?php endif; ?>
+								<form class="gcm-ajax-form" data-action="gcm_submit_assignment" enctype="multipart/form-data" style="margin-top:.5rem;">
+									<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+									<input type="hidden" name="assignment_id" value="<?php echo esc_attr( $row->id ); ?>" />
+									<label><?php esc_html_e( 'Notes', 'giga-class-market' ); ?><textarea name="notes" rows="2"></textarea></label>
+									<label><?php esc_html_e( 'File', 'giga-class-market' ); ?><input type="file" name="assignment_file" /></label>
+									<button type="submit" class="gcm-button gcm-button--small"><?php esc_html_e( 'Submit', 'giga-class-market' ); ?></button>
+									<div class="gcm-form-message" aria-live="polite"></div>
+								</form>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $quizzes ) ) : ?>
+				<div class="gcm-dashboard-card">
+					<h2><?php esc_html_e( 'Quizzes', 'giga-class-market' ); ?></h2>
+					<ul class="gcm-dashboard-pending-list">
+						<?php foreach ( $quizzes as $quiz ) : ?>
+							<?php
+							$best = class_exists( 'GCM_Quiz_Service' ) ? GCM_Quiz_Service::get_best_attempt( (int) $quiz->id, $user_id ) : null;
+							?>
+							<li>
+								<strong><?php echo esc_html( $quiz->title ); ?></strong>
+								<small><?php echo esc_html( $quiz->course_title ); ?></small>
+								<?php if ( $best ) : ?>
+									<span><?php echo esc_html( sprintf( __( 'Best score: %d%%', 'giga-class-market' ), (int) $best->score ) ); ?></span>
+								<?php endif; ?>
+								<?php if ( ! empty( $quiz->questions ) ) : ?>
+									<form class="gcm-ajax-form" data-action="gcm_submit_quiz" style="margin-top:.5rem;">
+										<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+										<input type="hidden" name="quiz_id" value="<?php echo esc_attr( $quiz->id ); ?>" />
+										<?php foreach ( $quiz->questions as $q ) : ?>
+											<fieldset style="margin-bottom:.75rem;">
+												<legend><?php echo esc_html( wp_strip_all_tags( $q->question ) ); ?></legend>
+												<?php foreach ( (array) $q->options as $idx => $opt ) : ?>
+													<label style="display:block;">
+														<input type="radio" name="answers[<?php echo esc_attr( $q->id ); ?>]" value="<?php echo esc_attr( $idx ); ?>" required />
+														<?php echo esc_html( $opt ); ?>
+													</label>
+												<?php endforeach; ?>
+											</fieldset>
+										<?php endforeach; ?>
+										<button type="submit" class="gcm-button gcm-button--small"><?php esc_html_e( 'Submit quiz', 'giga-class-market' ); ?></button>
+										<div class="gcm-form-message" aria-live="polite"></div>
+									</form>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
 
 			<?php if ( ! empty( $pending ) ) : ?>
 				<div class="gcm-dashboard-card">

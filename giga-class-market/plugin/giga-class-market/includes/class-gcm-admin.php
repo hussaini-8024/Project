@@ -33,9 +33,11 @@ class GCM_Admin {
 		add_submenu_page( 'gcm-dashboard', __( 'Dashboard', 'giga-class-market' ), __( 'Dashboard', 'giga-class-market' ), 'gcm_view_dashboard', 'gcm-dashboard', array( $this, 'render_dashboard' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Courses', 'giga-class-market' ), __( 'Courses', 'giga-class-market' ), 'gcm_manage_courses', 'edit.php?post_type=gcm_course' );
 		add_submenu_page( 'gcm-dashboard', __( 'Payments', 'giga-class-market' ), __( 'Payments', 'giga-class-market' ), 'gcm_manage_payments', 'gcm-payments', array( $this, 'render_payments' ) );
+		add_submenu_page( 'gcm-dashboard', __( 'Coupons', 'giga-class-market' ), __( 'Coupons', 'giga-class-market' ), 'gcm_manage_payments', 'gcm-coupons', array( $this, 'render_coupons' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Students', 'giga-class-market' ), __( 'Students', 'giga-class-market' ), 'gcm_manage_students', 'gcm-students', array( $this, 'render_students' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Teachers', 'giga-class-market' ), __( 'Teachers', 'giga-class-market' ), 'gcm_manage_teachers', 'gcm-teachers', array( $this, 'render_teachers' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Live Classes', 'giga-class-market' ), __( 'Live Classes', 'giga-class-market' ), 'gcm_manage_teachers', 'gcm-classes', array( $this, 'render_classes' ) );
+		add_submenu_page( 'gcm-dashboard', __( 'Analytics', 'giga-class-market' ), __( 'Analytics', 'giga-class-market' ), 'gcm_view_dashboard', 'gcm-analytics', array( $this, 'render_analytics' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Contact Messages', 'giga-class-market' ), __( 'Contact Messages', 'giga-class-market' ), 'gcm_manage_contacts', 'gcm-contacts', array( $this, 'render_contacts' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Testimonials', 'giga-class-market' ), __( 'Testimonials', 'giga-class-market' ), 'gcm_manage_testimonials', 'edit.php?post_type=gcm_testimonial' );
 		add_submenu_page( 'gcm-dashboard', __( 'Hero Slides', 'giga-class-market' ), __( 'Hero Slides', 'giga-class-market' ), 'gcm_manage_settings', 'edit.php?post_type=gcm_slide' );
@@ -84,8 +86,30 @@ class GCM_Admin {
 	 */
 	public function render_payments() {
 		$status   = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
-		$payments = GCM_Payment_Service::get_by_status( $status, 100 );
-		$this->view( 'payments', array( 'payments' => $payments, 'status' => $status ) );
+		$search   = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		$payments = GCM_Payment_Service::get_by_status( $status, 100, 0, $search );
+		$this->view( 'payments', array( 'payments' => $payments, 'status' => $status, 'search' => $search ) );
+	}
+
+	/**
+	 * Render coupons.
+	 *
+	 * @return void
+	 */
+	public function render_coupons() {
+		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to manage coupons.', 'giga-class-market' ) );
+		}
+		$this->view( 'coupons' );
+	}
+
+	/**
+	 * Render analytics.
+	 *
+	 * @return void
+	 */
+	public function render_analytics() {
+		$this->view( 'analytics', array( 'stats' => $this->get_stats() ) );
 	}
 
 	/**
@@ -185,6 +209,15 @@ class GCM_Admin {
 	private function get_stats() {
 		global $wpdb;
 
+		$upcoming_classes = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->prefix}gcm_classes WHERE status IN (%s, %s) AND scheduled_at >= %s",
+				'scheduled',
+				'live',
+				current_time( 'mysql' )
+			)
+		);
+
 		return array(
 			'courses'          => (int) wp_count_posts( 'gcm_course' )->publish,
 			'students'         => count( get_users( array( 'role' => 'gcm_student', 'fields' => 'ID' ) ) ),
@@ -194,6 +227,10 @@ class GCM_Admin {
 			'rejected'         => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'rejected' ) ),
 			'contacts'         => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_contacts WHERE status = %s", 'new' ) ),
 			'enrollments'      => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_enrollments" ),
+			'completions'      => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_enrollments WHERE status = %s", 'completed' ) ),
+			'certificates'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_certificates" ),
+			'live_classes'     => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}gcm_classes WHERE status = %s", 'live' ) ),
+			'upcoming_classes' => $upcoming_classes,
 			'revenue'          => (float) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount), 0) FROM {$wpdb->prefix}gcm_payments WHERE status = %s", 'approved' ) ),
 		);
 	}

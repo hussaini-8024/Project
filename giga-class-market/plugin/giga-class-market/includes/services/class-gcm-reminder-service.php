@@ -52,8 +52,12 @@ class GCM_Reminder_Service {
 	public static function send_upcoming_class_reminders() {
 		global $wpdb;
 
+		$settings = GCM_Settings_Service::get_settings();
+		$hours    = isset( $settings['course']['reminder_hours'] ) ? absint( $settings['course']['reminder_hours'] ) : 2;
+		$hours    = min( 72, max( 1, $hours ) );
+
 		$now   = current_time( 'mysql' );
-		$until = wp_date( 'Y-m-d H:i:s', strtotime( $now ) + ( 2 * HOUR_IN_SECONDS ) );
+		$until = wp_date( 'Y-m-d H:i:s', strtotime( $now ) + ( $hours * HOUR_IN_SECONDS ) );
 
 		$classes = $wpdb->get_results(
 			$wpdb->prepare(
@@ -90,7 +94,13 @@ class GCM_Reminder_Service {
 				$course_title
 			);
 
-			$body  = '<p>' . esc_html__( 'Your live class is starting within the next 2 hours.', 'giga-class-market' ) . '</p>';
+			$body  = '<p>' . esc_html(
+				sprintf(
+					/* translators: %d: hours */
+					__( 'Your live class is starting within the next %d hour(s).', 'giga-class-market' ),
+					$hours
+				)
+			) . '</p>';
 			$body .= '<p><strong>' . esc_html( $class->title ) . '</strong><br />';
 			$body .= esc_html( $course_title ) . '<br />';
 			$body .= esc_html( $when ) . '</p>';

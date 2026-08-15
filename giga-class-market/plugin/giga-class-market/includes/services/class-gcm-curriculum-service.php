@@ -106,10 +106,11 @@ class GCM_Curriculum_Service {
 				'video_url'           => esc_url_raw( $data['video_url'] ?? '' ),
 				'video_attachment_id' => absint( $data['video_attachment_id'] ?? 0 ),
 				'duration_minutes'    => absint( $data['duration_minutes'] ?? 0 ),
+				'is_preview'          => ! empty( $data['is_preview'] ) ? 1 : 0,
 				'sort_order'          => absint( $data['sort_order'] ?? 0 ),
 				'created_at'          => current_time( 'mysql' ),
 			),
-			array( '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%d', '%s' )
+			array( '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%s' )
 		);
 
 		return $inserted ? (int) $wpdb->insert_id : false;
@@ -133,6 +134,7 @@ class GCM_Curriculum_Service {
 			'video_url'           => array( 'sanitize' => 'esc_url_raw', 'format' => '%s' ),
 			'video_attachment_id' => array( 'sanitize' => 'absint', 'format' => '%d' ),
 			'duration_minutes'    => array( 'sanitize' => 'absint', 'format' => '%d' ),
+			'is_preview'          => array( 'sanitize' => 'absint', 'format' => '%d' ),
 			'sort_order'          => array( 'sanitize' => 'absint', 'format' => '%d' ),
 		);
 		$update = array();
@@ -272,6 +274,7 @@ class GCM_Curriculum_Service {
 					'video_url'           => esc_url_raw( $lesson['video_url'] ?? '' ),
 					'video_attachment_id' => absint( $lesson['video_attachment_id'] ?? 0 ),
 					'duration_minutes'    => absint( $lesson['duration_minutes'] ?? 0 ),
+					'is_preview'          => ! empty( $lesson['is_preview'] ) ? 1 : 0,
 					'sort_order'          => $lesson_index,
 				);
 

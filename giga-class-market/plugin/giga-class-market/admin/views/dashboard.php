@@ -22,6 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 			'rejected'        => __( 'Rejected Payments', 'giga-class-market' ),
 			'contacts'        => __( 'Contact Messages', 'giga-class-market' ),
 			'enrollments'     => __( 'Enrollments', 'giga-class-market' ),
+			'completions'     => __( 'Completions', 'giga-class-market' ),
+			'certificates'    => __( 'Certificates', 'giga-class-market' ),
+			'live_classes'    => __( 'Live Classes', 'giga-class-market' ),
 			'revenue'         => __( 'Approved Revenue', 'giga-class-market' ),
 		);
 		foreach ( $cards as $key => $label ) :

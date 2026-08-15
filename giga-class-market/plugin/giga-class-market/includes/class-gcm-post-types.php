@@ -95,14 +95,19 @@ class GCM_Post_Types {
 	 */
 	private function register_meta() {
 		$meta = array(
-			'_gcm_price'             => 'number',
-			'_gcm_duration'          => 'string',
-			'_gcm_instructor'        => 'string',
-			'_gcm_what_you_learn'    => 'string',
-			'_gcm_requirements'      => 'string',
-			'_gcm_featured'          => 'boolean',
-			'_gcm_featured_priority' => 'integer',
-			'_gcm_rating'            => 'number',
+			'_gcm_price'                => 'number',
+			'_gcm_discount_price'       => 'number',
+			'_gcm_sale_label'           => 'string',
+			'_gcm_faq'                  => 'string',
+			'_gcm_bundle_ids'           => 'string',
+			'_gcm_community_whatsapp'   => 'string',
+			'_gcm_duration'             => 'string',
+			'_gcm_instructor'           => 'string',
+			'_gcm_what_you_learn'       => 'string',
+			'_gcm_requirements'         => 'string',
+			'_gcm_featured'             => 'boolean',
+			'_gcm_featured_priority'    => 'integer',
+			'_gcm_rating'               => 'number',
 		);
 
 		foreach ( $meta as $key => $type ) {
@@ -132,6 +137,7 @@ class GCM_Post_Types {
 	public function sanitize_registered_meta( $value, $key ) {
 		switch ( $key ) {
 			case '_gcm_price':
+			case '_gcm_discount_price':
 			case '_gcm_rating':
 				return (float) $value;
 			case '_gcm_featured':
@@ -140,7 +146,11 @@ class GCM_Post_Types {
 				return absint( $value );
 			case '_gcm_what_you_learn':
 			case '_gcm_requirements':
+			case '_gcm_faq':
 				return sanitize_textarea_field( $value );
+			case '_gcm_community_whatsapp':
+				$url = esc_url_raw( $value );
+				return $url ? $url : sanitize_text_field( $value );
 			default:
 				return sanitize_text_field( $value );
 		}
@@ -207,13 +217,18 @@ class GCM_Post_Types {
 		wp_nonce_field( 'gcm_save_course_meta', 'gcm_course_meta_nonce' );
 
 		$fields = array(
-			'price'          => get_post_meta( $post->ID, '_gcm_price', true ),
-			'duration'       => get_post_meta( $post->ID, '_gcm_duration', true ),
-			'instructor'     => get_post_meta( $post->ID, '_gcm_instructor', true ),
-			'what_you_learn' => get_post_meta( $post->ID, '_gcm_what_you_learn', true ),
-			'requirements'   => get_post_meta( $post->ID, '_gcm_requirements', true ),
-			'featured'       => get_post_meta( $post->ID, '_gcm_featured', true ),
-			'rating'         => get_post_meta( $post->ID, '_gcm_rating', true ),
+			'price'               => get_post_meta( $post->ID, '_gcm_price', true ),
+			'discount_price'      => get_post_meta( $post->ID, '_gcm_discount_price', true ),
+			'sale_label'          => get_post_meta( $post->ID, '_gcm_sale_label', true ),
+			'faq'                 => get_post_meta( $post->ID, '_gcm_faq', true ),
+			'bundle_ids'          => get_post_meta( $post->ID, '_gcm_bundle_ids', true ),
+			'community_whatsapp'  => get_post_meta( $post->ID, '_gcm_community_whatsapp', true ),
+			'duration'            => get_post_meta( $post->ID, '_gcm_duration', true ),
+			'instructor'          => get_post_meta( $post->ID, '_gcm_instructor', true ),
+			'what_you_learn'      => get_post_meta( $post->ID, '_gcm_what_you_learn', true ),
+			'requirements'        => get_post_meta( $post->ID, '_gcm_requirements', true ),
+			'featured'            => get_post_meta( $post->ID, '_gcm_featured', true ),
+			'rating'              => get_post_meta( $post->ID, '_gcm_rating', true ),
 		);
 		?>
 		<div class="gcm-meta-grid">
@@ -223,6 +238,14 @@ class GCM_Post_Types {
 			<p>
 				<label for="gcm_price"><?php esc_html_e( 'Price', 'giga-class-market' ); ?></label>
 				<input type="number" step="0.01" min="0" id="gcm_price" name="gcm_price" value="<?php echo esc_attr( $fields['price'] ); ?>" class="widefat" />
+			</p>
+			<p>
+				<label for="gcm_discount_price"><?php esc_html_e( 'Sale / discount price', 'giga-class-market' ); ?></label>
+				<input type="number" step="0.01" min="0" id="gcm_discount_price" name="gcm_discount_price" value="<?php echo esc_attr( $fields['discount_price'] ); ?>" class="widefat" />
+			</p>
+			<p>
+				<label for="gcm_sale_label"><?php esc_html_e( 'Sale label', 'giga-class-market' ); ?></label>
+				<input type="text" id="gcm_sale_label" name="gcm_sale_label" value="<?php echo esc_attr( $fields['sale_label'] ); ?>" class="widefat" placeholder="<?php esc_attr_e( 'Early bird', 'giga-class-market' ); ?>" />
 			</p>
 			<p>
 				<label for="gcm_duration"><?php esc_html_e( 'Duration', 'giga-class-market' ); ?></label>
@@ -250,6 +273,18 @@ class GCM_Post_Types {
 				<label for="gcm_requirements"><?php esc_html_e( 'Requirements', 'giga-class-market' ); ?></label>
 				<textarea id="gcm_requirements" name="gcm_requirements" rows="4" class="widefat"><?php echo esc_textarea( $fields['requirements'] ); ?></textarea>
 			</p>
+			<p>
+				<label for="gcm_faq"><?php esc_html_e( 'FAQ (one Q/A per line: Question? | Answer)', 'giga-class-market' ); ?></label>
+				<textarea id="gcm_faq" name="gcm_faq" rows="5" class="widefat"><?php echo esc_textarea( $fields['faq'] ); ?></textarea>
+			</p>
+			<p>
+				<label for="gcm_bundle_ids"><?php esc_html_e( 'Bundle course IDs (comma-separated)', 'giga-class-market' ); ?></label>
+				<input type="text" id="gcm_bundle_ids" name="gcm_bundle_ids" value="<?php echo esc_attr( $fields['bundle_ids'] ); ?>" class="widefat" placeholder="12,34,56" />
+			</p>
+			<p>
+				<label for="gcm_community_whatsapp"><?php esc_html_e( 'Community WhatsApp (URL or number)', 'giga-class-market' ); ?></label>
+				<input type="text" id="gcm_community_whatsapp" name="gcm_community_whatsapp" value="<?php echo esc_attr( $fields['community_whatsapp'] ); ?>" class="widefat" />
+			</p>
 		</div>
 		<?php
 	}
@@ -265,7 +300,7 @@ class GCM_Post_Types {
 		?>
 		<p><?php esc_html_e( 'Manage modules and lessons as JSON. Keep existing IDs to update records; omit IDs to create new modules or lessons.', 'giga-class-market' ); ?></p>
 		<textarea name="gcm_curriculum_payload" rows="18" class="widefat code"><?php echo esc_textarea( wp_json_encode( $curriculum, JSON_PRETTY_PRINT ) ); ?></textarea>
-		<p class="description"><?php esc_html_e( 'Lesson fields: title, content, video_url, video_attachment_id, duration_minutes. Course access is enforced before lesson video links are displayed to students.', 'giga-class-market' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Lesson fields: title, content, video_url, video_attachment_id, duration_minutes, is_preview (0/1). Course access is enforced before lesson video links are displayed to students.', 'giga-class-market' ); ?></p>
 		<?php
 	}
 
@@ -289,15 +324,37 @@ class GCM_Post_Types {
 			return;
 		}
 
-		$price          = isset( $_POST['gcm_price'] ) ? (float) wp_unslash( $_POST['gcm_price'] ) : 0;
-		$duration       = isset( $_POST['gcm_duration'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_duration'] ) ) : '';
-		$instructor     = isset( $_POST['gcm_instructor'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_instructor'] ) ) : '';
-		$what_you_learn = isset( $_POST['gcm_what_you_learn'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_what_you_learn'] ) ) : '';
-		$requirements   = isset( $_POST['gcm_requirements'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_requirements'] ) ) : '';
-		$rating         = isset( $_POST['gcm_rating'] ) ? (float) wp_unslash( $_POST['gcm_rating'] ) : 0;
-		$featured       = isset( $_POST['gcm_featured'] ) ? 1 : 0;
+		$price             = isset( $_POST['gcm_price'] ) ? (float) wp_unslash( $_POST['gcm_price'] ) : 0;
+		$discount_price    = isset( $_POST['gcm_discount_price'] ) ? (float) wp_unslash( $_POST['gcm_discount_price'] ) : 0;
+		$sale_label        = isset( $_POST['gcm_sale_label'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_sale_label'] ) ) : '';
+		$faq               = isset( $_POST['gcm_faq'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_faq'] ) ) : '';
+		$bundle_ids        = isset( $_POST['gcm_bundle_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_bundle_ids'] ) ) : '';
+		$community_whatsapp = isset( $_POST['gcm_community_whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_community_whatsapp'] ) ) : '';
+		$duration          = isset( $_POST['gcm_duration'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_duration'] ) ) : '';
+		$instructor        = isset( $_POST['gcm_instructor'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_instructor'] ) ) : '';
+		$what_you_learn    = isset( $_POST['gcm_what_you_learn'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_what_you_learn'] ) ) : '';
+		$requirements      = isset( $_POST['gcm_requirements'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_requirements'] ) ) : '';
+		$rating            = isset( $_POST['gcm_rating'] ) ? (float) wp_unslash( $_POST['gcm_rating'] ) : 0;
+		$featured          = isset( $_POST['gcm_featured'] ) ? 1 : 0;
+
+		$bundle_ids = implode(
+			',',
+			array_filter(
+				array_map(
+					static function ( $id ) {
+						return absint( $id );
+					},
+					preg_split( '/[\s,]+/', $bundle_ids )
+				)
+			)
+		);
 
 		update_post_meta( $post_id, '_gcm_price', max( 0, $price ) );
+		update_post_meta( $post_id, '_gcm_discount_price', max( 0, $discount_price ) );
+		update_post_meta( $post_id, '_gcm_sale_label', $sale_label );
+		update_post_meta( $post_id, '_gcm_faq', $faq );
+		update_post_meta( $post_id, '_gcm_bundle_ids', $bundle_ids );
+		update_post_meta( $post_id, '_gcm_community_whatsapp', $community_whatsapp );
 		update_post_meta( $post_id, '_gcm_duration', $duration );
 		update_post_meta( $post_id, '_gcm_instructor', $instructor );
 		update_post_meta( $post_id, '_gcm_what_you_learn', $what_you_learn );

@@ -25,7 +25,9 @@
 			payment_id: $button.data('payment-id') || 0,
 			user_id: $button.data('user-id') || 0,
 			course_id: $button.data('course-id') || 0,
-			class_id: $button.data('class-id') || 0
+			class_id: $button.data('class-id') || 0,
+			coupon_id: $button.data('coupon-id') || 0,
+			review_id: $button.data('review-id') || 0
 		};
 
 		if ($button.hasClass('gcm-reject-payment')) {
@@ -43,7 +45,7 @@
 				if (response.success && response.data && response.data.whatsapp_url) {
 					window.open(response.data.whatsapp_url, '_blank', 'noopener');
 				}
-				if (response.success) {
+				if (response.success && action !== 'gcm_whatsapp_payment_reminder') {
 					window.setTimeout(function () {
 						window.location.reload();
 					}, 700);
@@ -55,6 +57,37 @@
 			})
 			.always(function () {
 				$button.prop('disabled', false);
+			});
+	});
+
+	$(document).on('submit', '.gcm-ajax-form', function (event) {
+		var $form = $(this);
+		if ($form.hasClass('gcm-settings-form') || $form.hasClass('gcm-create-teacher-form') || $form.hasClass('gcm-set-teacher-password') || $form.hasClass('gcm-assign-teacher-courses') || $form.hasClass('gcm-admin-schedule-class')) {
+			return;
+		}
+		event.preventDefault();
+		var $message = $form.find('.gcm-form-message').first();
+		var data = $form.serializeArray();
+		var action = $form.data('action');
+		if (action) {
+			data.push({ name: 'action', value: action });
+		}
+		if (!$form.find('[name="nonce"]').length) {
+			data.push({ name: 'nonce', value: gcmAdmin.nonce });
+		}
+		$message.text('Saving...');
+		$.post(gcmAdmin.ajaxUrl, data)
+			.done(function (response) {
+				$message.text(response.data && response.data.message ? response.data.message : 'Done.');
+				if (response.success) {
+					window.setTimeout(function () {
+						window.location.reload();
+					}, 700);
+				}
+			})
+			.fail(function (xhr) {
+				var message = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : 'Request failed.';
+				$message.text(message);
 			});
 	});
 

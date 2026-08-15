@@ -95,6 +95,12 @@
 		if (button.getAttribute('data-note-id')) {
 			data.append('note_id', button.getAttribute('data-note-id'));
 		}
+		if (button.getAttribute('data-recording-id')) {
+			data.append('recording_id', button.getAttribute('data-recording-id'));
+		}
+		if (button.getAttribute('data-announcement-id')) {
+			data.append('announcement_id', button.getAttribute('data-announcement-id'));
+		}
 		button.disabled = true;
 		fetch(window.gcmPublic.ajaxUrl, {
 			method: 'POST',

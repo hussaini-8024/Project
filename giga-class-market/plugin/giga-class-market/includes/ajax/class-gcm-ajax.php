@@ -20,13 +20,23 @@ class GCM_Ajax {
 	 * @return void
 	 */
 	public function register() {
-		$public_actions = array( 'contact_submit', 'payment_submit', 'course_search' );
+		$public_actions = array( 'contact_submit', 'payment_submit', 'course_search', 'validate_coupon' );
 		foreach ( $public_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
 			add_action( 'wp_ajax_nopriv_gcm_' . $action, array( $this, $action ) );
 		}
 
-		$student_actions = array( 'mark_lesson_complete', 'update_profile', 'change_password', 'send_course_message', 'get_course_messages', 'join_live_class' );
+		$student_actions = array(
+			'mark_lesson_complete',
+			'update_profile',
+			'change_password',
+			'send_course_message',
+			'get_course_messages',
+			'join_live_class',
+			'submit_review',
+			'submit_quiz',
+			'submit_assignment',
+		);
 		foreach ( $student_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
 		}
@@ -41,6 +51,13 @@ class GCM_Ajax {
 			'get_teacher_messages',
 			'get_course_students',
 			'get_class_attendance',
+			'add_recording',
+			'delete_recording',
+			'add_announcement',
+			'delete_announcement',
+			'create_assignment',
+			'grade_assignment',
+			'save_quiz',
 		);
 		foreach ( $teacher_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
@@ -61,6 +78,12 @@ class GCM_Ajax {
 			'set_teacher_password',
 			'assign_teacher_courses',
 			'generate_certificate',
+			'create_coupon',
+			'toggle_coupon',
+			'delete_coupon',
+			'bulk_generate_certificates',
+			'whatsapp_payment_reminder',
+			'moderate_review',
 		);
 		foreach ( $admin_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
@@ -118,6 +141,7 @@ class GCM_Ajax {
 				'address'        => isset( $_POST['address'] ) ? sanitize_textarea_field( wp_unslash( $_POST['address'] ) ) : '',
 				'transaction_id' => isset( $_POST['transaction_id'] ) ? sanitize_text_field( wp_unslash( $_POST['transaction_id'] ) ) : '',
 				'payment_method' => isset( $_POST['payment_method'] ) ? sanitize_text_field( wp_unslash( $_POST['payment_method'] ) ) : '',
+				'coupon_code'    => isset( $_POST['coupon_code'] ) ? sanitize_text_field( wp_unslash( $_POST['coupon_code'] ) ) : '',
 			),
 			$file
 		);
@@ -727,6 +751,435 @@ class GCM_Ajax {
 				'url'     => GCM_Certificate_Service::verify_url( $result->certificate_code ),
 			)
 		);
+	}
+
+	/**
+	 * Validate coupon for checkout.
+	 *
+	 * @return void
+	 */
+	public function validate_coupon() {
+		GCM_Security::verify_ajax_nonce();
+
+		$result = GCM_Coupon_Service::validate_for_course(
+			isset( $_POST['coupon_code'] ) ? sanitize_text_field( wp_unslash( $_POST['coupon_code'] ) ) : '',
+			isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+			get_current_user_id()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success(
+			array(
+				'message'         => __( 'Coupon applied.', 'giga-class-market' ),
+				'discount_amount' => $result['discount_amount'],
+				'final_price'     => $result['final_price'],
+				'code'            => $result['coupon']->code,
+			)
+		);
+	}
+
+	/**
+	 * Admin: create coupon.
+	 *
+	 * @return void
+	 */
+	public function create_coupon() {
+		GCM_Security::verify_ajax_nonce();
+		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 403 );
+		}
+
+		$result = GCM_Coupon_Service::create(
+			array(
+				'code'           => isset( $_POST['code'] ) ? sanitize_text_field( wp_unslash( $_POST['code'] ) ) : '',
+				'description'    => isset( $_POST['description'] ) ? sanitize_text_field( wp_unslash( $_POST['description'] ) ) : '',
+				'discount_type'  => isset( $_POST['discount_type'] ) ? sanitize_key( wp_unslash( $_POST['discount_type'] ) ) : 'percent',
+				'discount_value' => isset( $_POST['discount_value'] ) ? (float) wp_unslash( $_POST['discount_value'] ) : 0,
+				'course_id'      => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'max_uses'       => isset( $_POST['max_uses'] ) ? absint( $_POST['max_uses'] ) : 0,
+				'expires_at'     => isset( $_POST['expires_at'] ) ? sanitize_text_field( wp_unslash( $_POST['expires_at'] ) ) : '',
+				'created_by'     => get_current_user_id(),
+			)
+		);
+		$this->send_service_response( $result, __( 'Coupon created.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Admin: toggle coupon active state.
+	 *
+	 * @return void
+	 */
+	public function toggle_coupon() {
+		GCM_Security::verify_ajax_nonce();
+		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 403 );
+		}
+
+		$coupon_id = isset( $_POST['coupon_id'] ) ? absint( $_POST['coupon_id'] ) : 0;
+		$coupon    = GCM_Coupon_Service::get( $coupon_id );
+		if ( ! $coupon ) {
+			wp_send_json_error( array( 'message' => __( 'Coupon not found.', 'giga-class-market' ) ), 404 );
+		}
+
+		$result = GCM_Coupon_Service::update( $coupon_id, array( 'is_active' => empty( $coupon->is_active ) ? 1 : 0 ) );
+		$this->send_service_response( $result, __( 'Coupon status updated.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Admin: delete coupon.
+	 *
+	 * @return void
+	 */
+	public function delete_coupon() {
+		GCM_Security::verify_ajax_nonce();
+		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 403 );
+		}
+
+		$result = GCM_Coupon_Service::delete( isset( $_POST['coupon_id'] ) ? absint( $_POST['coupon_id'] ) : 0 );
+		$this->send_service_response( $result, __( 'Coupon deleted.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Admin: bulk generate certificates for completed enrollments.
+	 *
+	 * @return void
+	 */
+	public function bulk_generate_certificates() {
+		GCM_Security::verify_ajax_nonce();
+		if ( ! current_user_can( 'gcm_manage_students' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to issue certificates.', 'giga-class-market' ) ), 403 );
+		}
+
+		global $wpdb;
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT e.user_id, e.course_id FROM {$wpdb->prefix}gcm_enrollments e
+				LEFT JOIN {$wpdb->prefix}gcm_certificates c ON c.user_id = e.user_id AND c.course_id = e.course_id
+				WHERE e.status = %s AND c.id IS NULL
+				LIMIT 100",
+				'completed'
+			)
+		);
+
+		$generated = 0;
+		$errors    = 0;
+		foreach ( (array) $rows as $row ) {
+			$result = GCM_Certificate_Service::generate_and_send( (int) $row->user_id, (int) $row->course_id, get_current_user_id() );
+			if ( is_wp_error( $result ) ) {
+				$errors++;
+			} else {
+				$generated++;
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: 1: generated count, 2: error count */
+					__( 'Generated %1$d certificate(s). %2$d skipped/failed.', 'giga-class-market' ),
+					$generated,
+					$errors
+				),
+				'generated' => $generated,
+				'errors'    => $errors,
+			)
+		);
+	}
+
+	/**
+	 * Admin: WhatsApp reminder for a pending payment.
+	 *
+	 * @return void
+	 */
+	public function whatsapp_payment_reminder() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_manage_payments' );
+
+		$payment_id = isset( $_POST['payment_id'] ) ? absint( $_POST['payment_id'] ) : 0;
+		$payment    = GCM_Payment_Service::get( $payment_id );
+		if ( ! $payment ) {
+			wp_send_json_error( array( 'message' => __( 'Payment not found.', 'giga-class-market' ) ), 404 );
+		}
+
+		$course = GCM_Course_Service::get( (int) $payment->course_id );
+		$message = sprintf(
+			/* translators: 1: student name, 2: course title, 3: amount */
+			__( 'Hello %1$s, this is a reminder from Giga Class Market about your payment for “%2$s” (amount: %3$s). Please reply here if you need help completing verification.', 'giga-class-market' ),
+			$payment->full_name,
+			$course ? $course['title'] : __( 'your course', 'giga-class-market' ),
+			number_format_i18n( (float) $payment->amount, 2 )
+		);
+
+		$url = GCM_Notification_Service::build_whatsapp_url( $payment->whatsapp, $message );
+		wp_send_json_success(
+			array(
+				'message'      => __( 'Opening WhatsApp reminder…', 'giga-class-market' ),
+				'whatsapp_url' => $url,
+			)
+		);
+	}
+
+	/**
+	 * Admin: moderate a review.
+	 *
+	 * @return void
+	 */
+	public function moderate_review() {
+		GCM_Security::verify_ajax_nonce();
+		if ( ! current_user_can( 'gcm_manage_courses' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to moderate reviews.', 'giga-class-market' ) ), 403 );
+		}
+
+		$result = GCM_Review_Service::set_status(
+			isset( $_POST['review_id'] ) ? absint( $_POST['review_id'] ) : 0,
+			isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : ''
+		);
+		$this->send_service_response( $result, __( 'Review status updated.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Student: submit course review.
+	 *
+	 * @return void
+	 */
+	public function submit_review() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_access_dashboard' );
+
+		$result = GCM_Review_Service::submit(
+			isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+			get_current_user_id(),
+			isset( $_POST['rating'] ) ? absint( $_POST['rating'] ) : 5,
+			isset( $_POST['review_title'] ) ? sanitize_text_field( wp_unslash( $_POST['review_title'] ) ) : '',
+			isset( $_POST['review_body'] ) ? sanitize_textarea_field( wp_unslash( $_POST['review_body'] ) ) : ''
+		);
+		$this->send_service_response( $result, __( 'Thank you! Your review was submitted for moderation.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Student: submit quiz attempt.
+	 *
+	 * @return void
+	 */
+	public function submit_quiz() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_access_dashboard' );
+
+		$answers = array();
+		if ( isset( $_POST['answers'] ) ) {
+			$raw = wp_unslash( $_POST['answers'] );
+			if ( is_string( $raw ) ) {
+				$decoded = json_decode( $raw, true );
+				$answers = is_array( $decoded ) ? $decoded : array();
+			} elseif ( is_array( $raw ) ) {
+				$answers = $raw;
+			}
+		}
+
+		$result = GCM_Quiz_Service::submit_attempt(
+			isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0,
+			get_current_user_id(),
+			$answers
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: 1: score, 2: pass/fail */
+					__( 'Quiz scored %1$d%% — %2$s', 'giga-class-market' ),
+					(int) $result->score,
+					! empty( $result->passed ) ? __( 'Passed', 'giga-class-market' ) : __( 'Not passed', 'giga-class-market' )
+				),
+				'score'   => (int) $result->score,
+				'passed'  => (int) $result->passed,
+				'id'      => (int) $result->id,
+			)
+		);
+	}
+
+	/**
+	 * Student: submit assignment.
+	 *
+	 * @return void
+	 */
+	public function submit_assignment() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_access_dashboard' );
+
+		$file_id = 0;
+		if ( ! empty( $_FILES['assignment_file']['name'] ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			$upload = media_handle_upload( 'assignment_file', 0 );
+			if ( is_wp_error( $upload ) ) {
+				wp_send_json_error( array( 'message' => $upload->get_error_message() ), 400 );
+			}
+			$file_id = (int) $upload;
+		}
+
+		$result = GCM_Assignment_Service::submit(
+			isset( $_POST['assignment_id'] ) ? absint( $_POST['assignment_id'] ) : 0,
+			get_current_user_id(),
+			$file_id,
+			isset( $_POST['notes'] ) ? sanitize_textarea_field( wp_unslash( $_POST['notes'] ) ) : ''
+		);
+		$this->send_service_response( $result, __( 'Assignment submitted.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher: add recording.
+	 *
+	 * @return void
+	 */
+	public function add_recording() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Recording_Service::add(
+			array(
+				'course_id'  => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'class_id'   => isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+				'teacher_id' => get_current_user_id(),
+				'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'video_url'  => isset( $_POST['video_url'] ) ? esc_url_raw( wp_unslash( $_POST['video_url'] ) ) : '',
+			)
+		);
+		$this->send_service_response( $result, __( 'Recording added.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher: delete recording.
+	 *
+	 * @return void
+	 */
+	public function delete_recording() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Recording_Service::delete(
+			isset( $_POST['recording_id'] ) ? absint( $_POST['recording_id'] ) : 0,
+			get_current_user_id()
+		);
+		$this->send_service_response( $result, __( 'Recording deleted.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher: add announcement.
+	 *
+	 * @return void
+	 */
+	public function add_announcement() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Announcement_Service::add(
+			array(
+				'course_id'  => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'teacher_id' => get_current_user_id(),
+				'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'body'       => isset( $_POST['body'] ) ? wp_kses_post( wp_unslash( $_POST['body'] ) ) : '',
+			)
+		);
+		$this->send_service_response( $result, __( 'Announcement published.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher: delete announcement.
+	 *
+	 * @return void
+	 */
+	public function delete_announcement() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Announcement_Service::delete(
+			isset( $_POST['announcement_id'] ) ? absint( $_POST['announcement_id'] ) : 0,
+			get_current_user_id()
+		);
+		$this->send_service_response( $result, __( 'Announcement deleted.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher: create assignment.
+	 *
+	 * @return void
+	 */
+	public function create_assignment() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Assignment_Service::create_assignment(
+			array(
+				'course_id'    => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'teacher_id'   => get_current_user_id(),
+				'title'        => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'instructions' => isset( $_POST['instructions'] ) ? wp_kses_post( wp_unslash( $_POST['instructions'] ) ) : '',
+				'due_at'       => isset( $_POST['due_at'] ) ? sanitize_text_field( wp_unslash( $_POST['due_at'] ) ) : '',
+			)
+		);
+		$this->send_service_response( $result, __( 'Assignment created.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher: grade assignment submission.
+	 *
+	 * @return void
+	 */
+	public function grade_assignment() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Assignment_Service::grade(
+			isset( $_POST['submission_id'] ) ? absint( $_POST['submission_id'] ) : 0,
+			isset( $_POST['grade'] ) ? sanitize_text_field( wp_unslash( $_POST['grade'] ) ) : '',
+			isset( $_POST['feedback'] ) ? wp_kses_post( wp_unslash( $_POST['feedback'] ) ) : ''
+		);
+		$this->send_service_response( $result, __( 'Grade saved.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Teacher/admin: create quiz (title + questions JSON).
+	 *
+	 * @return void
+	 */
+	public function save_quiz() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$course_id = isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0;
+		if ( ! GCM_Teacher_Service::teacher_can_manage_course( get_current_user_id(), $course_id ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not assigned to this course.', 'giga-class-market' ) ), 403 );
+		}
+
+		$questions = array();
+		if ( isset( $_POST['questions'] ) ) {
+			$raw = wp_unslash( $_POST['questions'] );
+			if ( is_string( $raw ) ) {
+				$decoded   = json_decode( $raw, true );
+				$questions = is_array( $decoded ) ? $decoded : array();
+			} elseif ( is_array( $raw ) ) {
+				$questions = $raw;
+			}
+		}
+
+		$result = GCM_Quiz_Service::create_quiz(
+			array(
+				'course_id'  => $course_id,
+				'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'pass_score' => isset( $_POST['pass_score'] ) ? absint( $_POST['pass_score'] ) : 70,
+				'questions'  => $questions,
+			)
+		);
+		$this->send_service_response( $result, __( 'Quiz saved.', 'giga-class-market' ) );
 	}
 
 	/**

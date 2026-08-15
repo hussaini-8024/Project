@@ -20,6 +20,9 @@ class GCM_Deactivator {
 	 * @return void
 	 */
 	public static function deactivate() {
+		if ( class_exists( 'GCM_Reminder_Service' ) ) {
+			GCM_Reminder_Service::clear_hooks();
+		}
 		flush_rewrite_rules();
 	}
 }

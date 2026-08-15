@@ -58,6 +58,8 @@ class GCM_Core {
 
 		$ajax->register();
 
+		add_action( 'init', array( 'GCM_Reminder_Service', 'schedule_hooks' ) );
+
 		if ( is_admin() ) {
 			$admin = new GCM_Admin();
 			add_action( 'admin_menu', array( $admin, 'register_menus' ) );

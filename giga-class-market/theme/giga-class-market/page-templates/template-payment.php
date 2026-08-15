@@ -10,6 +10,12 @@ $course    = ( $course_id && class_exists( 'GCM_Course_Service' ) ) ? GCM_Course
 $methods   = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_payment_methods() : array();
 $verify_url = add_query_arg( 'course_id', $course_id, home_url( '/payment-verification/' ) );
 
+$regular_price   = $course ? (float) $course['price'] : 0;
+$discount_price  = $course ? (float) ( $course['discount_price'] ?? 0 ) : 0;
+$sale_label      = $course ? (string) ( $course['sale_label'] ?? '' ) : '';
+$effective_price = $course ? (float) ( $course['effective_price'] ?? $regular_price ) : 0;
+$on_sale         = $discount_price > 0 && $discount_price < $regular_price;
+
 get_header();
 ?>
 <section class="gcm-payment-page">
@@ -20,8 +26,18 @@ get_header();
 		<?php if ( $course ) : ?>
 			<div class="gcm-payment-summary">
 				<h2><?php echo esc_html( $course['title'] ); ?></h2>
-				<p class="gcm-payment-price"><?php echo esc_html( gcm_format_price( $course['price'] ) ); ?></p>
-				<p><?php esc_html_e( 'Transfer the exact course amount using one of the company payment accounts below, then proceed to submit your transaction ID for verification.', 'giga-class-market' ); ?></p>
+				<p class="gcm-payment-price">
+					<?php if ( $on_sale ) : ?>
+						<?php if ( $sale_label ) : ?>
+							<span class="gcm-sale-label"><?php echo esc_html( $sale_label ); ?></span>
+						<?php endif; ?>
+						<s><?php echo esc_html( gcm_format_price( $regular_price ) ); ?></s>
+						<strong><?php echo esc_html( gcm_format_price( $effective_price ) ); ?></strong>
+					<?php else : ?>
+						<?php echo esc_html( gcm_format_price( $effective_price ) ); ?>
+					<?php endif; ?>
+				</p>
+				<p><?php esc_html_e( 'Transfer the exact course amount using one of the company payment accounts below, then proceed to submit your transaction ID for verification. Coupons can be applied on the next step.', 'giga-class-market' ); ?></p>
 			</div>
 		<?php else : ?>
 			<div class="gcm-empty-state">

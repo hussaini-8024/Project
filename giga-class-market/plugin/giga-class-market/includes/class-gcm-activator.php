@@ -106,6 +106,11 @@ class GCM_Activator {
 				'content'  => '',
 				'template' => 'page-templates/template-terms.php',
 			),
+			'refund-policy'        => array(
+				'title'    => __( 'Refund Policy', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-refund.php',
+			),
 			'verify-certificate'   => array(
 				'title'    => __( 'Verify Certificate', 'giga-class-market' ),
 				'content'  => '',

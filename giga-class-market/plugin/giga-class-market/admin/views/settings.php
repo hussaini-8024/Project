@@ -64,6 +64,7 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Theme color', 'giga-class-market' ); ?><input type="text" name="settings[website][theme_color]" value="<?php echo esc_attr( $settings['website']['theme_color'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Accent color', 'giga-class-market' ); ?><input type="text" name="settings[website][accent_color]" value="<?php echo esc_attr( $settings['website']['accent_color'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Student page slug', 'giga-class-market' ); ?><input type="text" name="settings[website][student_page_slug]" value="<?php echo esc_attr( $settings['website']['student_page_slug'] ); ?>" /></label>
+			<label><?php esc_html_e( 'Community WhatsApp (site-wide)', 'giga-class-market' ); ?><input type="text" name="settings[website][community_whatsapp]" value="<?php echo esc_attr( $settings['website']['community_whatsapp'] ?? '' ); ?>" placeholder="+966509136037 or https://chat.whatsapp.com/…" /></label>
 		</section>
 
 		<section id="gcm-tab-course" class="gcm-tab">
@@ -71,6 +72,7 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Featured course count', 'giga-class-market' ); ?><input type="number" min="1" max="3" name="settings[course][featured_count]" value="<?php echo esc_attr( $settings['course']['featured_count'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Default duration', 'giga-class-market' ); ?><input type="text" name="settings[course][default_duration]" value="<?php echo esc_attr( $settings['course']['default_duration'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Default rating', 'giga-class-market' ); ?><input type="number" step="0.1" min="0" max="5" name="settings[course][default_rating]" value="<?php echo esc_attr( $settings['course']['default_rating'] ); ?>" /></label>
+			<label><?php esc_html_e( 'Live class reminder (hours before)', 'giga-class-market' ); ?><input type="number" min="1" max="72" name="settings[course][reminder_hours]" value="<?php echo esc_attr( $settings['course']['reminder_hours'] ?? 2 ); ?>" /></label>
 			<label><?php esc_html_e( 'Default student password', 'giga-class-market' ); ?><input type="text" name="settings[security][default_password]" value="<?php echo esc_attr( $settings['security']['default_password'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Max upload size (MB)', 'giga-class-market' ); ?><input type="number" min="1" name="settings[security][max_upload_mb]" value="<?php echo esc_attr( $settings['security']['max_upload_mb'] ); ?>" /></label>
 		</section>
