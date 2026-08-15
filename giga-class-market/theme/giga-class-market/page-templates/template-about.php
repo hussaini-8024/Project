@@ -41,15 +41,9 @@ $about_cards = array(
 $team_uri = trailingslashit( GCM_THEME_URI ) . 'assets/images/team/';
 $core_team = array(
 	array(
-		'name'  => __( 'Manzoor Ahmad', 'giga-class-market' ),
-		'role'  => __( 'Lecturer', 'giga-class-market' ),
-		'bio'   => __( 'An experienced lecturer focused on clear teaching, practical skills, and helping students build confidence through structured live classes.', 'giga-class-market' ),
-		'photo' => $team_uri . 'manzoor-ahmad.jpg',
-	),
-	array(
 		'name'  => __( 'Navyan Baig', 'giga-class-market' ),
 		'role'  => __( 'Web Developer', 'giga-class-market' ),
-		'bio'   => __( 'Web developer building and refining the Giga Class Market platform so students, teachers, and admins enjoy a smooth, reliable learning experience.', 'giga-class-market' ),
+		'bio'   => __( 'Navyan builds and maintains the Giga Class Market web platform — from course pages and student dashboards to smooth enrollment and payment flows — so learners get a fast, reliable experience.', 'giga-class-market' ),
 		'photo' => $team_uri . 'navyan-baig.jpg',
 	),
 );
@@ -106,17 +100,17 @@ $core_team = array(
 		<header class="gcm-section__header gcm-section__header--center gcm-animate">
 			<p class="gcm-eyebrow"><?php esc_html_e( 'Our people', 'giga-class-market' ); ?></p>
 			<h2 id="gcm-core-team-heading"><?php esc_html_e( 'Meet Our Core Team', 'giga-class-market' ); ?></h2>
-			<p><?php esc_html_e( 'The educators and builders guiding Giga Class Market every day.', 'giga-class-market' ); ?></p>
+			<p><?php esc_html_e( 'The builder behind a smooth Giga Class Market experience.', 'giga-class-market' ); ?></p>
 		</header>
-		<div class="gcm-team-grid">
+		<div class="gcm-team-grid gcm-team-grid--single">
 			<?php foreach ( $core_team as $index => $member ) : ?>
 				<article class="gcm-team-card gcm-animate" style="--gcm-delay: <?php echo esc_attr( ( $index + 1 ) * 0.1 ); ?>s">
 					<div class="gcm-team-card__photo">
 						<img
 							src="<?php echo esc_url( $member['photo'] ); ?>"
 							alt="<?php echo esc_attr( $member['name'] ); ?>"
-							width="480"
-							height="640"
+							width="720"
+							height="960"
 							loading="lazy"
 							decoding="async"
 						>
