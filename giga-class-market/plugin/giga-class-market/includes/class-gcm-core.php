@@ -33,6 +33,7 @@ class GCM_Core {
 		add_action( 'init', array( $frontend, 'register_shortcodes' ) );
 		add_action( 'template_redirect', array( $frontend, 'protect_student_pages' ) );
 		add_action( 'template_redirect', array( $frontend, 'serve_private_screenshot' ) );
+		add_action( 'template_redirect', array( $frontend, 'serve_promo_popup_json' ), 0 );
 		add_action( 'wp_enqueue_scripts', array( $frontend, 'enqueue_assets' ) );
 		add_filter( 'wp_robots', array( $frontend, 'noindex_student_pages' ) );
 		add_action( 'wp_head', array( $frontend, 'print_course_schema' ) );

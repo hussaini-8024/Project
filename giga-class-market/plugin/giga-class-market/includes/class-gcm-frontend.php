@@ -24,6 +24,47 @@ class GCM_Frontend {
 	}
 
 	/**
+	 * Uncached JSON endpoint for promo popup (front URL, not admin-ajax).
+	 * Hosts that block /wp-admin/admin-ajax.php for guests can still serve this.
+	 *
+	 * @return void
+	 */
+	public function serve_promo_popup_json() {
+		if ( empty( $_GET['gcm_promo_json'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+
+		nocache_headers();
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: application/json; charset=utf-8' );
+			header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+			header( 'X-StackCache-Cacheable: no' );
+		}
+
+		$website  = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_section( 'website' ) : array();
+		$enabled  = ! empty( $website['popup_enabled'] );
+		$image_id = absint( $website['popup_image_id'] ?? 0 );
+		$image    = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
+		$link     = esc_url_raw( $website['popup_link_url'] ?? '' );
+
+		if ( ! $enabled || ! $image ) {
+			wp_send_json_success( array( 'enabled' => false ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'enabled' => true,
+				'id'      => (string) $image_id,
+				'image'   => $image,
+				'link'    => $link,
+				'alt'     => __( 'Promotional offer', 'giga-class-market' ),
+			)
+		);
+	}
+
+	/**
 	 * Register shortcodes.
 	 *
 	 * @return void

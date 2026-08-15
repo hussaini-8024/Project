@@ -132,8 +132,55 @@
 	}
 
 	function initPromoPopup() {
-		var ajaxUrl = window.gcmTheme && gcmTheme.ajaxUrl ? gcmTheme.ajaxUrl : '';
-		if (!ajaxUrl || !window.fetch) {
+		function bindExistingPopup(popup) {
+			if (!popup) {
+				return false;
+			}
+
+			var popupId = popup.getAttribute('data-popup-id') || 'default';
+			var storageKey = 'gcmPromoPopupDismissed:' + popupId;
+
+			try {
+				if (window.localStorage.getItem(storageKey) === '1') {
+					popup.remove();
+					return true;
+				}
+			} catch (err) {
+				/* ignore */
+			}
+
+			function closePopup() {
+				popup.hidden = true;
+				popup.classList.remove('is-open');
+				document.body.classList.remove('gcm-promo-open');
+				try {
+					window.localStorage.setItem(storageKey, '1');
+				} catch (err2) {
+					/* ignore */
+				}
+			}
+
+			popup.hidden = false;
+			window.requestAnimationFrame(function () {
+				popup.classList.add('is-open');
+				document.body.classList.add('gcm-promo-open');
+			});
+
+			popup.querySelectorAll('[data-gcm-popup-close]').forEach(function (el) {
+				el.addEventListener('click', closePopup);
+			});
+
+			document.addEventListener('keydown', function (event) {
+				if (event.key === 'Escape' && popup.classList.contains('is-open')) {
+					closePopup();
+				}
+			});
+
+			return true;
+		}
+
+		// Prefer server-rendered markup (works for guests when admin-ajax is blocked).
+		if (bindExistingPopup(document.getElementById('gcm-promo-popup'))) {
 			return;
 		}
 
@@ -201,51 +248,41 @@
 			popup.appendChild(backdrop);
 			popup.appendChild(panel);
 			document.body.appendChild(popup);
-
-			function closePopup() {
-				popup.hidden = true;
-				popup.classList.remove('is-open');
-				document.body.classList.remove('gcm-promo-open');
-				try {
-					window.localStorage.setItem(storageKey, '1');
-				} catch (err) {
-					/* ignore storage errors */
-				}
-			}
-
-			popup.hidden = false;
-			window.requestAnimationFrame(function () {
-				popup.classList.add('is-open');
-				document.body.classList.add('gcm-promo-open');
-			});
-
-			popup.querySelectorAll('[data-gcm-popup-close]').forEach(function (el) {
-				el.addEventListener('click', closePopup);
-			});
-
-			document.addEventListener('keydown', function (event) {
-				if (event.key === 'Escape' && popup.classList.contains('is-open')) {
-					closePopup();
-				}
-			});
+			bindExistingPopup(popup);
 		}
 
-		window.fetch(ajaxUrl + '?action=gcm_get_promo_popup&_=' + Date.now(), {
-			method: 'GET',
-			credentials: 'same-origin',
-			cache: 'no-store'
-		})
-			.then(function (response) {
-				return response.json();
-			})
-			.then(function (payload) {
-				if (payload && payload.success && payload.data) {
-					showPopup(payload.data);
-				}
-			})
-			.catch(function () {
-				/* ignore popup fetch failures */
-			});
+		var endpoints = [];
+		try {
+			endpoints.push(window.location.origin + '/?gcm_promo_json=1&_=' + Date.now());
+		} catch (err3) {
+			/* ignore */
+		}
+		if (window.gcmTheme && gcmTheme.ajaxUrl) {
+			endpoints.push(gcmTheme.ajaxUrl + '?action=gcm_get_promo_popup&_=' + Date.now());
+		}
+
+		function tryFetch(i) {
+			if (i >= endpoints.length || !window.fetch) {
+				return;
+			}
+			window.fetch(endpoints[i], { method: 'GET', credentials: 'same-origin', cache: 'no-store' })
+				.then(function (response) {
+					if (!response.ok) {
+						throw new Error('bad status');
+					}
+					return response.json();
+				})
+				.then(function (payload) {
+					if (payload && payload.success && payload.data) {
+						showPopup(payload.data);
+					}
+				})
+				.catch(function () {
+					tryFetch(i + 1);
+				});
+		}
+
+		tryFetch(0);
 	}
 
 	document.addEventListener('DOMContentLoaded', function () {
