@@ -86,8 +86,14 @@ h4,
 .gcm-hero .gcm-hero__title,
 .gcm-dashboard-hero h1,
 .gcm-dashboard-hero h2,
+.gcm-page-hero h1,
+.gcm-page-hero h2,
 .gcm-page-hero--about h1,
 .gcm-page-hero--about h2,
+.gcm-page-hero--verify h1,
+.gcm-page-hero--verify h2,
+.gcm-course-hero h1,
+.gcm-course-hero h2,
 .gcm-contact-cta h2 {
 	color: #fff;
 }
@@ -1368,6 +1374,7 @@ textarea {
 .gcm-course-hero h1 {
 	margin: 0;
 	font-size: clamp(2.5rem, 5vw, 5rem);
+	color: #fff;
 }
 
 .gcm-course-hero__facts {
@@ -1994,6 +2001,15 @@ textarea {
 		radial-gradient(circle at 80% 15%, rgba(224,160,69,0.2), transparent 32%),
 		linear-gradient(135deg, var(--gcm-navy-deep), var(--gcm-navy));
 	color: #fff;
+}
+
+.gcm-page-hero--verify h1,
+.gcm-page-hero--verify h2 {
+	color: #fff;
+}
+
+.gcm-page-hero--verify .gcm-eyebrow {
+	color: var(--gcm-gold);
 }
 
 .gcm-page-hero--verify .gcm-lead {
