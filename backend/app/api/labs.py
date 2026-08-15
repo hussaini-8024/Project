@@ -8,6 +8,7 @@ from app.database import get_db
 from app.deps import current_user, require_staff
 from app.models import (
     EnvironmentKind,
+    LabNetwork,
     Machine,
     MachineKind,
     MachineStatus,
@@ -43,6 +44,8 @@ def _machine(m: Machine) -> dict:
         "warning_label": m.template.warning_label if m.template else "",
         "ip": m.interfaces[0].ipv4 if m.interfaces else None,
         "mac": m.interfaces[0].mac if m.interfaces else None,
+        "network_id": m.interfaces[0].network_id if m.interfaces else None,
+        "cidr": m.interfaces[0].network.cidr if m.interfaces and m.interfaces[0].network else None,
         "queue_position": m.queue_position,
         "queue_reason": m.queue_reason,
         "error": m.error_message,
@@ -51,7 +54,22 @@ def _machine(m: Machine) -> dict:
     }
 
 
+def _network_brief(n) -> dict:
+    return {
+        "id": n.id,
+        "name": n.name,
+        "cidr": n.cidr,
+        "vlan_id": n.vlan_id,
+        "namespace": n.namespace,
+        "isolated": n.isolated,
+        "internet": n.internet,
+        "bridge": n.bridge,
+        "kind": n.kind,
+    }
+
+
 def _lab(lab: StudentLab) -> dict:
+    nets = [_network_brief(n) for n in lab.networks]
     return {
         "id": lab.id,
         "public_id": lab.public_id,
@@ -60,16 +78,8 @@ def _lab(lab: StudentLab) -> dict:
         "internet_enabled": lab.internet_enabled,
         "student": lab.student.username,
         "student_public_id": lab.student.public_id,
-        "network": {
-            "cidr": lab.network.cidr,
-            "vlan_id": lab.network.vlan_id,
-            "namespace": lab.network.namespace,
-            "isolated": lab.network.isolated,
-            "internet": lab.network.internet,
-            "bridge": lab.network.bridge,
-        }
-        if lab.network
-        else None,
+        "network": nets[0] if nets else None,
+        "networks": nets,
         "machines": [_machine(m) for m in lab.machines],
         "last_restored_at": lab.last_restored_at.isoformat() if lab.last_restored_at else None,
     }
@@ -137,6 +147,7 @@ class MachineCreate(BaseModel):
     internet: bool = False
     isolated: bool = True
     ephemeral: bool = False
+    network_id: str | None = None
 
 
 PREBUILT_MEMBERS = {
@@ -148,9 +159,23 @@ PREBUILT_MEMBERS = {
 }
 
 
+def _usable_network(db: Session, user: User, network_id: str | None) -> str | None:
+    if not network_id:
+        return None
+    net = db.get(LabNetwork, network_id)
+    if not net:
+        raise HTTPException(404, "Network not found")
+    if user.role == Role.STUDENT:
+        lab = ensure_lab(db, user)
+        if net.lab_id != lab.id:
+            raise HTTPException(403, "Network is outside this student laboratory")
+    return net.id
+
+
 @router.post("/machines")
 def create(body: MachineCreate, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
     tmpl = None
+    network_id = _usable_network(db, user, body.network_id)
     if body.template_slug:
         tmpl = db.query(MachineTemplate).filter(MachineTemplate.slug == body.template_slug).first()
         if not tmpl:
@@ -172,6 +197,7 @@ def create(body: MachineCreate, user: User = Depends(current_user), db: Session 
                 isolated=True,
                 ephemeral=body.ephemeral,
                 ip="",
+                network_id=network_id,
             )
             created.append(_machine(m))
         return {"machines": created, "scenario": tmpl.slug}
@@ -195,6 +221,7 @@ def create(body: MachineCreate, user: User = Depends(current_user), db: Session 
         isolated=body.isolated,
         ephemeral=body.ephemeral,
         ip="",
+        network_id=network_id,
     )
     return {"machine": _machine(m), **meta}
 

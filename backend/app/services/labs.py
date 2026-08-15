@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import secrets
 from datetime import datetime
-from ipaddress import IPv4Network
-
 from sqlalchemy.orm import Session
 
 from app.models import (
@@ -21,6 +19,7 @@ from app.models import (
 from app.providers import get_provider
 from app.security import public_id
 from app.services import audit
+from app.services.netutil import DEFAULT_LAB_CIDR, next_host, parse_cidr
 from app.services.scheduler import evaluate, start_machine
 
 
@@ -38,16 +37,17 @@ def ensure_lab(db: Session, user: User) -> StudentLab:
     db.add(lab)
     db.flush()
     vlan = 1000 + (int(user.public_id.encode().hex()[:4], 16) % 3000)
-    third = 10 + (vlan % 240)
     net = LabNetwork(
         lab_id=lab.id,
         name=f"net-{user.public_id}",
-        cidr=f"10.{third}.0.0/24",
+        cidr=DEFAULT_LAB_CIDR,
         vlan_id=vlan,
         namespace=f"ns-{user.public_id.lower()}",
         isolated=True,
         internet=False,
         bridge=f"br-{user.public_id[-6:].lower()}",
+        kind="student",
+        created_by=user.id,
     )
     db.add(net)
     db.commit()
@@ -65,14 +65,62 @@ def restore_lab(db: Session, user: User) -> StudentLab:
 
 def next_ip(network: LabNetwork, db: Session) -> str:
     used = {i.ipv4 for i in network.interfaces}
-    net = IPv4Network(network.cidr)
-    for host in net.hosts():
-        ip = str(host)
-        if ip.endswith(".1"):
-            continue
-        if ip not in used:
-            return ip
-    raise RuntimeError("Lab network exhausted")
+    return next_host(network, used)
+
+
+def _next_vlan(db: Session) -> int:
+    used = {row[0] for row in db.query(LabNetwork.vlan_id).all()}
+    for vlan in range(1000, 4095):
+        if vlan not in used:
+            return vlan
+    raise RuntimeError("VLAN pool exhausted")
+
+
+def resolve_lab(db: Session, lab_id: str | None) -> StudentLab | None:
+    if not lab_id:
+        return None
+    return (
+        db.query(StudentLab)
+        .filter((StudentLab.id == lab_id) | (StudentLab.public_id == lab_id))
+        .first()
+    )
+
+
+def create_network(
+    db: Session,
+    user: User,
+    *,
+    name: str,
+    cidr: str = DEFAULT_LAB_CIDR,
+    lab_id: str | None = None,
+    isolated: bool = True,
+    internet: bool = False,
+    kind: str = "admin",
+) -> LabNetwork:
+    net = parse_cidr(cidr)
+    lab = resolve_lab(db, lab_id)
+    if lab_id and not lab:
+        raise ValueError("Lab not found")
+    if not lab:
+        lab = ensure_lab(db, user)
+    token = secrets.token_hex(3)
+    network = LabNetwork(
+        lab_id=lab.id,
+        name=name.strip() or f"net-{token}",
+        cidr=str(net),
+        vlan_id=_next_vlan(db),
+        namespace=f"ns-{token}",
+        isolated=isolated,
+        internet=internet,
+        bridge=f"br{token}"[:15],
+        kind=kind,
+        created_by=user.id,
+    )
+    db.add(network)
+    audit.record(db, user=user, action="network.create", resource=network.name, detail=network.cidr)
+    db.commit()
+    db.refresh(network)
+    return network
 
 
 def create_machine(
@@ -89,14 +137,24 @@ def create_machine(
     isolated: bool,
     ephemeral: bool,
     ip: str,
+    network_id: str | None = None,
+    owner: User | None = None,
 ) -> tuple[Machine, dict]:
-    lab = ensure_lab(db, user)
-    decision = evaluate(db, user, kind=kind, ram_mb=ram_mb, vcpu=vcpu, disk_gb=disk_gb, template=template)
+    owner = owner or user
+    lab = ensure_lab(db, owner)
+    target_net = None
+    if network_id:
+        target_net = db.get(LabNetwork, network_id)
+        if not target_net:
+            raise ValueError("Network not found")
+        if target_net.lab_id:
+            lab = target_net.lab or lab
+    decision = evaluate(db, owner, kind=kind, ram_mb=ram_mb, vcpu=vcpu, disk_gb=disk_gb, template=template)
     kind = MachineKind(decision.recommended_kind)
     machine = Machine(
         public_id=public_id("MCH"),
         lab_id=lab.id,
-        owner_id=user.id,
+        owner_id=owner.id,
         template_id=template.id if template else None,
         name=name,
         kind=kind,
@@ -113,18 +171,19 @@ def create_machine(
     )
     db.add(machine)
     db.flush()
-    if lab.network:
+    attach = target_net or lab.network
+    if attach:
         iface = NetworkInterface(
-            network_id=lab.network.id,
+            network_id=attach.id,
             machine_id=machine.id,
             mac="02:cr:" + ":".join(f"{secrets.randbelow(256):02x}" for _ in range(4)),
-            ipv4=next_ip(lab.network, db),
+            ipv4=next_ip(attach, db),
         )
         # mac format fix - keep simple valid-ish
         iface.mac = "02:%02x:%02x:%02x:%02x:%02x" % tuple(secrets.randbelow(256) for _ in range(5))
         db.add(iface)
     vol = StorageVolume(
-        owner_id=user.id,
+        owner_id=owner.id,
         lab_id=lab.id,
         machine_id=machine.id,
         name=f"{name}-data",
@@ -137,7 +196,7 @@ def create_machine(
 
     provider = get_provider()
     image = template.image_ref if template else "ubuntu:22.04"
-    net_name = lab.network.namespace if lab.network else ""
+    net_name = attach.namespace if attach else ""
     if kind == MachineKind.CONTAINER:
         result = provider.create_container(machine.public_id, image, vcpu, ram_mb, net_name)
     else:
@@ -160,7 +219,7 @@ def create_machine(
 
     machine.status = MachineStatus.STOPPED
     db.commit()
-    start_machine(db, machine, user)
+    start_machine(db, machine, owner)
     audit.record(db, user=user, action="machine.create", resource=machine.public_id, machine=machine.name, ip=ip)
     db.commit()
     return machine, {"decision": decision.__dict__}

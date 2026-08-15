@@ -11,7 +11,7 @@ OpenAPI is generated at runtime: `/docs` and `/openapi.json`.
 | `/api/labs` | Persistent student laboratories |
 | `/api/machines` `/api/vms` `/api/containers` | Lifecycle |
 | `/api/templates` `/api/images` `/api/isos` | Catalog |
-| `/api/networks` `/api/storage` `/api/quotas` | Isolation and quotas |
+| `/api/networks` `POST /api/networks` `POST /api/networks/{id}/deploy` | Private /8 labs; staff create and deploy |
 | `/api/assignments` | Instructor exercises |
 | `/api/snapshots` | Checkpoints (quota-limited) |
 | `/api/resources` `/api/resources/scheduler` `/api/resources/loadtest` | Capacity |

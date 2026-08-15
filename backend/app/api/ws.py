@@ -106,7 +106,8 @@ async def terminal(ws: WebSocket, machine_id: str) -> None:
     machine = (
         db.query(Machine)
         .options(
-            joinedload(Machine.lab).joinedload(StudentLab.network).joinedload(LabNetwork.interfaces).joinedload(NetworkInterface.machine),
+            joinedload(Machine.lab).joinedload(StudentLab.networks).joinedload(LabNetwork.interfaces).joinedload(NetworkInterface.machine),
+            joinedload(Machine.interfaces).joinedload(NetworkInterface.network),
             joinedload(Machine.interfaces),
         )
         .filter((Machine.id == machine_id) | (Machine.public_id == machine_id))

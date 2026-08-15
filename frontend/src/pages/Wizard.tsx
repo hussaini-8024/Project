@@ -16,9 +16,14 @@ export function Wizard() {
   const [internet, setInternet] = useState(false);
   const [isolated, setIsolated] = useState(true);
   const [name, setName] = useState("");
+  const [networkId, setNetworkId] = useState("");
   const { data: templates = [] } = useQuery({
     queryKey: ["templates"],
     queryFn: () => api<Template[]>("/api/templates"),
+  });
+  const { data: networks = [] } = useQuery({
+    queryKey: ["networks"],
+    queryFn: () => api<any[]>("/api/networks"),
   });
   const filtered = templates.filter((t) =>
     env === "prebuilt" ? t.environment === "prebuilt" : env === "vm" ? t.recommended_kind === "vm" || t.requires_full_os : t.container_first || t.recommended_kind === "container",
@@ -42,6 +47,7 @@ export function Wizard() {
           disk_gb: disk,
           internet,
           isolated,
+          network_id: networkId || undefined,
         }),
       }),
     onSuccess: () => nav("/machines"),
@@ -130,9 +136,20 @@ export function Wizard() {
           <div className="space-y-3">
             <Toggle label="Internet access (staff-controlled NAT)" value={internet} set={setInternet} />
             <Toggle label="Private lab only / network isolation" value={isolated} set={setIsolated} />
+            <label className="block text-sm">
+              Attach to network
+              <select className="input mt-1" value={networkId} onChange={(e) => setNetworkId(e.target.value)}>
+                <option value="">Default lab network (10.0.0.0/8)</option>
+                {networks.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.name} · {n.cidr}
+                  </option>
+                ))}
+              </select>
+            </label>
             <p className="text-sm text-slate-400">
-              Default path: student machines → private lab network → controlled NAT → internet. Host management
-              interfaces are never exposed.
+              Default path: student machines → private 10.0.0.0/8 lab network → controlled NAT → internet. Host
+              management interfaces are never exposed. Administrators can create extra networks and deploy onto them.
             </p>
           </div>
         )}

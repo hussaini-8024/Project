@@ -72,7 +72,7 @@ Open http://localhost:5173 and sign in as `student`.
 
 Development uses SQLite (`backend/data/cyberrange.db`) and `COMPUTE_PROVIDER=auto`.
 
-Linux terminals are **real shells** inside isolated guests (Alpine userspace + Linux network namespaces). Machines in the same student lab share a private bridge, so `ping dvwa-target` and `ping 10.142.0.3` work. Other student labs stay unreachable.
+Linux terminals are **real shells** inside isolated guests (Alpine userspace + Linux network namespaces). Machines in the same student lab share a private **10.0.0.0/8** bridge, so `ping dvwa-target` and `ping 10.0.0.3` work. Other student labs stay unreachable. Administrators can create additional networks and deploy machines onto them.
 
 ---
 

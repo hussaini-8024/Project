@@ -8,23 +8,31 @@ export function Topology() {
   const lab = useQuery({ queryKey: ["lab"], queryFn: () => api<any>("/api/labs/me") });
   const machines: Machine[] = lab.data?.machines ?? [];
   const { nodes, edges } = useMemo(() => {
-    const ns = [
-      {
+    const nets = lab.data?.networks?.length ? lab.data.networks : lab.data?.network ? [lab.data.network] : [];
+    const ns = nets.map((net: any, idx: number) => ({
+      id: net.id || `net-${idx}`,
+      position: { x: 80 + idx * 280, y: 20 },
+      data: { label: `${net.name || "Private lab net"}\n${net.cidr || "10.0.0.0/8"}` },
+      style: nodeStyle("#3ee0c8"),
+    }));
+    if (!ns.length) {
+      ns.push({
         id: "net",
         position: { x: 280, y: 20 },
-        data: { label: lab.data?.network?.cidr || "Private lab net" },
+        data: { label: "10.0.0.0/8" },
         style: nodeStyle("#3ee0c8"),
-      },
-    ];
+      });
+    }
     const es = [];
     machines.forEach((m, i) => {
+      const parent = (m.network_id && ns.find((n) => n.id === m.network_id)) || ns[0];
       ns.push({
         id: m.id,
         position: { x: 40 + (i % 3) * 240, y: 160 + Math.floor(i / 3) * 120 },
         data: { label: `${m.name}\n${m.ip || m.kind}` },
         style: nodeStyle(m.kind === "vm" ? "#f59e0b" : "#38bdf8"),
       });
-      es.push({ id: `e-${m.id}`, source: "net", target: m.id });
+      es.push({ id: `e-${m.id}`, source: parent.id, target: m.id });
     });
     return { nodes: ns, edges: es };
   }, [lab.data, machines]);

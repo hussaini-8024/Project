@@ -12,6 +12,7 @@ from app.api import assignments, auth, catalog, labs, resources, users, ws
 from app.config import get_settings
 from app.database import Base, SessionLocal, engine
 from app.seed import seed
+from app.services.schema import migrate_network_schema, migrate_slash8_networks
 
 
 @asynccontextmanager
@@ -19,9 +20,11 @@ async def lifespan(_app: FastAPI):
     settings = get_settings()
     Path(settings.storage_root).mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    migrate_network_schema(engine)
     db = SessionLocal()
     try:
         seed(db)
+        migrate_slash8_networks(db)
     finally:
         db.close()
     yield

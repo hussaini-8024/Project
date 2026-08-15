@@ -67,6 +67,8 @@ export type Machine = {
   warning_label: string;
   ip: string | null;
   mac: string | null;
+  network_id: string | null;
+  cidr: string | null;
   queue_position: number | null;
   queue_reason: string;
   error: string;

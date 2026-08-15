@@ -19,6 +19,8 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.config import get_settings
+from app.services.netutil import addr as cidr_addr
+from app.services.netutil import gateway_ip
 
 ALPINE_URL = (
     "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/"
@@ -136,7 +138,7 @@ class LinuxRuntime:
         raw = configured or lab_key
         return _safe(raw, 15)
 
-    def _bridge_up(self, bridge: str, gateway: str) -> None:
+    def _bridge_up(self, bridge: str, gateway: str, cidr: str) -> None:
         exists = _sudo(["ip", "link", "show", bridge], check=False)
         if exists.returncode != 0:
             _sudo(["ip", "link", "add", bridge, "type", "bridge"])
@@ -149,9 +151,9 @@ class LinuxRuntime:
             _sudo(["sysctl", "-w", f"{key}=0"], check=False)
         _sudo(["ip", "link", "set", bridge, "type", "bridge", "forward_delay", "0"], check=False)
         _sudo(["ip", "link", "set", bridge, "up"])
-        addr = _sudo(["ip", "-4", "addr", "show", "dev", bridge], check=False)
-        if gateway not in (addr.stdout or ""):
-            _sudo(["ip", "addr", "add", f"{gateway}/24", "dev", bridge], check=False)
+        shown = _sudo(["ip", "-4", "addr", "show", "dev", bridge], check=False)
+        if gateway not in (shown.stdout or ""):
+            _sudo(["ip", "addr", "add", cidr_addr(gateway, cidr), "dev", bridge], check=False)
 
     def _prepare_overlay(self, ref: str, spec: GuestSpec) -> Path:
         self.ensure_rootfs()
@@ -181,8 +183,7 @@ class LinuxRuntime:
 
     def _write_guest_files(self, merged: Path, spec: GuestSpec) -> None:
         hostname = _hostify(spec.hostname)
-        prefix = spec.cidr.split("/")[0].rsplit(".", 1)[0]
-        gateway = f"{prefix}.1"
+        gateway = gateway_ip(spec.cidr)
         hosts = [
             "127.0.0.1\tlocalhost",
             f"{spec.ipv4}\t{hostname}",
@@ -222,14 +223,17 @@ class LinuxRuntime:
             self._write_guest_files(merged, spec)
 
     def start(self, spec: GuestSpec) -> None:
+        previous = self.load_spec(spec.ref)
         self.save_spec(spec)
         if self.running(spec.ref):
-            self.refresh_hosts(spec)
-            return
+            if previous and (previous.ipv4 != spec.ipv4 or previous.cidr != spec.cidr):
+                self.stop(spec.ref)
+            else:
+                self.refresh_hosts(spec)
+                return
         bridge = self.bridge_name(spec.lab_key, spec.bridge)
-        prefix = spec.cidr.split("/")[0].rsplit(".", 1)[0]
-        gateway = f"{prefix}.1"
-        self._bridge_up(bridge, gateway)
+        gateway = gateway_ip(spec.cidr)
+        self._bridge_up(bridge, gateway, spec.cidr)
         ns = self.ns_name(spec.ref)
         veth = self.veth_name(spec.ref)
         _sudo(["ip", "netns", "delete", ns], check=False)
@@ -241,7 +245,7 @@ class LinuxRuntime:
         _sudo(["ip", "netns", "exec", ns, "ip", "link", "set", "lo", "up"])
         _sudo(["ip", "netns", "exec", ns, "ip", "link", "set", "eth0", "up"])
         _sudo(["ip", "netns", "exec", ns, "ip", "addr", "flush", "dev", "eth0"], check=False)
-        _sudo(["ip", "netns", "exec", ns, "ip", "addr", "add", f"{spec.ipv4}/24", "dev", "eth0"])
+        _sudo(["ip", "netns", "exec", ns, "ip", "addr", "add", cidr_addr(spec.ipv4, spec.cidr), "dev", "eth0"])
         if spec.internet:
             _sudo(["ip", "netns", "exec", ns, "ip", "route", "add", "default", "via", gateway], check=False)
         self._prepare_overlay(spec.ref, spec)

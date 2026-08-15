@@ -16,14 +16,18 @@ from app.models import (
     IsoImage,
     IsoStatus,
     LabNetwork,
+    MachineKind,
+    MachineTemplate,
     QuotaProfile,
+    Role,
     Snapshot,
     StorageVolume,
     User,
 )
 from app.services import audit
-from app.services.labs import snapshot_machine
-from app.api.labs import _owned
+from app.services.labs import create_machine, create_network, snapshot_machine
+from app.services.netutil import DEFAULT_LAB_CIDR
+from app.api.labs import _machine, _owned
 
 router = APIRouter(tags=["catalog"])
 
@@ -120,26 +124,132 @@ def delete_iso(iso_id: str, user: User = Depends(require_admin), db: Session = D
     return {"ok": True}
 
 
+def _network(n: LabNetwork) -> dict:
+    return {
+        "id": n.id,
+        "name": n.name,
+        "cidr": n.cidr,
+        "vlan_id": n.vlan_id,
+        "namespace": n.namespace,
+        "isolated": n.isolated,
+        "internet": n.internet,
+        "bridge": n.bridge,
+        "kind": n.kind,
+        "created_by": n.created_by,
+        "lab_id": n.lab.public_id if n.lab else None,
+        "lab_name": n.lab.name if n.lab else None,
+        "interfaces": [
+            {
+                "ip": i.ipv4,
+                "mac": i.mac,
+                "machine": i.machine.name if i.machine else None,
+                "machine_id": i.machine.id if i.machine else None,
+            }
+            for i in n.interfaces
+        ],
+    }
+
+
 @router.get("/networks")
 def networks(user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[dict]:
     q = db.query(LabNetwork)
-    if user.role.value == "student" and user.lab:
+    if user.role == Role.STUDENT:
+        if not user.lab:
+            return []
         q = q.filter(LabNetwork.lab_id == user.lab.id)
-    return [
-        {
-            "id": n.id,
-            "name": n.name,
-            "cidr": n.cidr,
-            "vlan_id": n.vlan_id,
-            "namespace": n.namespace,
-            "isolated": n.isolated,
-            "internet": n.internet,
-            "bridge": n.bridge,
-            "lab_id": n.lab.public_id if n.lab else None,
-            "interfaces": [{"ip": i.ipv4, "mac": i.mac, "machine": i.machine.name} for i in n.interfaces],
-        }
-        for n in q.all()
-    ]
+    return [_network(n) for n in q.order_by(LabNetwork.created_at.desc()).all()]
+
+
+class NetworkCreate(BaseModel):
+    name: str
+    cidr: str = DEFAULT_LAB_CIDR
+    lab_id: str | None = None
+    isolated: bool = True
+    internet: bool = False
+
+
+@router.post("/networks")
+def add_network(body: NetworkCreate, user: User = Depends(require_staff), db: Session = Depends(get_db)) -> dict:
+    network = create_network(
+        db,
+        user,
+        name=body.name,
+        cidr=body.cidr or DEFAULT_LAB_CIDR,
+        lab_id=body.lab_id,
+        isolated=body.isolated,
+        internet=body.internet,
+        kind="admin",
+    )
+    return _network(network)
+
+
+class NetworkDeploy(BaseModel):
+    template_slug: str
+    name: str | None = None
+    owner_id: str | None = None
+    environment: str = "container"
+    internet: bool = False
+    isolated: bool = True
+    ephemeral: bool = False
+
+
+@router.post("/networks/{network_id}/deploy")
+def deploy_on_network(
+    network_id: str,
+    body: NetworkDeploy,
+    user: User = Depends(require_staff),
+    db: Session = Depends(get_db),
+) -> dict:
+    network = db.get(LabNetwork, network_id)
+    if not network:
+        raise HTTPException(404, "Network not found")
+    tmpl = db.query(MachineTemplate).filter(MachineTemplate.slug == body.template_slug).first()
+    if not tmpl:
+        raise HTTPException(404, "Template not found")
+    owner = user
+    if body.owner_id:
+        owner = (
+            db.query(User)
+            .filter((User.id == body.owner_id) | (User.public_id == body.owner_id) | (User.username == body.owner_id))
+            .first()
+        )
+        if not owner:
+            raise HTTPException(404, "Owner not found")
+    elif network.lab and network.lab.student:
+        owner = network.lab.student
+    kind = MachineKind.VM if body.environment == "vm" or tmpl.requires_full_os or tmpl.requires_kernel else tmpl.recommended_kind
+    machine, meta = create_machine(
+        db,
+        user,
+        name=body.name or tmpl.name,
+        template=tmpl,
+        kind=kind,
+        vcpu=tmpl.default_vcpu,
+        ram_mb=tmpl.default_ram_mb,
+        disk_gb=tmpl.default_disk_gb,
+        internet=body.internet,
+        isolated=body.isolated,
+        ephemeral=body.ephemeral,
+        ip="",
+        network_id=network.id,
+        owner=owner,
+    )
+    return {"machine": _machine(machine), **meta}
+
+
+@router.delete("/networks/{network_id}")
+def delete_network(network_id: str, user: User = Depends(require_staff), db: Session = Depends(get_db)) -> dict:
+    network = db.get(LabNetwork, network_id)
+    if not network:
+        raise HTTPException(404, "Network not found")
+    if network.kind != "admin":
+        raise HTTPException(400, "Student default networks cannot be deleted")
+    if network.interfaces:
+        raise HTTPException(400, "Detach or delete machines on this network first")
+    audit.record(db, user=user, action="network.delete", resource=network.name, detail=network.cidr)
+    db.delete(network)
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/storage")

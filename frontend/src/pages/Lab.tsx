@@ -15,8 +15,8 @@ export function Lab() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="card p-4">
-          <div className="text-xs text-slate-400">Private network</div>
-          <div className="mt-1 font-mono">{data?.network?.cidr}</div>
+          <div className="text-xs text-slate-400">Private network (/8)</div>
+          <div className="mt-1 font-mono">{data?.network?.cidr || "10.0.0.0/8"}</div>
           <div className="text-xs text-slate-500">
             VLAN {data?.network?.vlan_id} · {data?.network?.namespace}
           </div>

@@ -205,7 +205,8 @@ def start_machine(db: Session, machine: Machine, user: User) -> ScheduleDecision
     machine = (
         db.query(Machine)
         .options(
-            joinedload(Machine.lab).joinedload(StudentLab.network).joinedload(LabNetwork.interfaces).joinedload(NetworkInterface.machine),
+            joinedload(Machine.lab).joinedload(StudentLab.networks).joinedload(LabNetwork.interfaces).joinedload(NetworkInterface.machine),
+            joinedload(Machine.interfaces).joinedload(NetworkInterface.network),
             joinedload(Machine.interfaces),
             joinedload(Machine.template),
         )

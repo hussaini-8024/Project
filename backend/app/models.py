@@ -175,25 +175,31 @@ class StudentLab(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     student: Mapped[User] = relationship(back_populates="lab")
-    network: Mapped[LabNetwork | None] = relationship(back_populates="lab", uselist=False)
+    networks: Mapped[list[LabNetwork]] = relationship(back_populates="lab")
     machines: Mapped[list[Machine]] = relationship(back_populates="lab")
+
+    @property
+    def network(self) -> LabNetwork | None:
+        return self.networks[0] if self.networks else None
 
 
 class LabNetwork(Base):
     __tablename__ = "networks"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    lab_id: Mapped[str] = mapped_column(ForeignKey("student_labs.id", ondelete="CASCADE"), unique=True)
+    lab_id: Mapped[str | None] = mapped_column(ForeignKey("student_labs.id", ondelete="SET NULL"), nullable=True)
     name: Mapped[str] = mapped_column(String(64))
-    cidr: Mapped[str] = mapped_column(String(32))
+    cidr: Mapped[str] = mapped_column(String(32), default="10.0.0.0/8")
     vlan_id: Mapped[int] = mapped_column(Integer)
     namespace: Mapped[str] = mapped_column(String(64))
     isolated: Mapped[bool] = mapped_column(Boolean, default=True)
     internet: Mapped[bool] = mapped_column(Boolean, default=False)
     bridge: Mapped[str] = mapped_column(String(64), default="")
+    kind: Mapped[str] = mapped_column(String(32), default="student")  # student | admin
+    created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    lab: Mapped[StudentLab] = relationship(back_populates="network")
+    lab: Mapped[StudentLab | None] = relationship(back_populates="networks")
     interfaces: Mapped[list[NetworkInterface]] = relationship(back_populates="network")
 
 

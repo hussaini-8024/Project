@@ -15,14 +15,15 @@ def test_spec_roundtrip(tmp_path, monkeypatch) -> None:
     spec = GuestSpec(
         ref="MCH-TEST1",
         hostname="kali-training",
-        ipv4="10.142.0.2",
-        cidr="10.142.0.0/24",
+        ipv4="10.0.0.2",
+        cidr="10.0.0.0/8",
         lab_key="ns-test",
         bridge="brtest1",
-        peers=[("10.142.0.3", "dvwa-target")],
+        peers=[("10.0.0.3", "dvwa-target")],
     )
     runtime.save_spec(spec)
     loaded = runtime.load_spec("MCH-TEST1")
     assert loaded is not None
-    assert loaded.ipv4 == "10.142.0.2"
+    assert loaded.ipv4 == "10.0.0.2"
+    assert loaded.cidr == "10.0.0.0/8"
     get_settings.cache_clear()
