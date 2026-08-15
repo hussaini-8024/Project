@@ -23,3 +23,9 @@ office2016_remove_existing: false
 
 # Reboot behavior: never | always | if_required
 office2016_reboot: "if_required"
+
+# Stop McAfee / Trellix real-time scanning before Office setup (setup.exe is often blocked).
+office2016_deactivate_mcafee: true
+mcafee_strict: false
+mcafee_disable_startup: true
+mcafee_stop_agent: true

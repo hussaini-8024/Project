@@ -14,3 +14,4 @@ office2016_reboot: "if_required"
 office2016_setup_exe: "setup.exe"
 office2016_config_file: "configuration.xml"
 office2016_install_timeout: 3600
+office2016_deactivate_mcafee: true

@@ -1,0 +1,24 @@
+---
+- name: Deactivate McAfee / Trellix real-time antivirus
+  ansible.windows.win_powershell:
+    script: "{{ lookup('file', playbook_dir ~ '/../scripts/deactivate-mcafee.ps1') }}"
+    parameters:
+      Strict: "{{ mcafee_strict | bool }}"
+      DisableStartup: "{{ mcafee_disable_startup | bool }}"
+      DisableFirewall: "{{ mcafee_disable_firewall | bool }}"
+      DisableWebAdvisor: "{{ mcafee_disable_webadvisor | bool }}"
+      StopAgent: "{{ mcafee_stop_agent | bool }}"
+  register: mcafee_deactivate
+  failed_when: false
+  changed_when: mcafee_deactivate.result.changed | default(false)
+
+- name: Show McAfee deactivation result
+  ansible.builtin.debug:
+    msg: "{{ mcafee_deactivate.result.message | default(mcafee_deactivate.msg | default(mcafee_deactivate.stdout | default('No result message'))) }}"
+
+- name: Fail when McAfee real-time protection is still active
+  ansible.builtin.fail:
+    msg: "{{ mcafee_deactivate.result.message | default(mcafee_deactivate.msg | default('McAfee deactivation failed')) }}"
+  when:
+    - mcafee_strict | bool
+    - mcafee_deactivate.result.still_protected | default(mcafee_deactivate.result is not defined)
