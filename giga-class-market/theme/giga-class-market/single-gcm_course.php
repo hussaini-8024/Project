@@ -90,7 +90,7 @@ get_header();
 				<aside class="gcm-course-buy-card<?php echo $on_sale ? ' gcm-course-buy-card--sale' : ''; ?>" aria-label="<?php esc_attr_e( 'Course enrollment', 'giga-class-market' ); ?>">
 					<div class="gcm-course-buy-card__media">
 						<?php if ( has_post_thumbnail() ) : ?>
-							<?php the_post_thumbnail( 'large', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+							<?php the_post_thumbnail( 'full', array( 'alt' => esc_attr( get_the_title() ), 'class' => 'gcm-course-buy-card__image' ) ); ?>
 						<?php else : ?>
 							<div class="gcm-course-card__placeholder" aria-hidden="true">
 								<span><?php esc_html_e( 'GCM', 'giga-class-market' ); ?></span>

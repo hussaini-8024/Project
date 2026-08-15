@@ -1472,12 +1472,17 @@ textarea {
 
 .gcm-course-buy-card__media {
 	position: relative;
+	background: color-mix(in srgb, var(--gcm-navy) 10%, var(--gcm-surface));
 }
 
 .gcm-course-buy-card img {
 	width: 100%;
-	aspect-ratio: 16 / 10;
-	object-fit: cover;
+	height: auto;
+	max-height: none;
+	aspect-ratio: auto;
+	object-fit: contain;
+	object-position: center;
+	display: block;
 }
 
 .gcm-course-buy-card__body {
