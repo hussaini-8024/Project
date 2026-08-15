@@ -129,7 +129,9 @@ class GCM_Portfolio_Service {
 		}
 
 		$slug = '';
-		if ( ! empty( $query_vars['pagename'] ) && false === strpos( (string) $query_vars['pagename'], '/' ) ) {
+		if ( ! empty( $query_vars['attachment'] ) ) {
+			$slug = sanitize_title( $query_vars['attachment'] );
+		} elseif ( ! empty( $query_vars['pagename'] ) && false === strpos( (string) $query_vars['pagename'], '/' ) ) {
 			$slug = sanitize_title( $query_vars['pagename'] );
 		} elseif ( ! empty( $query_vars['name'] ) && empty( $query_vars['post_type'] ) && empty( $query_vars['page_id'] ) ) {
 			$slug = sanitize_title( $query_vars['name'] );
@@ -148,6 +150,7 @@ class GCM_Portfolio_Service {
 			return $query_vars;
 		}
 
+		// Portfolio wins over attachments / posts that share the same slug.
 		return array(
 			'post_type'     => 'gcm_portfolio',
 			'name'          => $slug,
@@ -364,40 +367,45 @@ class GCM_Portfolio_Service {
 	}
 
 	/**
-	 * Seed Navyan portfolio + projects once (v2 multi-portfolio).
+	 * Seed Navyan portfolio + projects once (v3 multi-portfolio + slug claim).
 	 *
 	 * @return void
 	 */
 	public static function maybe_seed_projects() {
-		if ( get_option( 'gcm_portfolio_seeded_v2' ) ) {
+		$seeded = get_option( 'gcm_portfolio_seeded_v3' );
+		if ( $seeded ) {
 			self::cleanup_shared_portfolio_page();
+			self::claim_portfolio_slugs();
 			return;
 		}
 		if ( ! post_type_exists( 'gcm_portfolio' ) || ! post_type_exists( 'gcm_portfolio_item' ) ) {
 			return;
 		}
 
-		$navyan = get_page_by_path( 'navyan', OBJECT, 'gcm_portfolio' );
+		$navyan = self::get_published_by_slug( 'navyan' );
 		if ( ! $navyan ) {
 			$existing = get_posts(
 				array(
 					'post_type'      => 'gcm_portfolio',
 					'name'           => 'navyan',
 					'posts_per_page' => 1,
-					'post_status'    => array( 'publish', 'draft' ),
+					'post_status'    => array( 'publish', 'draft', 'pending', 'private' ),
 				)
 			);
 			$navyan = $existing ? $existing[0] : null;
 		}
 
+		// Free /navyan/ from media attachments or other posts before creating the profile.
+		self::release_slug( 'navyan' );
+
 		if ( ! $navyan ) {
 			$portfolio_id = wp_insert_post(
 				array(
-					'post_type'   => 'gcm_portfolio',
-					'post_status' => 'publish',
-					'post_title'  => 'Navyan Baig',
-					'post_name'   => 'navyan',
-					'post_content'=> '',
+					'post_type'    => 'gcm_portfolio',
+					'post_status'  => 'publish',
+					'post_title'   => 'Navyan Baig',
+					'post_name'    => 'navyan',
+					'post_content' => '',
 				),
 				true
 			);
@@ -410,18 +418,15 @@ class GCM_Portfolio_Service {
 					update_post_meta( $portfolio_id, $meta_key, $defaults[ $key ] );
 				}
 			}
-			// Prefer existing team photo attachment if present in media by filename search — optional skip.
 		} else {
 			$portfolio_id = (int) $navyan->ID;
-			if ( 'publish' !== $navyan->post_status ) {
-				wp_update_post(
-					array(
-						'ID'          => $portfolio_id,
-						'post_status' => 'publish',
-						'post_name'   => 'navyan',
-					)
-				);
-			}
+			wp_update_post(
+				array(
+					'ID'          => $portfolio_id,
+					'post_status' => 'publish',
+					'post_name'   => 'navyan',
+				)
+			);
 		}
 
 		// Attach existing unassigned projects, or seed new ones.
@@ -544,8 +549,91 @@ class GCM_Portfolio_Service {
 		}
 
 		self::cleanup_shared_portfolio_page();
+		self::claim_portfolio_slugs();
 		update_option( 'gcm_portfolio_seeded_v2', 1, false );
+		update_option( 'gcm_portfolio_seeded_v3', 1, false );
 		update_option( 'gcm_flush_rewrite_rules', 1, false );
+	}
+
+	/**
+	 * Rename non-portfolio posts that collide with portfolio slugs (e.g. media /navyan/ → image).
+	 *
+	 * @return void
+	 */
+	public static function claim_portfolio_slugs() {
+		$profiles = get_posts(
+			array(
+				'post_type'      => 'gcm_portfolio',
+				'post_status'    => array( 'publish', 'draft' ),
+				'posts_per_page' => 100,
+				'fields'         => 'ids',
+			)
+		);
+		foreach ( $profiles as $pid ) {
+			$slug = get_post_field( 'post_name', $pid );
+			if ( $slug ) {
+				self::release_slug( $slug, (int) $pid );
+			}
+		}
+	}
+
+	/**
+	 * Free a root slug from attachments/other CPTs so the portfolio can own /{slug}/.
+	 *
+	 * @param string $slug Slug.
+	 * @param int    $keep_id Portfolio post ID to keep.
+	 * @return void
+	 */
+	public static function release_slug( $slug, $keep_id = 0 ) {
+		$slug = sanitize_title( $slug );
+		if ( '' === $slug ) {
+			return;
+		}
+		$posts = get_posts(
+			array(
+				'name'             => $slug,
+				'post_type'        => 'any',
+				'post_status'      => 'any',
+				'posts_per_page'   => 20,
+				'suppress_filters' => true,
+			)
+		);
+		foreach ( $posts as $post ) {
+			if ( (int) $post->ID === (int) $keep_id ) {
+				continue;
+			}
+			if ( 'gcm_portfolio' === $post->post_type ) {
+				continue;
+			}
+			$new_slug = $slug . '-' . $post->post_type;
+			if ( 'attachment' === $post->post_type ) {
+				$new_slug = $slug . '-photo';
+			}
+			wp_update_post(
+				array(
+					'ID'        => $post->ID,
+					'post_name' => $new_slug,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Block canonical redirects that would send portfolio URLs to media files.
+	 *
+	 * @param string|false $redirect_url Redirect.
+	 * @param string       $requested_url Requested.
+	 * @return string|false
+	 */
+	public static function filter_canonical( $redirect_url, $requested_url ) {
+		$path = trim( (string) wp_parse_url( $requested_url, PHP_URL_PATH ), '/' );
+		if ( '' === $path || false !== strpos( $path, '/' ) ) {
+			return $redirect_url;
+		}
+		if ( self::get_published_by_slug( $path ) ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	/**

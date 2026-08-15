@@ -36,6 +36,7 @@ class GCM_Core {
 		add_action( 'init', array( 'GCM_Portfolio_Service', 'maybe_flush_rewrites' ), 99 );
 		add_filter( 'post_type_link', array( 'GCM_Portfolio_Service', 'filter_portfolio_link' ), 10, 2 );
 		add_filter( 'request', array( 'GCM_Portfolio_Service', 'map_portfolio_request' ) );
+		add_filter( 'redirect_canonical', array( 'GCM_Portfolio_Service', 'filter_canonical' ), 10, 2 );
 		add_action( 'template_redirect', array( $frontend, 'protect_student_pages' ) );
 		add_action( 'template_redirect', array( $frontend, 'serve_private_screenshot' ) );
 		add_action( 'template_redirect', array( $frontend, 'serve_promo_popup_json' ), 0 );
