@@ -96,9 +96,6 @@ get_header();
 								<span><?php esc_html_e( 'GCM', 'giga-class-market' ); ?></span>
 							</div>
 						<?php endif; ?>
-						<?php if ( $on_sale ) : ?>
-							<span class="gcm-sale-badge gcm-sale-badge--lg"><?php echo esc_html( $sale_label ? $sale_label : __( 'Sale', 'giga-class-market' ) ); ?></span>
-						<?php endif; ?>
 					</div>
 					<div class="gcm-course-buy-card__body">
 						<?php if ( $on_sale ) : ?>

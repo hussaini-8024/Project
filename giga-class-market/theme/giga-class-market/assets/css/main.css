@@ -1465,7 +1465,7 @@ textarea {
 }
 
 .gcm-course-buy-card {
-	overflow: hidden;
+	overflow: visible;
 	background: var(--gcm-surface);
 	color: var(--gcm-text);
 }
@@ -1473,16 +1473,25 @@ textarea {
 .gcm-course-buy-card__media {
 	position: relative;
 	background: color-mix(in srgb, var(--gcm-navy) 10%, var(--gcm-surface));
+	border-radius: calc(var(--gcm-radius) + 8px) calc(var(--gcm-radius) + 8px) 0 0;
+	overflow: visible;
 }
 
-.gcm-course-buy-card img {
+.gcm-course-buy-card__media img,
+.gcm-course-buy-card__image {
 	width: 100%;
 	height: auto;
 	max-height: none;
 	aspect-ratio: auto;
 	object-fit: contain;
-	object-position: center;
+	object-position: center top;
 	display: block;
+	border-radius: calc(var(--gcm-radius) + 8px) calc(var(--gcm-radius) + 8px) 0 0;
+}
+
+/* Keep sale chip in the price area — do not cover poster artwork */
+.gcm-course-buy-card__media .gcm-sale-badge {
+	display: none;
 }
 
 .gcm-course-buy-card__body {
