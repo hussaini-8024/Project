@@ -44,4 +44,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=gcm-settings' ) ); ?>"><?php esc_html_e( 'Configure Settings', 'giga-class-market' ); ?></a>
 		</p>
 	</div>
+	<?php if ( current_user_can( 'manage_options' ) ) : ?>
+		<div class="gcm-admin-panel" style="border-color:#d63638;">
+			<h2><?php esc_html_e( 'Clear Test Data', 'giga-class-market' ); ?></h2>
+			<p><?php esc_html_e( 'Permanently deletes all students, payment submissions, contact messages, enrollments, certificates, and related learner activity. Courses, teachers, settings, portfolios, and coupons are kept.', 'giga-class-market' ); ?></p>
+			<p>
+				<button
+					type="button"
+					class="button button-secondary gcm-ajax-button gcm-clear-test-data"
+					data-action="gcm_clear_operational_test_data"
+					style="color:#b32d2e;border-color:#b32d2e;"
+				>
+					<?php esc_html_e( 'Clear students, payments & contact messages', 'giga-class-market' ); ?>
+				</button>
+			</p>
+		</div>
+	<?php endif; ?>
 </div>

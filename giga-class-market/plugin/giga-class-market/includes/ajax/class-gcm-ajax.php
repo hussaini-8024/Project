@@ -84,6 +84,7 @@ class GCM_Ajax {
 			'bulk_generate_certificates',
 			'whatsapp_payment_reminder',
 			'moderate_review',
+			'clear_operational_test_data',
 		);
 		foreach ( $admin_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
@@ -1246,6 +1247,24 @@ class GCM_Ajax {
 			)
 		);
 		$this->send_service_response( $result, __( 'Quiz saved.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Clear students, payments, and contact messages (test/operational wipe).
+	 *
+	 * @return void
+	 */
+	public function clear_operational_test_data() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'manage_options' );
+
+		$confirm = isset( $_POST['confirm'] ) ? sanitize_text_field( wp_unslash( $_POST['confirm'] ) ) : '';
+		if ( 'CLEAR' !== $confirm ) {
+			wp_send_json_error( array( 'message' => __( 'Type CLEAR to confirm this irreversible cleanup.', 'giga-class-market' ) ), 400 );
+		}
+
+		$result = GCM_Data_Cleanup_Service::clear_operational_test_data();
+		$this->send_service_response( $result, $result['message'] ?? __( 'Operational test data cleared.', 'giga-class-market' ) );
 	}
 
 	/**

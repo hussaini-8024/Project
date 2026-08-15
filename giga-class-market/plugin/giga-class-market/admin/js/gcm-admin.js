@@ -38,6 +38,15 @@
 			payload.reason = reason;
 		}
 
+		if ($button.hasClass('gcm-clear-test-data')) {
+			var typed = window.prompt('This permanently deletes students, payments, and contact messages.\nType CLEAR to confirm:');
+			if (typed !== 'CLEAR') {
+				showNotice('Cleanup cancelled. Type CLEAR exactly to confirm.', false);
+				return;
+			}
+			payload.confirm = 'CLEAR';
+		}
+
 		$button.prop('disabled', true);
 		$.post(gcmAdmin.ajaxUrl, payload)
 			.done(function (response) {
