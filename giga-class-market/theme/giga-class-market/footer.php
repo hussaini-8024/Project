@@ -67,6 +67,7 @@ $socials  = array(
 				<li><a href="<?php echo esc_url( home_url( '/refund-policy/' ) ); ?>"><?php esc_html_e( 'Refund Policy', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>"><?php esc_html_e( 'Privacy Policy', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/verify-certificate/' ) ); ?>"><?php esc_html_e( 'Verify Certificate', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( function_exists( 'gcm_platform_guide_download_url' ) ? gcm_platform_guide_download_url() : home_url( '/platform-guide.pdf' ) ); ?>" download><?php esc_html_e( 'Platform Guide (PDF)', 'giga-class-market' ); ?></a></li>
 			</ul>
 		</div>
 	</div>
