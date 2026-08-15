@@ -92,6 +92,7 @@ class GCM_Settings_Service {
 				'client_secret' => '',
 				'host_email'    => '',
 			),
+			'seo'      => class_exists( 'GCM_SEO' ) ? GCM_SEO::defaults() : array(),
 		);
 	}
 
@@ -291,6 +292,24 @@ class GCM_Settings_Service {
 			$clean['zoom']['client_id']     = sanitize_text_field( $settings['zoom']['client_id'] ?? '' );
 			$clean['zoom']['client_secret'] = sanitize_text_field( $settings['zoom']['client_secret'] ?? '' );
 			$clean['zoom']['host_email']    = sanitize_email( $settings['zoom']['host_email'] ?? '' );
+		}
+
+		if ( isset( $settings['seo'] ) && is_array( $settings['seo'] ) ) {
+			$seo_defaults = class_exists( 'GCM_SEO' ) ? GCM_SEO::defaults() : array();
+			$clean['seo'] = $seo_defaults;
+			$clean['seo']['title_separator']          = sanitize_text_field( $settings['seo']['title_separator'] ?? ( $seo_defaults['title_separator'] ?? '|' ) );
+			$clean['seo']['home_title']               = sanitize_text_field( $settings['seo']['home_title'] ?? ( $seo_defaults['home_title'] ?? '' ) );
+			$clean['seo']['home_description']         = sanitize_textarea_field( $settings['seo']['home_description'] ?? ( $seo_defaults['home_description'] ?? '' ) );
+			$clean['seo']['about_title']              = sanitize_text_field( $settings['seo']['about_title'] ?? ( $seo_defaults['about_title'] ?? '' ) );
+			$clean['seo']['about_description']        = sanitize_textarea_field( $settings['seo']['about_description'] ?? ( $seo_defaults['about_description'] ?? '' ) );
+			$clean['seo']['contact_title']            = sanitize_text_field( $settings['seo']['contact_title'] ?? ( $seo_defaults['contact_title'] ?? '' ) );
+			$clean['seo']['contact_description']      = sanitize_textarea_field( $settings['seo']['contact_description'] ?? ( $seo_defaults['contact_description'] ?? '' ) );
+			$clean['seo']['courses_title']            = sanitize_text_field( $settings['seo']['courses_title'] ?? ( $seo_defaults['courses_title'] ?? '' ) );
+			$clean['seo']['courses_description']      = sanitize_textarea_field( $settings['seo']['courses_description'] ?? ( $seo_defaults['courses_description'] ?? '' ) );
+			$clean['seo']['default_og_image_id']      = absint( $settings['seo']['default_og_image_id'] ?? 0 );
+			$clean['seo']['organization_description'] = sanitize_textarea_field( $settings['seo']['organization_description'] ?? ( $seo_defaults['organization_description'] ?? '' ) );
+			$clean['seo']['google_site_verification'] = sanitize_text_field( $settings['seo']['google_site_verification'] ?? '' );
+			$clean['seo']['bing_site_verification']   = sanitize_text_field( $settings['seo']['bing_site_verification'] ?? '' );
 		}
 
 		return $clean;

@@ -403,37 +403,11 @@ class GCM_Frontend {
 	/**
 	 * Print Course schema JSON-LD on single course pages.
 	 *
+	 * @deprecated 1.3.7 Handled by GCM_SEO.
 	 * @return void
 	 */
 	public function print_course_schema() {
-		if ( ! is_singular( 'gcm_course' ) ) {
-			return;
-		}
-
-		$course = GCM_Course_Service::get( get_the_ID() );
-		if ( ! $course ) {
-			return;
-		}
-
-		$schema = array(
-			'@context'    => 'https://schema.org',
-			'@type'       => 'Course',
-			'name'        => $course['title'],
-			'description' => wp_strip_all_tags( $course['excerpt'] ? $course['excerpt'] : wp_trim_words( wp_strip_all_tags( $course['content'] ), 40 ) ),
-			'provider'    => array(
-				'@type' => 'Organization',
-				'name'  => GCM_Settings_Service::get_settings()['company']['name'],
-			),
-			'offers'      => array(
-				'@type'         => 'Offer',
-				'price'         => (string) $course['price'],
-				'priceCurrency' => 'PKR',
-				'availability'  => 'https://schema.org/InStock',
-				'url'           => $course['permalink'],
-			),
-		);
-
-		echo '<script type="application/ld+json">' . wp_json_encode( $schema ) . '</script>' . "\n";
+		// Kept for backward compatibility; GCM_SEO owns schema output.
 	}
 
 	/**

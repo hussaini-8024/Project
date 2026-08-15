@@ -236,6 +236,14 @@ class GCM_Post_Types {
 				<?php esc_html_e( 'Set a Course Thumbnail in the sidebar (Featured image panel). It is shown on the courses page, homepage, and course details.', 'giga-class-market' ); ?>
 			</p>
 			<p>
+				<label for="gcm_seo_title"><?php esc_html_e( 'SEO title (optional)', 'giga-class-market' ); ?></label>
+				<input type="text" id="gcm_seo_title" name="gcm_seo_title" value="<?php echo esc_attr( get_post_meta( $post->ID, '_gcm_seo_title', true ) ); ?>" class="widefat" placeholder="<?php esc_attr_e( 'Leave blank to use the course title', 'giga-class-market' ); ?>" />
+			</p>
+			<p>
+				<label for="gcm_seo_description"><?php esc_html_e( 'SEO meta description (optional)', 'giga-class-market' ); ?></label>
+				<textarea id="gcm_seo_description" name="gcm_seo_description" rows="3" class="widefat" placeholder="<?php esc_attr_e( 'Leave blank to use the course excerpt', 'giga-class-market' ); ?>"><?php echo esc_textarea( get_post_meta( $post->ID, '_gcm_seo_description', true ) ); ?></textarea>
+			</p>
+			<p>
 				<label for="gcm_price"><?php esc_html_e( 'Price', 'giga-class-market' ); ?></label>
 				<input type="number" step="0.01" min="0" id="gcm_price" name="gcm_price" value="<?php echo esc_attr( $fields['price'] ); ?>" class="widefat" />
 			</p>
@@ -336,6 +344,8 @@ class GCM_Post_Types {
 		$requirements      = isset( $_POST['gcm_requirements'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_requirements'] ) ) : '';
 		$rating            = isset( $_POST['gcm_rating'] ) ? (float) wp_unslash( $_POST['gcm_rating'] ) : 0;
 		$featured          = isset( $_POST['gcm_featured'] ) ? 1 : 0;
+		$seo_title         = isset( $_POST['gcm_seo_title'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_seo_title'] ) ) : '';
+		$seo_description   = isset( $_POST['gcm_seo_description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_seo_description'] ) ) : '';
 
 		$bundle_ids = implode(
 			',',
@@ -360,6 +370,8 @@ class GCM_Post_Types {
 		update_post_meta( $post_id, '_gcm_what_you_learn', $what_you_learn );
 		update_post_meta( $post_id, '_gcm_requirements', $requirements );
 		update_post_meta( $post_id, '_gcm_rating', min( 5, max( 0, $rating ) ) );
+		update_post_meta( $post_id, '_gcm_seo_title', $seo_title );
+		update_post_meta( $post_id, '_gcm_seo_description', $seo_description );
 
 		self::set_featured( $post_id, $featured );
 

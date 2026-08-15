@@ -22,6 +22,7 @@ $methods = $settings['payment']['methods'];
 			<a href="#gcm-tab-whatsapp"><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-website"><?php esc_html_e( 'Website', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-about"><?php esc_html_e( 'About / Team', 'giga-class-market' ); ?></a>
+			<a href="#gcm-tab-seo"><?php esc_html_e( 'SEO', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-course"><?php esc_html_e( 'Course', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-zoom"><?php esc_html_e( 'Zoom', 'giga-class-market' ); ?></a>
 		</nav>
@@ -144,6 +145,56 @@ $methods = $settings['payment']['methods'];
 					<button type="button" class="button gcm-media-clear" data-target="#gcm_team_photo_id" data-preview="#gcm_team_photo_preview" data-empty="<?php echo esc_attr__( 'No photo selected — theme default will be used', 'giga-class-market' ); ?>"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
 				</p>
 			</div>
+		</section>
+
+		<section id="gcm-tab-seo" class="gcm-tab">
+			<?php
+			$seo             = isset( $settings['seo'] ) && is_array( $settings['seo'] ) ? $settings['seo'] : ( class_exists( 'GCM_SEO' ) ? GCM_SEO::defaults() : array() );
+			$og_image_id     = absint( $seo['default_og_image_id'] ?? 0 );
+			$og_image_url    = $og_image_id ? wp_get_attachment_image_url( $og_image_id, 'medium' ) : '';
+			?>
+			<h2><?php esc_html_e( 'Search Engine Optimization', 'giga-class-market' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Titles, meta descriptions, social share image, and verification codes help Google and other search engines understand and rank your site. After saving, submit https://gigaclassmarket.com/wp-sitemap.xml in Google Search Console.', 'giga-class-market' ); ?></p>
+
+			<label><?php esc_html_e( 'Title separator', 'giga-class-market' ); ?><input type="text" name="settings[seo][title_separator]" value="<?php echo esc_attr( $seo['title_separator'] ?? '|' ); ?>" maxlength="5" /></label>
+
+			<h3><?php esc_html_e( 'Homepage', 'giga-class-market' ); ?></h3>
+			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][home_title]" value="<?php echo esc_attr( $seo['home_title'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][home_description]" rows="3"><?php echo esc_textarea( $seo['home_description'] ?? '' ); ?></textarea></label>
+
+			<h3><?php esc_html_e( 'Courses archive', 'giga-class-market' ); ?></h3>
+			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][courses_title]" value="<?php echo esc_attr( $seo['courses_title'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][courses_description]" rows="3"><?php echo esc_textarea( $seo['courses_description'] ?? '' ); ?></textarea></label>
+
+			<h3><?php esc_html_e( 'About page', 'giga-class-market' ); ?></h3>
+			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][about_title]" value="<?php echo esc_attr( $seo['about_title'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][about_description]" rows="3"><?php echo esc_textarea( $seo['about_description'] ?? '' ); ?></textarea></label>
+
+			<h3><?php esc_html_e( 'Contact page', 'giga-class-market' ); ?></h3>
+			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][contact_title]" value="<?php echo esc_attr( $seo['contact_title'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][contact_description]" rows="3"><?php echo esc_textarea( $seo['contact_description'] ?? '' ); ?></textarea></label>
+
+			<h3><?php esc_html_e( 'Social / Open Graph default image', 'giga-class-market' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Used when a page has no featured image. Recommended size: 1200×630px.', 'giga-class-market' ); ?></p>
+			<div class="gcm-media-field">
+				<input type="hidden" name="settings[seo][default_og_image_id]" id="gcm_seo_og_image_id" value="<?php echo esc_attr( (string) $og_image_id ); ?>" />
+				<div id="gcm_seo_og_image_preview" class="gcm-media-preview<?php echo $og_image_url ? ' has-image' : ''; ?>">
+					<?php if ( $og_image_url ) : ?>
+						<img src="<?php echo esc_url( $og_image_url ); ?>" alt="" />
+					<?php else : ?>
+						<span><?php esc_html_e( 'No default share image selected', 'giga-class-market' ); ?></span>
+					<?php endif; ?>
+				</div>
+				<p>
+					<button type="button" class="button gcm-media-upload" data-target="#gcm_seo_og_image_id" data-preview="#gcm_seo_og_image_preview" data-title="<?php echo esc_attr__( 'Select default Open Graph image', 'giga-class-market' ); ?>" data-empty="<?php echo esc_attr__( 'No default share image selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Upload / select from media library', 'giga-class-market' ); ?></button>
+					<button type="button" class="button gcm-media-clear" data-target="#gcm_seo_og_image_id" data-preview="#gcm_seo_og_image_preview" data-empty="<?php echo esc_attr__( 'No default share image selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
+				</p>
+			</div>
+
+			<label><?php esc_html_e( 'Organization description (schema)', 'giga-class-market' ); ?><textarea name="settings[seo][organization_description]" rows="3"><?php echo esc_textarea( $seo['organization_description'] ?? '' ); ?></textarea></label>
+			<label><?php esc_html_e( 'Google Search Console verification code', 'giga-class-market' ); ?><input type="text" name="settings[seo][google_site_verification]" value="<?php echo esc_attr( $seo['google_site_verification'] ?? '' ); ?>" placeholder="paste content value only" /></label>
+			<label><?php esc_html_e( 'Bing Webmaster verification code', 'giga-class-market' ); ?><input type="text" name="settings[seo][bing_site_verification]" value="<?php echo esc_attr( $seo['bing_site_verification'] ?? '' ); ?>" placeholder="paste content value only" /></label>
+			<p class="description"><?php echo esc_html( sprintf( __( 'XML sitemap: %s', 'giga-class-market' ), home_url( '/wp-sitemap.xml' ) ) ); ?></p>
 		</section>
 
 		<section id="gcm-tab-course" class="gcm-tab">

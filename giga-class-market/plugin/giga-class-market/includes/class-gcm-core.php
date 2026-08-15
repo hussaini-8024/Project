@@ -26,6 +26,7 @@ class GCM_Core {
 		$post_types = new GCM_Post_Types();
 		$ajax       = new GCM_Ajax();
 		$frontend   = new GCM_Frontend();
+		$seo        = new GCM_SEO();
 
 		add_action( 'init', array( $roles, 'register' ), 1 );
 		add_action( 'init', array( $post_types, 'register' ) );
@@ -36,7 +37,7 @@ class GCM_Core {
 		add_action( 'template_redirect', array( $frontend, 'serve_promo_popup_json' ), 0 );
 		add_action( 'wp_enqueue_scripts', array( $frontend, 'enqueue_assets' ) );
 		add_filter( 'wp_robots', array( $frontend, 'noindex_student_pages' ) );
-		add_action( 'wp_head', array( $frontend, 'print_course_schema' ) );
+		$seo->register();
 		add_filter( 'login_redirect', array( $frontend, 'login_redirect' ), 10, 3 );
 		add_filter( 'login_url', array( $frontend, 'filter_login_url' ), 10, 3 );
 		add_action( 'login_init', array( $frontend, 'redirect_wp_login_to_branded' ) );

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.8.0' );
+define( 'GCM_THEME_VERSION', '1.8.1' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -736,11 +736,13 @@ function gcm_is_noindex_template() {
 	return is_page_template(
 		array(
 			'page-templates/template-student-dashboard.php',
+			'page-templates/template-teacher-dashboard.php',
 			'page-templates/template-course-learn.php',
 			'page-templates/template-payment.php',
 			'page-templates/template-payment-verify.php',
+			'page-templates/template-login.php',
 		)
-	);
+	) || is_page( array( 'login', 'student-dashboard', 'teacher-dashboard', 'course-learn', 'payment', 'payment-verify', 'live-class' ) );
 }
 
 /**
@@ -761,8 +763,13 @@ add_filter( 'wp_robots', 'gcm_robots_meta' );
 
 /**
  * Basic Open Graph output for public pages.
+ * Skipped when the plugin SEO module is active (avoids duplicate tags).
  */
 function gcm_open_graph_meta() {
+	if ( class_exists( 'GCM_SEO' ) ) {
+		return;
+	}
+
 	if ( is_admin() || gcm_is_noindex_template() ) {
 		return;
 	}
