@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.9.0' );
+define( 'GCM_THEME_VERSION', '1.9.1' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -88,7 +88,7 @@ function gcm_enqueue_assets() {
 		);
 	}
 
-	if ( is_page_template( 'page-templates/template-portfolio.php' ) ) {
+	if ( is_singular( 'gcm_portfolio' ) || is_page_template( 'page-templates/template-portfolio.php' ) ) {
 		wp_enqueue_style(
 			'gcm-portfolio',
 			GCM_THEME_URI . '/assets/css/portfolio.css',
@@ -412,7 +412,7 @@ function gcm_body_classes( $classes ) {
 		$classes[] = 'gcm-student-area';
 	}
 
-	if ( is_page_template( 'page-templates/template-portfolio.php' ) ) {
+	if ( is_singular( 'gcm_portfolio' ) || is_page_template( 'page-templates/template-portfolio.php' ) ) {
 		$classes[] = 'gcm-page-portfolio';
 	}
 

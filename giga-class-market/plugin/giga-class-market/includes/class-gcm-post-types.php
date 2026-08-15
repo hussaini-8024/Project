@@ -70,6 +70,35 @@ class GCM_Post_Types {
 		);
 
 		register_post_type(
+			'gcm_portfolio',
+			array(
+				'labels'              => array(
+					'name'               => __( 'Portfolios', 'giga-class-market' ),
+					'singular_name'      => __( 'Portfolio', 'giga-class-market' ),
+					'add_new_item'       => __( 'Add Portfolio', 'giga-class-market' ),
+					'edit_item'          => __( 'Edit Portfolio', 'giga-class-market' ),
+					'new_item'           => __( 'New Portfolio', 'giga-class-market' ),
+					'view_item'          => __( 'View Portfolio', 'giga-class-market' ),
+					'search_items'       => __( 'Search Portfolios', 'giga-class-market' ),
+					'not_found'          => __( 'No portfolios found.', 'giga-class-market' ),
+					'not_found_in_trash' => __( 'No portfolios found in Trash.', 'giga-class-market' ),
+				),
+				'public'              => true,
+				'publicly_queryable'  => true,
+				'exclude_from_search' => true,
+				'show_ui'             => true,
+				'show_in_menu'        => false,
+				'show_in_nav_menus'   => false,
+				'has_archive'         => false,
+				'rewrite'             => false,
+				'query_var'           => 'gcm_portfolio',
+				'supports'            => array( 'title', 'thumbnail', 'revisions' ),
+				'show_in_rest'        => true,
+				'capability_type'     => 'post',
+			)
+		);
+
+		register_post_type(
 			'gcm_portfolio_item',
 			array(
 				'labels'              => array(
@@ -91,6 +120,10 @@ class GCM_Post_Types {
 				'capability_type'     => 'post',
 			)
 		);
+
+		if ( class_exists( 'GCM_Portfolio_Service' ) ) {
+			GCM_Portfolio_Service::register_rewrites();
+		}
 
 		register_taxonomy(
 			'gcm_category',
@@ -230,6 +263,15 @@ class GCM_Post_Types {
 		);
 
 		add_meta_box(
+			'gcm_portfolio_profile',
+			__( 'Portfolio Profile (public page content)', 'giga-class-market' ),
+			array( $this, 'render_portfolio_profile_meta_box' ),
+			'gcm_portfolio',
+			'normal',
+			'high'
+		);
+
+		add_meta_box(
 			'gcm_portfolio_details',
 			__( 'Portfolio Details', 'giga-class-market' ),
 			array( $this, 'render_portfolio_meta_box' ),
@@ -237,6 +279,93 @@ class GCM_Post_Types {
 			'normal',
 			'high'
 		);
+	}
+
+	/**
+	 * Render portfolio person/profile meta box.
+	 *
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function render_portfolio_profile_meta_box( $post ) {
+		wp_nonce_field( 'gcm_save_portfolio_profile', 'gcm_portfolio_profile_nonce' );
+		$profile = class_exists( 'GCM_Portfolio_Service' ) ? GCM_Portfolio_Service::get_profile_from_post( $post ) : array();
+		$url     = get_permalink( $post );
+		?>
+		<p class="description">
+			<?php esc_html_e( 'Public URL (share this — no menu button is shown on the site):', 'giga-class-market' ); ?>
+			<code><?php echo esc_html( $url ? $url : home_url( '/' . ( $post->post_name ?: 'your-slug' ) . '/' ) ); ?></code>
+			<br />
+			<?php esc_html_e( 'Set the slug under the title (e.g. navyan → https://gigaclassmarket.com/navyan/). Use Featured Image for the profile photo.', 'giga-class-market' ); ?>
+		</p>
+		<div class="gcm-meta-grid">
+			<p><label for="gcm_pf_role"><strong><?php esc_html_e( 'Role', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_role" name="gcm_pf_role" value="<?php echo esc_attr( $profile['role'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_tagline"><strong><?php esc_html_e( 'Tagline', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_tagline" name="gcm_pf_tagline" value="<?php echo esc_attr( $profile['tagline'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_eyebrow"><strong><?php esc_html_e( 'Eyebrow', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_eyebrow" name="gcm_pf_eyebrow" value="<?php echo esc_attr( $profile['eyebrow'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_headline"><strong><?php esc_html_e( 'Headline', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_headline" name="gcm_pf_headline" value="<?php echo esc_attr( $profile['headline'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_intro"><strong><?php esc_html_e( 'Intro', 'giga-class-market' ); ?></strong></label>
+			<textarea class="widefat" rows="3" id="gcm_pf_intro" name="gcm_pf_intro"><?php echo esc_textarea( $profile['intro'] ?? '' ); ?></textarea></p>
+			<p><label for="gcm_pf_bio"><strong><?php esc_html_e( 'About / bio', 'giga-class-market' ); ?></strong></label>
+			<textarea class="widefat" rows="4" id="gcm_pf_bio" name="gcm_pf_bio"><?php echo esc_textarea( $profile['bio'] ?? '' ); ?></textarea></p>
+			<p><label for="gcm_pf_status_text"><strong><?php esc_html_e( 'Status text', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_status_text" name="gcm_pf_status_text" value="<?php echo esc_attr( $profile['status_text'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_location"><strong><?php esc_html_e( 'Location', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_location" name="gcm_pf_location" value="<?php echo esc_attr( $profile['location'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_email"><strong><?php esc_html_e( 'Email', 'giga-class-market' ); ?></strong></label>
+			<input type="email" class="widefat" id="gcm_pf_email" name="gcm_pf_email" value="<?php echo esc_attr( $profile['email'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_cta_label"><strong><?php esc_html_e( 'CTA label', 'giga-class-market' ); ?></strong></label>
+			<input type="text" class="widefat" id="gcm_pf_cta_label" name="gcm_pf_cta_label" value="<?php echo esc_attr( $profile['cta_label'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_cta_url"><strong><?php esc_html_e( 'CTA URL', 'giga-class-market' ); ?></strong></label>
+			<input type="url" class="widefat" id="gcm_pf_cta_url" name="gcm_pf_cta_url" value="<?php echo esc_attr( $profile['cta_url'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_github_url"><strong><?php esc_html_e( 'GitHub URL', 'giga-class-market' ); ?></strong></label>
+			<input type="url" class="widefat" id="gcm_pf_github_url" name="gcm_pf_github_url" value="<?php echo esc_attr( $profile['github_url'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_linkedin_url"><strong><?php esc_html_e( 'LinkedIn URL', 'giga-class-market' ); ?></strong></label>
+			<input type="url" class="widefat" id="gcm_pf_linkedin_url" name="gcm_pf_linkedin_url" value="<?php echo esc_attr( $profile['linkedin_url'] ?? '' ); ?>" /></p>
+			<p><label for="gcm_pf_skills_cyber"><strong><?php esc_html_e( 'Skills — Cyber Security (one per line)', 'giga-class-market' ); ?></strong></label>
+			<textarea class="widefat" rows="4" id="gcm_pf_skills_cyber" name="gcm_pf_skills_cyber"><?php echo esc_textarea( $profile['skills_cyber'] ?? '' ); ?></textarea></p>
+			<p><label for="gcm_pf_skills_networking"><strong><?php esc_html_e( 'Skills — Networking', 'giga-class-market' ); ?></strong></label>
+			<textarea class="widefat" rows="4" id="gcm_pf_skills_networking" name="gcm_pf_skills_networking"><?php echo esc_textarea( $profile['skills_networking'] ?? '' ); ?></textarea></p>
+			<p><label for="gcm_pf_skills_web"><strong><?php esc_html_e( 'Skills — Web Development', 'giga-class-market' ); ?></strong></label>
+			<textarea class="widefat" rows="4" id="gcm_pf_skills_web" name="gcm_pf_skills_web"><?php echo esc_textarea( $profile['skills_web'] ?? '' ); ?></textarea></p>
+			<p><label for="gcm_pf_skills_animation"><strong><?php esc_html_e( 'Skills — Animation', 'giga-class-market' ); ?></strong></label>
+			<textarea class="widefat" rows="4" id="gcm_pf_skills_animation" name="gcm_pf_skills_animation"><?php echo esc_textarea( $profile['skills_animation'] ?? '' ); ?></textarea></p>
+			<p><label><?php esc_html_e( 'Stat 1', 'giga-class-market' ); ?></label>
+			<input type="text" name="gcm_pf_stat_1_value" value="<?php echo esc_attr( $profile['stat_1_value'] ?? '' ); ?>" placeholder="Value" />
+			<input type="text" name="gcm_pf_stat_1_label" value="<?php echo esc_attr( $profile['stat_1_label'] ?? '' ); ?>" placeholder="Label" /></p>
+			<p><label><?php esc_html_e( 'Stat 2', 'giga-class-market' ); ?></label>
+			<input type="text" name="gcm_pf_stat_2_value" value="<?php echo esc_attr( $profile['stat_2_value'] ?? '' ); ?>" placeholder="Value" />
+			<input type="text" name="gcm_pf_stat_2_label" value="<?php echo esc_attr( $profile['stat_2_label'] ?? '' ); ?>" placeholder="Label" /></p>
+			<p><label><?php esc_html_e( 'Stat 3', 'giga-class-market' ); ?></label>
+			<input type="text" name="gcm_pf_stat_3_value" value="<?php echo esc_attr( $profile['stat_3_value'] ?? '' ); ?>" placeholder="Value" />
+			<input type="text" name="gcm_pf_stat_3_label" value="<?php echo esc_attr( $profile['stat_3_label'] ?? '' ); ?>" placeholder="Label" /></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Save portfolio profile meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function save_portfolio_profile_meta( $post_id, $post ) {
+		if ( ! isset( $_POST['gcm_portfolio_profile_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcm_portfolio_profile_nonce'] ) ), 'gcm_save_portfolio_profile' ) ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) || 'gcm_portfolio' !== $post->post_type ) {
+			return;
+		}
+		if ( class_exists( 'GCM_Portfolio_Service' ) ) {
+			GCM_Portfolio_Service::save_profile_meta_from_request( $post_id );
+		}
 	}
 
 	/**
@@ -252,9 +381,20 @@ class GCM_Post_Types {
 		$url      = (string) get_post_meta( $post->ID, '_gcm_portfolio_url', true );
 		$year     = (string) get_post_meta( $post->ID, '_gcm_portfolio_year', true );
 		$featured = (int) get_post_meta( $post->ID, '_gcm_portfolio_featured', true );
+		$owner_id = absint( get_post_meta( $post->ID, '_gcm_portfolio_id', true ) );
 		$cats     = class_exists( 'GCM_Portfolio_Service' ) ? GCM_Portfolio_Service::categories() : array();
+		$owners   = class_exists( 'GCM_Portfolio_Service' ) ? GCM_Portfolio_Service::list_portfolios() : array();
 		?>
-		<p class="description"><?php esc_html_e( 'Set a Featured Image for the project photo. Title, excerpt, and content are fully editable.', 'giga-class-market' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Assign this project to a portfolio profile. Set a Featured Image for the project photo.', 'giga-class-market' ); ?></p>
+		<p>
+			<label for="gcm_portfolio_id"><strong><?php esc_html_e( 'Portfolio owner', 'giga-class-market' ); ?></strong></label>
+			<select name="gcm_portfolio_id" id="gcm_portfolio_id" class="widefat">
+				<option value="0"><?php esc_html_e( '— Select portfolio —', 'giga-class-market' ); ?></option>
+				<?php foreach ( $owners as $oid => $label ) : ?>
+					<option value="<?php echo esc_attr( (string) $oid ); ?>" <?php selected( $owner_id, $oid ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</p>
 		<p>
 			<label for="gcm_portfolio_category"><strong><?php esc_html_e( 'Category', 'giga-class-market' ); ?></strong></label>
 			<select name="gcm_portfolio_category" id="gcm_portfolio_category" class="widefat">
@@ -313,6 +453,7 @@ class GCM_Post_Types {
 		update_post_meta( $post_id, '_gcm_portfolio_url', isset( $_POST['gcm_portfolio_url'] ) ? esc_url_raw( wp_unslash( $_POST['gcm_portfolio_url'] ) ) : '' );
 		update_post_meta( $post_id, '_gcm_portfolio_year', isset( $_POST['gcm_portfolio_year'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_portfolio_year'] ) ) : '' );
 		update_post_meta( $post_id, '_gcm_portfolio_featured', isset( $_POST['gcm_portfolio_featured'] ) ? 1 : 0 );
+		update_post_meta( $post_id, '_gcm_portfolio_id', isset( $_POST['gcm_portfolio_id'] ) ? absint( wp_unslash( $_POST['gcm_portfolio_id'] ) ) : 0 );
 	}
 
 	/**

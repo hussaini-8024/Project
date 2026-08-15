@@ -23,7 +23,6 @@ $methods = $settings['payment']['methods'];
 			<a href="#gcm-tab-website"><?php esc_html_e( 'Website', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-about"><?php esc_html_e( 'About / Team', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-seo"><?php esc_html_e( 'SEO', 'giga-class-market' ); ?></a>
-			<a href="#gcm-tab-portfolio"><?php esc_html_e( 'Portfolio Profile', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-course"><?php esc_html_e( 'Course', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-zoom"><?php esc_html_e( 'Zoom', 'giga-class-market' ); ?></a>
 		</nav>
@@ -196,72 +195,6 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Google Search Console verification code', 'giga-class-market' ); ?><input type="text" name="settings[seo][google_site_verification]" value="<?php echo esc_attr( $seo['google_site_verification'] ?? '' ); ?>" placeholder="paste content value only" /></label>
 			<label><?php esc_html_e( 'Bing Webmaster verification code', 'giga-class-market' ); ?><input type="text" name="settings[seo][bing_site_verification]" value="<?php echo esc_attr( $seo['bing_site_verification'] ?? '' ); ?>" placeholder="paste content value only" /></label>
 			<p class="description"><?php echo esc_html( sprintf( __( 'XML sitemap: %s', 'giga-class-market' ), home_url( '/wp-sitemap.xml' ) ) ); ?></p>
-		</section>
-
-		<section id="gcm-tab-portfolio" class="gcm-tab">
-			<?php
-			$pf = isset( $settings['portfolio'] ) && is_array( $settings['portfolio'] ) ? $settings['portfolio'] : ( class_exists( 'GCM_Portfolio_Service' ) ? GCM_Portfolio_Service::profile_defaults() : array() );
-			$pf_photo_id  = absint( $pf['photo_id'] ?? 0 );
-			$pf_photo_url = $pf_photo_id ? wp_get_attachment_image_url( $pf_photo_id, 'medium' ) : '';
-			?>
-			<h2><?php esc_html_e( 'Navyan Portfolio Profile', 'giga-class-market' ); ?></h2>
-			<p class="description">
-				<?php esc_html_e( 'Edit every profile field shown on the public Portfolio page. Manage individual projects under Giga Class Market → Portfolio (photos, titles, categories, content).', 'giga-class-market' ); ?>
-				<?php if ( current_user_can( 'gcm_manage_settings' ) ) : ?>
-					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=gcm_portfolio_item' ) ); ?>"><?php esc_html_e( 'Open Portfolio projects', 'giga-class-market' ); ?></a>
-				<?php endif; ?>
-			</p>
-			<label class="gcm-checkbox-label">
-				<input type="checkbox" name="settings[portfolio][enabled]" value="1" <?php checked( ! empty( $pf['enabled'] ) ); ?> />
-				<?php esc_html_e( 'Show portfolio page content', 'giga-class-market' ); ?>
-			</label>
-			<label><?php esc_html_e( 'Name', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][name]" value="<?php echo esc_attr( $pf['name'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Tagline', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][tagline]" value="<?php echo esc_attr( $pf['tagline'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Role', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][role]" value="<?php echo esc_attr( $pf['role'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Eyebrow label', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][eyebrow]" value="<?php echo esc_attr( $pf['eyebrow'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Headline', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][headline]" value="<?php echo esc_attr( $pf['headline'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Intro', 'giga-class-market' ); ?><textarea name="settings[portfolio][intro]" rows="3"><?php echo esc_textarea( $pf['intro'] ?? '' ); ?></textarea></label>
-			<label><?php esc_html_e( 'About / bio', 'giga-class-market' ); ?><textarea name="settings[portfolio][bio]" rows="4"><?php echo esc_textarea( $pf['bio'] ?? '' ); ?></textarea></label>
-			<label><?php esc_html_e( 'Status text', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][status_text]" value="<?php echo esc_attr( $pf['status_text'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Location', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][location]" value="<?php echo esc_attr( $pf['location'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Email', 'giga-class-market' ); ?><input type="email" name="settings[portfolio][email]" value="<?php echo esc_attr( $pf['email'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'CTA label', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][cta_label]" value="<?php echo esc_attr( $pf['cta_label'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'CTA URL', 'giga-class-market' ); ?><input type="url" name="settings[portfolio][cta_url]" value="<?php echo esc_attr( $pf['cta_url'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'GitHub URL', 'giga-class-market' ); ?><input type="url" name="settings[portfolio][github_url]" value="<?php echo esc_attr( $pf['github_url'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'LinkedIn URL', 'giga-class-market' ); ?><input type="url" name="settings[portfolio][linkedin_url]" value="<?php echo esc_attr( $pf['linkedin_url'] ?? '' ); ?>" /></label>
-
-			<div class="gcm-media-field">
-				<p><strong><?php esc_html_e( 'Profile photo', 'giga-class-market' ); ?></strong></p>
-				<input type="hidden" name="settings[portfolio][photo_id]" id="gcm_portfolio_photo_id" value="<?php echo esc_attr( (string) $pf_photo_id ); ?>" />
-				<div id="gcm_portfolio_photo_preview" class="gcm-media-preview<?php echo $pf_photo_url ? ' has-image' : ''; ?>">
-					<?php if ( $pf_photo_url ) : ?>
-						<img src="<?php echo esc_url( $pf_photo_url ); ?>" alt="" />
-					<?php else : ?>
-						<span><?php esc_html_e( 'No photo selected', 'giga-class-market' ); ?></span>
-					<?php endif; ?>
-				</div>
-				<p>
-					<button type="button" class="button gcm-media-upload" data-target="#gcm_portfolio_photo_id" data-preview="#gcm_portfolio_photo_preview" data-title="<?php echo esc_attr__( 'Select portfolio photo', 'giga-class-market' ); ?>" data-empty="<?php echo esc_attr__( 'No photo selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Upload / select from media library', 'giga-class-market' ); ?></button>
-					<button type="button" class="button gcm-media-clear" data-target="#gcm_portfolio_photo_id" data-preview="#gcm_portfolio_photo_preview" data-empty="<?php echo esc_attr__( 'No photo selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
-				</p>
-			</div>
-
-			<h3><?php esc_html_e( 'Skills — Cyber Security', 'giga-class-market' ); ?></h3>
-			<label><textarea name="settings[portfolio][skills_cyber]" rows="5"><?php echo esc_textarea( $pf['skills_cyber'] ?? '' ); ?></textarea></label>
-			<h3><?php esc_html_e( 'Skills — Networking', 'giga-class-market' ); ?></h3>
-			<label><textarea name="settings[portfolio][skills_networking]" rows="5"><?php echo esc_textarea( $pf['skills_networking'] ?? '' ); ?></textarea></label>
-			<h3><?php esc_html_e( 'Skills — Web Development', 'giga-class-market' ); ?></h3>
-			<label><textarea name="settings[portfolio][skills_web]" rows="5"><?php echo esc_textarea( $pf['skills_web'] ?? '' ); ?></textarea></label>
-			<h3><?php esc_html_e( 'Skills — Animation', 'giga-class-market' ); ?></h3>
-			<label><textarea name="settings[portfolio][skills_animation]" rows="5"><?php echo esc_textarea( $pf['skills_animation'] ?? '' ); ?></textarea></label>
-
-			<h3><?php esc_html_e( 'Stat chips', 'giga-class-market' ); ?></h3>
-			<label><?php esc_html_e( 'Stat 1 value', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][stat_1_value]" value="<?php echo esc_attr( $pf['stat_1_value'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Stat 1 label', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][stat_1_label]" value="<?php echo esc_attr( $pf['stat_1_label'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Stat 2 value', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][stat_2_value]" value="<?php echo esc_attr( $pf['stat_2_value'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Stat 2 label', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][stat_2_label]" value="<?php echo esc_attr( $pf['stat_2_label'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Stat 3 value', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][stat_3_value]" value="<?php echo esc_attr( $pf['stat_3_value'] ?? '' ); ?>" /></label>
-			<label><?php esc_html_e( 'Stat 3 label', 'giga-class-market' ); ?><input type="text" name="settings[portfolio][stat_3_label]" value="<?php echo esc_attr( $pf['stat_3_label'] ?? '' ); ?>" /></label>
 		</section>
 
 		<section id="gcm-tab-course" class="gcm-tab">

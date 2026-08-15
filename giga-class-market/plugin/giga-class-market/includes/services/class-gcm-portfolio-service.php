@@ -1,6 +1,6 @@
 <?php
 /**
- * Portfolio profile helpers and seed data for Navyan Baig.
+ * Multi-portfolio helpers: profiles at /{slug}/ and linked projects.
  *
  * @package GigaClassMarket
  */
@@ -10,12 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Portfolio settings, categories, and project helpers.
+ * Portfolio profiles + project helpers.
  */
 class GCM_Portfolio_Service {
 
 	/**
-	 * Project categories shown on the portfolio page.
+	 * Project categories.
 	 *
 	 * @return array<string,string>
 	 */
@@ -29,96 +29,228 @@ class GCM_Portfolio_Service {
 	}
 
 	/**
-	 * Default editable profile fields.
+	 * Profile field keys stored as post meta on gcm_portfolio.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function profile_meta_map() {
+		return array(
+			'tagline'           => '_gcm_pf_tagline',
+			'role'              => '_gcm_pf_role',
+			'eyebrow'           => '_gcm_pf_eyebrow',
+			'headline'          => '_gcm_pf_headline',
+			'intro'             => '_gcm_pf_intro',
+			'bio'               => '_gcm_pf_bio',
+			'location'          => '_gcm_pf_location',
+			'email'             => '_gcm_pf_email',
+			'cta_label'         => '_gcm_pf_cta_label',
+			'cta_url'           => '_gcm_pf_cta_url',
+			'github_url'        => '_gcm_pf_github_url',
+			'linkedin_url'      => '_gcm_pf_linkedin_url',
+			'status_text'       => '_gcm_pf_status_text',
+			'skills_cyber'      => '_gcm_pf_skills_cyber',
+			'skills_networking' => '_gcm_pf_skills_networking',
+			'skills_web'        => '_gcm_pf_skills_web',
+			'skills_animation'  => '_gcm_pf_skills_animation',
+			'stat_1_label'      => '_gcm_pf_stat_1_label',
+			'stat_1_value'      => '_gcm_pf_stat_1_value',
+			'stat_2_label'      => '_gcm_pf_stat_2_label',
+			'stat_2_value'      => '_gcm_pf_stat_2_value',
+			'stat_3_label'      => '_gcm_pf_stat_3_label',
+			'stat_3_value'      => '_gcm_pf_stat_3_value',
+		);
+	}
+
+	/**
+	 * Defaults used when seeding / empty meta.
 	 *
 	 * @return array
 	 */
 	public static function profile_defaults() {
 		return array(
-			'enabled'          => 1,
-			'name'             => 'Navyan Baig',
-			'tagline'          => 'Cyber Security Student · Builder · Problem Solver',
-			'role'             => 'Cyber Security Student & Web Developer',
-			'eyebrow'          => 'PORTFOLIO // NAVYAN.BAIG',
-			'headline'         => 'Securing systems. Shipping clean web experiences.',
-			'intro'            => 'I am Navyan Baig — a cyber security student focused on defensive security, networking fundamentals, and modern web development. I build practical projects that blend security thinking with polished product craft.',
-			'bio'              => 'My work spans vulnerability awareness, network labs, full-stack web builds, and motion-led interfaces. I care about clarity, reliability, and interfaces that feel alive without noise.',
-			'photo_id'         => 0,
-			'location'         => 'Pakistan',
-			'email'            => 'Official@gigaclassmarket.com',
-			'cta_label'        => 'Start a project',
-			'cta_url'          => '/contact/',
-			'github_url'       => '',
-			'linkedin_url'     => '',
-			'status_text'      => 'Open to internships · labs · freelance builds',
-			'skills_cyber'     => "Threat modeling\nOWASP awareness\nLinux hardening basics\nSecure coding habits\nIncident response fundamentals",
-			'skills_networking'=> "TCP/IP fundamentals\nSubnetting & routing basics\nWireshark analysis\nFirewall concepts\nLAN/WAN troubleshooting",
-			'skills_web'       => "WordPress & PHP\nHTML/CSS/JS\nREST APIs\nResponsive UI systems\nLMS & marketplace builds",
-			'skills_animation' => "Scroll reveals\nMicro-interactions\nHero motion systems\nCSS/JS timelines\nInterface storytelling",
-			'stat_1_label'     => 'Focus areas',
-			'stat_1_value'     => '04',
-			'stat_2_label'     => 'Build mindset',
-			'stat_2_value'     => 'Secure-first',
-			'stat_3_label'     => 'Stack energy',
-			'stat_3_value'     => 'Web + Labs',
+			'tagline'           => 'Cyber Security Student · Builder · Problem Solver',
+			'role'              => 'Cyber Security Student & Web Developer',
+			'eyebrow'           => 'PORTFOLIO // NAVYAN.BAIG',
+			'headline'          => 'Securing systems. Shipping clean web experiences.',
+			'intro'             => 'I am Navyan Baig — a cyber security student focused on defensive security, networking fundamentals, and modern web development. I build practical projects that blend security thinking with polished product craft.',
+			'bio'               => 'My work spans vulnerability awareness, network labs, full-stack web builds, and motion-led interfaces. I care about clarity, reliability, and interfaces that feel alive without noise.',
+			'location'          => 'Pakistan',
+			'email'             => 'Official@gigaclassmarket.com',
+			'cta_label'         => 'Start a project',
+			'cta_url'           => '/contact/',
+			'github_url'        => '',
+			'linkedin_url'      => '',
+			'status_text'       => 'Open to internships · labs · freelance builds',
+			'skills_cyber'      => "Threat modeling\nOWASP awareness\nLinux hardening basics\nSecure coding habits\nIncident response fundamentals",
+			'skills_networking' => "TCP/IP fundamentals\nSubnetting & routing basics\nWireshark analysis\nFirewall concepts\nLAN/WAN troubleshooting",
+			'skills_web'        => "WordPress & PHP\nHTML/CSS/JS\nREST APIs\nResponsive UI systems\nLMS & marketplace builds",
+			'skills_animation'  => "Scroll reveals\nMicro-interactions\nHero motion systems\nCSS/JS timelines\nInterface storytelling",
+			'stat_1_label'      => 'Focus areas',
+			'stat_1_value'      => '04',
+			'stat_2_label'      => 'Build mindset',
+			'stat_2_value'      => 'Secure-first',
+			'stat_3_label'      => 'Stack energy',
+			'stat_3_value'      => 'Web + Labs',
 		);
 	}
 
 	/**
-	 * Get merged portfolio profile.
+	 * Portfolio URLs are root-level /{slug}/ via post_type_link + request mapping.
+	 * No catch-all rewrite (would steal real pages like /about/).
 	 *
-	 * @return array
+	 * @return void
 	 */
-	public static function get_profile() {
-		$settings = GCM_Settings_Service::get_settings();
-		$profile  = isset( $settings['portfolio'] ) && is_array( $settings['portfolio'] ) ? $settings['portfolio'] : array();
-		return wp_parse_args( $profile, self::profile_defaults() );
+	public static function register_rewrites() {
+		// Intentionally empty — see map_portfolio_request().
 	}
 
 	/**
-	 * Sanitize portfolio profile settings.
+	 * Map /{slug}/ to a portfolio when a published profile exists.
+	 * Prefer real pages/posts when they collide with a portfolio slug.
 	 *
-	 * @param array $raw Raw settings.
+	 * @param array $query_vars Query vars.
 	 * @return array
 	 */
-	public static function sanitize_profile( $raw ) {
-		$defaults = self::profile_defaults();
-		$raw      = is_array( $raw ) ? $raw : array();
+	public static function map_portfolio_request( $query_vars ) {
+		if ( ! empty( $query_vars['gcm_portfolio'] ) ) {
+			$slug = sanitize_title( $query_vars['gcm_portfolio'] );
+			if ( self::get_published_by_slug( $slug ) ) {
+				return array(
+					'post_type'     => 'gcm_portfolio',
+					'name'          => $slug,
+					'gcm_portfolio' => $slug,
+				);
+			}
+			unset( $query_vars['gcm_portfolio'] );
+			if ( empty( $query_vars['pagename'] ) && empty( $query_vars['name'] ) ) {
+				$query_vars['pagename'] = $slug;
+			}
+			return $query_vars;
+		}
+
+		$slug = '';
+		if ( ! empty( $query_vars['pagename'] ) && false === strpos( (string) $query_vars['pagename'], '/' ) ) {
+			$slug = sanitize_title( $query_vars['pagename'] );
+		} elseif ( ! empty( $query_vars['name'] ) && empty( $query_vars['post_type'] ) && empty( $query_vars['page_id'] ) ) {
+			$slug = sanitize_title( $query_vars['name'] );
+		}
+
+		if ( '' === $slug ) {
+			return $query_vars;
+		}
+
+		// Real WP pages always win over portfolio profiles.
+		if ( get_page_by_path( $slug ) ) {
+			return $query_vars;
+		}
+
+		if ( ! self::get_published_by_slug( $slug ) ) {
+			return $query_vars;
+		}
 
 		return array(
-			'enabled'           => ! empty( $raw['enabled'] ) ? 1 : 0,
-			'name'              => sanitize_text_field( $raw['name'] ?? $defaults['name'] ),
-			'tagline'           => sanitize_text_field( $raw['tagline'] ?? $defaults['tagline'] ),
-			'role'              => sanitize_text_field( $raw['role'] ?? $defaults['role'] ),
-			'eyebrow'           => sanitize_text_field( $raw['eyebrow'] ?? $defaults['eyebrow'] ),
-			'headline'          => sanitize_text_field( $raw['headline'] ?? $defaults['headline'] ),
-			'intro'             => sanitize_textarea_field( $raw['intro'] ?? $defaults['intro'] ),
-			'bio'               => sanitize_textarea_field( $raw['bio'] ?? $defaults['bio'] ),
-			'photo_id'          => absint( $raw['photo_id'] ?? 0 ),
-			'location'          => sanitize_text_field( $raw['location'] ?? $defaults['location'] ),
-			'email'             => sanitize_email( $raw['email'] ?? $defaults['email'] ),
-			'cta_label'         => sanitize_text_field( $raw['cta_label'] ?? $defaults['cta_label'] ),
-			'cta_url'           => esc_url_raw( $raw['cta_url'] ?? $defaults['cta_url'] ),
-			'github_url'        => esc_url_raw( $raw['github_url'] ?? '' ),
-			'linkedin_url'      => esc_url_raw( $raw['linkedin_url'] ?? '' ),
-			'status_text'       => sanitize_text_field( $raw['status_text'] ?? $defaults['status_text'] ),
-			'skills_cyber'      => sanitize_textarea_field( $raw['skills_cyber'] ?? $defaults['skills_cyber'] ),
-			'skills_networking' => sanitize_textarea_field( $raw['skills_networking'] ?? $defaults['skills_networking'] ),
-			'skills_web'        => sanitize_textarea_field( $raw['skills_web'] ?? $defaults['skills_web'] ),
-			'skills_animation'  => sanitize_textarea_field( $raw['skills_animation'] ?? $defaults['skills_animation'] ),
-			'stat_1_label'      => sanitize_text_field( $raw['stat_1_label'] ?? $defaults['stat_1_label'] ),
-			'stat_1_value'      => sanitize_text_field( $raw['stat_1_value'] ?? $defaults['stat_1_value'] ),
-			'stat_2_label'      => sanitize_text_field( $raw['stat_2_label'] ?? $defaults['stat_2_label'] ),
-			'stat_2_value'      => sanitize_text_field( $raw['stat_2_value'] ?? $defaults['stat_2_value'] ),
-			'stat_3_label'      => sanitize_text_field( $raw['stat_3_label'] ?? $defaults['stat_3_label'] ),
-			'stat_3_value'      => sanitize_text_field( $raw['stat_3_value'] ?? $defaults['stat_3_value'] ),
+			'post_type'     => 'gcm_portfolio',
+			'name'          => $slug,
+			'gcm_portfolio' => $slug,
 		);
 	}
 
 	/**
-	 * Lines helper for skill textareas.
+	 * Published portfolio by slug.
 	 *
-	 * @param string $text Raw textarea.
+	 * @param string $slug Slug.
+	 * @return WP_Post|null
+	 */
+	public static function get_published_by_slug( $slug ) {
+		$slug = sanitize_title( $slug );
+		if ( '' === $slug ) {
+			return null;
+		}
+		$posts = get_posts(
+			array(
+				'name'             => $slug,
+				'post_type'        => 'gcm_portfolio',
+				'post_status'      => 'publish',
+				'posts_per_page'   => 1,
+				'suppress_filters' => true,
+			)
+		);
+		return $posts ? $posts[0] : null;
+	}
+
+	/**
+	 * Pretty permalink: https://site.com/navyan/
+	 *
+	 * @param string  $permalink Permalink.
+	 * @param WP_Post $post Post.
+	 * @return string
+	 */
+	public static function filter_portfolio_link( $permalink, $post ) {
+		if ( ! ( $post instanceof WP_Post ) || 'gcm_portfolio' !== $post->post_type || empty( $post->post_name ) ) {
+			return $permalink;
+		}
+		return home_url( user_trailingslashit( $post->post_name ) );
+	}
+
+	/**
+	 * Format profile array from a portfolio post.
+	 *
+	 * @param WP_Post|int $post Post or ID.
+	 * @return array
+	 */
+	public static function get_profile_from_post( $post ) {
+		$post = get_post( $post );
+		if ( ! $post || 'gcm_portfolio' !== $post->post_type ) {
+			return self::profile_defaults();
+		}
+
+		$defaults = self::profile_defaults();
+		$profile  = array(
+			'name'     => get_the_title( $post ),
+			'slug'     => $post->post_name,
+			'photo_id' => (int) get_post_thumbnail_id( $post ),
+			'url'      => get_permalink( $post ),
+		);
+
+		foreach ( self::profile_meta_map() as $key => $meta_key ) {
+			$val = get_post_meta( $post->ID, $meta_key, true );
+			$profile[ $key ] = ( '' === $val || null === $val ) ? ( $defaults[ $key ] ?? '' ) : $val;
+		}
+
+		return $profile;
+	}
+
+	/**
+	 * Save profile fields from admin POST.
+	 *
+	 * @param int $post_id Portfolio ID.
+	 * @return void
+	 */
+	public static function save_profile_meta_from_request( $post_id ) {
+		$map = self::profile_meta_map();
+		foreach ( $map as $key => $meta_key ) {
+			$field = 'gcm_pf_' . $key;
+			if ( ! isset( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				continue;
+			}
+			$raw = wp_unslash( $_POST[ $field ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			if ( in_array( $key, array( 'intro', 'bio', 'skills_cyber', 'skills_networking', 'skills_web', 'skills_animation' ), true ) ) {
+				$value = sanitize_textarea_field( $raw );
+			} elseif ( in_array( $key, array( 'cta_url', 'github_url', 'linkedin_url' ), true ) ) {
+				$value = esc_url_raw( $raw );
+			} elseif ( 'email' === $key ) {
+				$value = sanitize_email( $raw );
+			} else {
+				$value = sanitize_text_field( $raw );
+			}
+			update_post_meta( $post_id, $meta_key, $value );
+		}
+	}
+
+	/**
+	 * Lines helper.
+	 *
+	 * @param string $text Textarea.
 	 * @return array
 	 */
 	public static function lines( $text ) {
@@ -128,12 +260,12 @@ class GCM_Portfolio_Service {
 	}
 
 	/**
-	 * Query published portfolio projects.
+	 * Projects for one portfolio.
 	 *
-	 * @param string $category Optional category slug.
+	 * @param int $portfolio_id Portfolio post ID.
 	 * @return array
 	 */
-	public static function get_projects( $category = '' ) {
+	public static function get_projects( $portfolio_id = 0 ) {
 		$args = array(
 			'post_type'      => 'gcm_portfolio_item',
 			'post_status'    => 'publish',
@@ -144,21 +276,21 @@ class GCM_Portfolio_Service {
 			),
 		);
 
-		if ( $category && isset( self::categories()[ $category ] ) ) {
-			$args['meta_key']   = '_gcm_portfolio_category';
-			$args['meta_value'] = $category;
+		$portfolio_id = absint( $portfolio_id );
+		if ( $portfolio_id ) {
+			$args['meta_key']   = '_gcm_portfolio_id';
+			$args['meta_value'] = (string) $portfolio_id;
 		}
 
-		$posts = get_posts( $args );
 		$items = array();
-		foreach ( $posts as $post ) {
+		foreach ( get_posts( $args ) as $post ) {
 			$items[] = self::format_project( $post );
 		}
 		return $items;
 	}
 
 	/**
-	 * Format one project.
+	 * Format project.
 	 *
 	 * @param WP_Post $post Post.
 	 * @return array
@@ -168,188 +300,265 @@ class GCM_Portfolio_Service {
 		if ( ! isset( self::categories()[ $category ] ) ) {
 			$category = 'web';
 		}
-
-		$tech = (string) get_post_meta( $post->ID, '_gcm_portfolio_tech', true );
 		$tech = array_values(
 			array_filter(
 				array_map(
 					'trim',
-					preg_split( '/[,|\n]/', $tech )
+					preg_split( '/[,|\n]/', (string) get_post_meta( $post->ID, '_gcm_portfolio_tech', true ) )
 				)
 			)
 		);
 
 		return array(
-			'id'          => (int) $post->ID,
-			'title'       => get_the_title( $post ),
-			'excerpt'     => $post->post_excerpt ? $post->post_excerpt : wp_trim_words( wp_strip_all_tags( $post->post_content ), 28 ),
-			'content'     => apply_filters( 'the_content', $post->post_content ),
-			'category'    => $category,
+			'id'             => (int) $post->ID,
+			'title'          => get_the_title( $post ),
+			'excerpt'        => $post->post_excerpt ? $post->post_excerpt : wp_trim_words( wp_strip_all_tags( $post->post_content ), 28 ),
+			'category'       => $category,
 			'category_label' => self::categories()[ $category ],
-			'tech'        => $tech,
-			'project_url' => (string) get_post_meta( $post->ID, '_gcm_portfolio_url', true ),
-			'year'        => (string) get_post_meta( $post->ID, '_gcm_portfolio_year', true ),
-			'featured'    => (bool) get_post_meta( $post->ID, '_gcm_portfolio_featured', true ),
-			'image'       => get_the_post_thumbnail_url( $post, 'large' ) ?: '',
+			'tech'           => $tech,
+			'project_url'    => (string) get_post_meta( $post->ID, '_gcm_portfolio_url', true ),
+			'year'           => (string) get_post_meta( $post->ID, '_gcm_portfolio_year', true ),
+			'featured'       => (bool) get_post_meta( $post->ID, '_gcm_portfolio_featured', true ),
+			'image'          => get_the_post_thumbnail_url( $post, 'large' ) ?: '',
+			'portfolio_id'   => absint( get_post_meta( $post->ID, '_gcm_portfolio_id', true ) ),
 		);
 	}
 
 	/**
-	 * Seed default projects once.
+	 * All portfolio profiles for admin dropdowns.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function list_portfolios() {
+		$posts = get_posts(
+			array(
+				'post_type'      => 'gcm_portfolio',
+				'post_status'    => array( 'publish', 'draft' ),
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		$out = array();
+		foreach ( $posts as $post ) {
+			$out[ (int) $post->ID ] = $post->post_title . ' (/' . $post->post_name . '/)';
+		}
+		return $out;
+	}
+
+	/**
+	 * Hide the old shared /portfolio/ page from public menus; keep CPT URLs only.
+	 *
+	 * @return void
+	 */
+	public static function cleanup_shared_portfolio_page() {
+		$page = get_page_by_path( 'portfolio' );
+		if ( $page && 'publish' === $page->post_status ) {
+			wp_update_post(
+				array(
+					'ID'          => $page->ID,
+					'post_status' => 'draft',
+				)
+			);
+		}
+	}
+
+	/**
+	 * Seed Navyan portfolio + projects once (v2 multi-portfolio).
 	 *
 	 * @return void
 	 */
 	public static function maybe_seed_projects() {
-		if ( get_option( 'gcm_portfolio_seeded_v1' ) ) {
+		if ( get_option( 'gcm_portfolio_seeded_v2' ) ) {
+			self::cleanup_shared_portfolio_page();
 			return;
 		}
-		if ( ! post_type_exists( 'gcm_portfolio_item' ) ) {
+		if ( ! post_type_exists( 'gcm_portfolio' ) || ! post_type_exists( 'gcm_portfolio_item' ) ) {
 			return;
 		}
 
-		$existing = get_posts(
+		$navyan = get_page_by_path( 'navyan', OBJECT, 'gcm_portfolio' );
+		if ( ! $navyan ) {
+			$existing = get_posts(
+				array(
+					'post_type'      => 'gcm_portfolio',
+					'name'           => 'navyan',
+					'posts_per_page' => 1,
+					'post_status'    => array( 'publish', 'draft' ),
+				)
+			);
+			$navyan = $existing ? $existing[0] : null;
+		}
+
+		if ( ! $navyan ) {
+			$portfolio_id = wp_insert_post(
+				array(
+					'post_type'   => 'gcm_portfolio',
+					'post_status' => 'publish',
+					'post_title'  => 'Navyan Baig',
+					'post_name'   => 'navyan',
+					'post_content'=> '',
+				),
+				true
+			);
+			if ( is_wp_error( $portfolio_id ) || ! $portfolio_id ) {
+				return;
+			}
+			$defaults = self::profile_defaults();
+			foreach ( self::profile_meta_map() as $key => $meta_key ) {
+				if ( isset( $defaults[ $key ] ) ) {
+					update_post_meta( $portfolio_id, $meta_key, $defaults[ $key ] );
+				}
+			}
+			// Prefer existing team photo attachment if present in media by filename search — optional skip.
+		} else {
+			$portfolio_id = (int) $navyan->ID;
+			if ( 'publish' !== $navyan->post_status ) {
+				wp_update_post(
+					array(
+						'ID'          => $portfolio_id,
+						'post_status' => 'publish',
+						'post_name'   => 'navyan',
+					)
+				);
+			}
+		}
+
+		// Attach existing unassigned projects, or seed new ones.
+		$existing_items = get_posts(
 			array(
 				'post_type'      => 'gcm_portfolio_item',
 				'post_status'    => array( 'publish', 'draft' ),
-				'posts_per_page' => 1,
+				'posts_per_page' => 50,
 				'fields'         => 'ids',
 			)
 		);
-		if ( ! empty( $existing ) ) {
-			update_option( 'gcm_portfolio_seeded_v1', 1, false );
-			return;
-		}
 
-		$seeds = array(
-			array(
-				'title'    => 'Home Lab Threat Surface Map',
-				'excerpt'  => 'Mapped attack surfaces across a personal cyber lab and documented hardening priorities.',
-				'content'  => 'Built a practical home-lab inventory covering exposed services, weak defaults, and remediation notes for a cyber security learning path.',
-				'category' => 'cyber',
-				'tech'     => 'Linux, Nmap, OWASP, Documentation',
-				'year'     => '2026',
-				'featured' => 1,
-			),
-			array(
-				'title'    => 'Secure Login Flow Review',
-				'excerpt'  => 'Reviewed authentication UX and session handling patterns for student platforms.',
-				'content'  => 'Audited login, session, and redirect flows with a security-first checklist for LMS-style products.',
-				'category' => 'cyber',
-				'tech'     => 'WordPress, PHP, Session Security',
-				'year'     => '2026',
-				'featured' => 0,
-			),
-			array(
-				'title'    => 'Packet Path Visual Lab',
-				'excerpt'  => 'Networking lab that visualizes routing decisions and common failure points.',
-				'content'  => 'Hands-on networking practice covering subnetting, packet capture notes, and troubleshooting playbooks.',
-				'category' => 'networking',
-				'tech'     => 'TCP/IP, Wireshark, Routing',
-				'year'     => '2025',
-				'featured' => 1,
-			),
-			array(
-				'title'    => 'LAN Hardening Checklist',
-				'excerpt'  => 'A practical networking checklist for small-office and home networks.',
-				'content'  => 'Created a repeatable networking hygiene checklist for segmentation, DNS, and firewall defaults.',
-				'category' => 'networking',
-				'tech'     => 'Firewall, DNS, LAN Design',
-				'year'     => '2025',
-				'featured' => 0,
-			),
-			array(
-				'title'    => 'Giga Class Market Platform',
-				'excerpt'  => 'Marketplace + LMS web platform with enrollment, dashboards, and certificates.',
-				'content'  => 'Contributed to a premium WordPress learning marketplace covering courses, payments, student dashboards, and certificate flows.',
-				'category' => 'web',
-				'tech'     => 'WordPress, PHP, CSS, JS',
-				'year'     => '2026',
-				'featured' => 1,
-				'url'      => home_url( '/' ),
-			),
-			array(
-				'title'    => 'Admin-Managed Content Systems',
-				'excerpt'  => 'Built editable site sections so admins can update media and copy without code.',
-				'content'  => 'Designed admin-friendly content systems for about, team, SEO, and portfolio management.',
-				'category' => 'web',
-				'tech'     => 'PHP, Media Library, UX',
-				'year'     => '2026',
-				'featured' => 0,
-			),
-			array(
-				'title'    => 'Cyber Portfolio Motion System',
-				'excerpt'  => 'Scroll reveals, terminal accents, and filter transitions for a cyber portfolio.',
-				'content'  => 'Crafted a motion language for cybersecurity storytelling — intentional reveals, staggered cards, and interactive filters.',
-				'category' => 'animation',
-				'tech'     => 'CSS, JS, Motion Design',
-				'year'     => '2026',
-				'featured' => 1,
-			),
-			array(
-				'title'    => 'Interface Micro-Interactions',
-				'excerpt'  => 'Subtle hover and focus states that keep technical UIs feeling alive.',
-				'content'  => 'Designed micro-interactions for cards, CTAs, and status indicators without noisy effects.',
-				'category' => 'animation',
-				'tech'     => 'CSS Transitions, JS Observers',
-				'year'     => '2025',
-				'featured' => 0,
-			),
-		);
-
-		foreach ( $seeds as $index => $seed ) {
-			$post_id = wp_insert_post(
+		if ( ! empty( $existing_items ) ) {
+			foreach ( $existing_items as $item_id ) {
+				if ( ! get_post_meta( $item_id, '_gcm_portfolio_id', true ) ) {
+					update_post_meta( $item_id, '_gcm_portfolio_id', $portfolio_id );
+				}
+			}
+		} else {
+			$seeds = array(
 				array(
-					'post_type'    => 'gcm_portfolio_item',
-					'post_status'  => 'publish',
-					'post_title'   => $seed['title'],
-					'post_excerpt' => $seed['excerpt'],
-					'post_content' => $seed['content'],
-					'menu_order'   => $index + 1,
+					'title'    => 'Home Lab Threat Surface Map',
+					'excerpt'  => 'Mapped attack surfaces across a personal cyber lab and documented hardening priorities.',
+					'content'  => 'Built a practical home-lab inventory covering exposed services, weak defaults, and remediation notes for a cyber security learning path.',
+					'category' => 'cyber',
+					'tech'     => 'Linux, Nmap, OWASP, Documentation',
+					'year'     => '2026',
+					'featured' => 1,
 				),
-				true
+				array(
+					'title'    => 'Secure Login Flow Review',
+					'excerpt'  => 'Reviewed authentication UX and session handling patterns for student platforms.',
+					'content'  => 'Audited login, session, and redirect flows with a security-first checklist for LMS-style products.',
+					'category' => 'cyber',
+					'tech'     => 'WordPress, PHP, Session Security',
+					'year'     => '2026',
+					'featured' => 0,
+				),
+				array(
+					'title'    => 'Packet Path Visual Lab',
+					'excerpt'  => 'Networking lab that visualizes routing decisions and common failure points.',
+					'content'  => 'Hands-on networking practice covering subnetting, packet capture notes, and troubleshooting playbooks.',
+					'category' => 'networking',
+					'tech'     => 'TCP/IP, Wireshark, Routing',
+					'year'     => '2025',
+					'featured' => 1,
+				),
+				array(
+					'title'    => 'LAN Hardening Checklist',
+					'excerpt'  => 'A practical networking checklist for small-office and home networks.',
+					'content'  => 'Created a repeatable networking hygiene checklist for segmentation, DNS, and firewall defaults.',
+					'category' => 'networking',
+					'tech'     => 'Firewall, DNS, LAN Design',
+					'year'     => '2025',
+					'featured' => 0,
+				),
+				array(
+					'title'    => 'Giga Class Market Platform',
+					'excerpt'  => 'Marketplace + LMS web platform with enrollment, dashboards, and certificates.',
+					'content'  => 'Contributed to a premium WordPress learning marketplace covering courses, payments, student dashboards, and certificate flows.',
+					'category' => 'web',
+					'tech'     => 'WordPress, PHP, CSS, JS',
+					'year'     => '2026',
+					'featured' => 1,
+					'url'      => home_url( '/' ),
+				),
+				array(
+					'title'    => 'Admin-Managed Content Systems',
+					'excerpt'  => 'Built editable site sections so admins can update media and copy without code.',
+					'content'  => 'Designed admin-friendly content systems for about, team, SEO, and portfolio management.',
+					'category' => 'web',
+					'tech'     => 'PHP, Media Library, UX',
+					'year'     => '2026',
+					'featured' => 0,
+				),
+				array(
+					'title'    => 'Cyber Portfolio Motion System',
+					'excerpt'  => 'Scroll reveals, terminal accents, and filter transitions for a cyber portfolio.',
+					'content'  => 'Crafted a motion language for cybersecurity storytelling — intentional reveals, staggered cards, and interactive filters.',
+					'category' => 'animation',
+					'tech'     => 'CSS, JS, Motion Design',
+					'year'     => '2026',
+					'featured' => 1,
+				),
+				array(
+					'title'    => 'Interface Micro-Interactions',
+					'excerpt'  => 'Subtle hover and focus states that keep technical UIs feeling alive.',
+					'content'  => 'Designed micro-interactions for cards, CTAs, and status indicators without noisy effects.',
+					'category' => 'animation',
+					'tech'     => 'CSS Transitions, JS Observers',
+					'year'     => '2025',
+					'featured' => 0,
+				),
 			);
-			if ( is_wp_error( $post_id ) || ! $post_id ) {
-				continue;
-			}
-			update_post_meta( $post_id, '_gcm_portfolio_category', $seed['category'] );
-			update_post_meta( $post_id, '_gcm_portfolio_tech', $seed['tech'] );
-			update_post_meta( $post_id, '_gcm_portfolio_year', $seed['year'] );
-			update_post_meta( $post_id, '_gcm_portfolio_featured', ! empty( $seed['featured'] ) ? 1 : 0 );
-			if ( ! empty( $seed['url'] ) ) {
-				update_post_meta( $post_id, '_gcm_portfolio_url', esc_url_raw( $seed['url'] ) );
+
+			foreach ( $seeds as $index => $seed ) {
+				$post_id = wp_insert_post(
+					array(
+						'post_type'    => 'gcm_portfolio_item',
+						'post_status'  => 'publish',
+						'post_title'   => $seed['title'],
+						'post_excerpt' => $seed['excerpt'],
+						'post_content' => $seed['content'],
+						'menu_order'   => $index + 1,
+					),
+					true
+				);
+				if ( is_wp_error( $post_id ) || ! $post_id ) {
+					continue;
+				}
+				update_post_meta( $post_id, '_gcm_portfolio_id', $portfolio_id );
+				update_post_meta( $post_id, '_gcm_portfolio_category', $seed['category'] );
+				update_post_meta( $post_id, '_gcm_portfolio_tech', $seed['tech'] );
+				update_post_meta( $post_id, '_gcm_portfolio_year', $seed['year'] );
+				update_post_meta( $post_id, '_gcm_portfolio_featured', ! empty( $seed['featured'] ) ? 1 : 0 );
+				if ( ! empty( $seed['url'] ) ) {
+					update_post_meta( $post_id, '_gcm_portfolio_url', esc_url_raw( $seed['url'] ) );
+				}
 			}
 		}
 
-		update_option( 'gcm_portfolio_seeded_v1', 1, false );
+		self::cleanup_shared_portfolio_page();
+		update_option( 'gcm_portfolio_seeded_v2', 1, false );
+		update_option( 'gcm_flush_rewrite_rules', 1, false );
 	}
 
 	/**
-	 * Ensure the Portfolio page exists with the GCM template.
+	 * Flush rewrite rules once after portfolio URL structure changes.
 	 *
 	 * @return void
 	 */
-	public static function ensure_portfolio_page() {
-		$page = get_page_by_path( 'portfolio' );
-		if ( ! $page ) {
-			$page_id = wp_insert_post(
-				array(
-					'post_type'    => 'page',
-					'post_status'  => 'publish',
-					'post_title'   => __( 'Portfolio', 'giga-class-market' ),
-					'post_name'    => 'portfolio',
-					'post_content' => '',
-				),
-				true
-			);
-			if ( ! is_wp_error( $page_id ) && $page_id ) {
-				update_post_meta( $page_id, '_wp_page_template', 'page-templates/template-portfolio.php' );
-			}
-			return;
-		}
-
-		$template = get_post_meta( $page->ID, '_wp_page_template', true );
-		if ( 'page-templates/template-portfolio.php' !== $template ) {
-			update_post_meta( $page->ID, '_wp_page_template', 'page-templates/template-portfolio.php' );
+	public static function maybe_flush_rewrites() {
+		$ver = get_option( 'gcm_portfolio_rewrite_ver' );
+		if ( $ver !== GCM_VERSION || get_option( 'gcm_flush_rewrite_rules' ) ) {
+			flush_rewrite_rules( false );
+			update_option( 'gcm_portfolio_rewrite_ver', GCM_VERSION, false );
+			delete_option( 'gcm_flush_rewrite_rules' );
 		}
 	}
 }

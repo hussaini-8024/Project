@@ -40,7 +40,8 @@ class GCM_Admin {
 		add_submenu_page( 'gcm-dashboard', __( 'Analytics', 'giga-class-market' ), __( 'Analytics', 'giga-class-market' ), 'gcm_view_dashboard', 'gcm-analytics', array( $this, 'render_analytics' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Contact Messages', 'giga-class-market' ), __( 'Contact Messages', 'giga-class-market' ), 'gcm_manage_contacts', 'gcm-contacts', array( $this, 'render_contacts' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Testimonials', 'giga-class-market' ), __( 'Testimonials', 'giga-class-market' ), 'gcm_manage_testimonials', 'edit.php?post_type=gcm_testimonial' );
-		add_submenu_page( 'gcm-dashboard', __( 'Portfolio', 'giga-class-market' ), __( 'Portfolio', 'giga-class-market' ), 'gcm_manage_settings', 'edit.php?post_type=gcm_portfolio_item' );
+		add_submenu_page( 'gcm-dashboard', __( 'Portfolios', 'giga-class-market' ), __( 'Portfolios', 'giga-class-market' ), 'gcm_manage_settings', 'edit.php?post_type=gcm_portfolio' );
+		add_submenu_page( 'gcm-dashboard', __( 'Portfolio Projects', 'giga-class-market' ), __( 'Portfolio Projects', 'giga-class-market' ), 'gcm_manage_settings', 'edit.php?post_type=gcm_portfolio_item' );
 		add_submenu_page( 'gcm-dashboard', __( 'Hero Slides', 'giga-class-market' ), __( 'Hero Slides', 'giga-class-market' ), 'gcm_manage_settings', 'edit.php?post_type=gcm_slide' );
 		add_submenu_page( 'gcm-dashboard', __( 'Settings', 'giga-class-market' ), __( 'Settings', 'giga-class-market' ), 'gcm_manage_settings', 'gcm-settings', array( $this, 'render_settings' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Activity Log', 'giga-class-market' ), __( 'Activity Log', 'giga-class-market' ), 'gcm_view_dashboard', 'gcm-activity-log', array( $this, 'render_activity_log' ) );
@@ -54,7 +55,7 @@ class GCM_Admin {
 	 */
 	public function enqueue_assets( $hook ) {
 		$screen = get_current_screen();
-		$is_gcm = false !== strpos( $hook, 'gcm' ) || ( $screen && in_array( $screen->post_type, array( 'gcm_course', 'gcm_testimonial', 'gcm_slide', 'gcm_portfolio_item' ), true ) );
+		$is_gcm = false !== strpos( $hook, 'gcm' ) || ( $screen && in_array( $screen->post_type, array( 'gcm_course', 'gcm_testimonial', 'gcm_slide', 'gcm_portfolio', 'gcm_portfolio_item' ), true ) );
 		if ( ! $is_gcm ) {
 			return;
 		}
