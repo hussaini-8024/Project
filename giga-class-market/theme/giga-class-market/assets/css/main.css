@@ -283,18 +283,6 @@ textarea {
 	justify-content: flex-end;
 }
 
-.gcm-header-link {
-	color: var(--gcm-muted);
-	font-size: 0.92rem;
-	font-weight: 600;
-	white-space: nowrap;
-	transition: color 180ms ease;
-}
-
-.gcm-header-link:hover {
-	color: var(--gcm-gold);
-}
-
 .gcm-theme-toggle,
 .gcm-nav-toggle {
 	border: 0;
@@ -1720,14 +1708,32 @@ textarea {
 @media (max-width: 1024px) {
 	.gcm-nav-toggle {
 		display: block;
+		order: 3;
+		margin-left: auto;
+	}
+
+	.gcm-header__inner {
+		flex-wrap: wrap;
+	}
+
+	.gcm-brand {
+		order: 1;
+	}
+
+	.gcm-header__actions {
+		order: 2;
+		margin-left: 0;
+		margin-right: 0.35rem;
 	}
 
 	.gcm-primary-nav {
+		order: 4;
 		position: fixed;
 		top: var(--gcm-header-height);
 		left: 0;
 		right: 0;
-		padding: 1rem 24px 2rem;
+		z-index: 90;
+		padding: 1rem 24px 1.5rem;
 		background: var(--gcm-surface);
 		border-bottom: 1px solid var(--gcm-border);
 		box-shadow: var(--gcm-shadow);
@@ -1745,11 +1751,31 @@ textarea {
 
 	.gcm-menu {
 		display: grid;
-		gap: 1rem;
+		gap: 0;
+		width: 100%;
 	}
 
-	.gcm-header__actions {
-		margin-left: 0;
+	.gcm-menu li {
+		border-bottom: 1px solid var(--gcm-border);
+	}
+
+	.gcm-menu li:last-child {
+		border-bottom: 0;
+	}
+
+	.gcm-menu a {
+		display: block;
+		padding: 0.95rem 0.15rem;
+		font-size: 1rem;
+		font-weight: 700;
+	}
+
+	.gcm-menu__account {
+		margin-top: 0.35rem;
+	}
+
+	.gcm-menu__account a {
+		color: var(--gcm-gold);
 	}
 
 	.gcm-hero__content,
@@ -1815,10 +1841,6 @@ textarea {
 		min-height: 38px;
 		padding: 0.45rem 0.9rem;
 		font-size: 0.85rem;
-	}
-
-	.gcm-header-link {
-		font-size: 0.82rem;
 	}
 
 	.gcm-logout-link {
@@ -1931,16 +1953,6 @@ textarea {
 }
 
 /* —— Premium certificate + verification —— */
-.gcm-verify-link {
-	font-weight: 800 !important;
-	color: var(--gcm-navy) !important;
-	letter-spacing: 0.01em;
-}
-
-.gcm-verify-link:hover {
-	color: var(--gcm-gold) !important;
-}
-
 .gcm-page-hero--verify {
 	background:
 		radial-gradient(circle at 80% 15%, rgba(224,160,69,0.2), transparent 32%),
@@ -2381,10 +2393,6 @@ textarea {
 	font-weight: 700;
 }
 
-.gcm-header-link {
-	font-weight: 700;
-}
-
 @media print {
 	@page {
 		size: landscape;
@@ -2444,9 +2452,5 @@ textarea {
 
 	.gcm-certificate__sign-line {
 		margin-inline: auto;
-	}
-
-	.gcm-verify-link {
-		font-size: 0.82rem;
 	}
 }

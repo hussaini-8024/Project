@@ -57,19 +57,17 @@
 				<li><a href="<?php echo esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ); ?>"><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php esc_html_e( 'Contact Us', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php esc_html_e( 'About Us', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( home_url( '/verify-certificate/' ) ); ?>"><?php esc_html_e( 'Verify Certificate', 'giga-class-market' ); ?></a></li>
+				<?php if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) : ?>
+					<li class="gcm-menu__account"><a href="<?php echo esc_url( admin_url() ); ?>"><?php esc_html_e( 'Admin', 'giga-class-market' ); ?></a></li>
+				<?php elseif ( is_user_logged_in() && current_user_can( 'gcm_teacher_dashboard' ) ) : ?>
+					<li class="gcm-menu__account"><a href="<?php echo esc_url( home_url( '/teacher-dashboard/' ) ); ?>"><?php esc_html_e( 'Teacher Dashboard', 'giga-class-market' ); ?></a></li>
+				<?php endif; ?>
 			</ul>
 		</nav>
 
 		<div class="gcm-header__actions">
-			<a class="gcm-header-link gcm-verify-link" href="<?php echo esc_url( home_url( '/verify-certificate/' ) ); ?>"><?php esc_html_e( 'Verify Certificate', 'giga-class-market' ); ?></a>
 			<?php if ( is_user_logged_in() ) : ?>
-				<?php if ( current_user_can( 'manage_options' ) ) : ?>
-					<a class="gcm-header-link" href="<?php echo esc_url( admin_url() ); ?>"><?php esc_html_e( 'Admin', 'giga-class-market' ); ?></a>
-				<?php elseif ( current_user_can( 'gcm_teacher_dashboard' ) ) : ?>
-					<a class="gcm-header-link" href="<?php echo esc_url( home_url( '/teacher-dashboard/' ) ); ?>"><?php esc_html_e( 'Teacher Dashboard', 'giga-class-market' ); ?></a>
-				<?php elseif ( current_user_can( 'gcm_access_dashboard' ) ) : ?>
-					<a class="gcm-header-link" href="<?php echo esc_url( home_url( '/student-dashboard/' ) ); ?>"><?php esc_html_e( 'My Courses', 'giga-class-market' ); ?></a>
-				<?php endif; ?>
 				<a class="gcm-login-link gcm-logout-link" href="<?php echo esc_url( wp_logout_url( home_url( '/login/' ) ) ); ?>"><?php esc_html_e( 'Logout', 'giga-class-market' ); ?></a>
 			<?php else : ?>
 				<a class="gcm-login-link" href="<?php echo esc_url( gcm_student_login_url() ); ?>"><?php esc_html_e( 'Login', 'giga-class-market' ); ?></a>

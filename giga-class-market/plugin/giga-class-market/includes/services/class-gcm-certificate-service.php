@@ -408,6 +408,9 @@ class GCM_Certificate_Service {
 						background-image: linear-gradient(180deg, rgba(255,253,248,0.94) 0%, rgba(255,255,255,0.88) 48%, rgba(244,250,249,0.92) 100%), url('<?php echo esc_url( $buildings ); ?>') !important;
 						background-size: cover !important;
 						background-position: center bottom !important;
+						aspect-ratio: 1.414 / 1 !important;
+						width: 100% !important;
+						max-width: 1100px !important;
 					}
 					.gcm-certificate--email .gcm-certificate__skyline {
 						background-image: url('<?php echo esc_url( $buildings ); ?>') !important;
