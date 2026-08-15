@@ -132,6 +132,16 @@
 	}
 
 	function initPromoPopup() {
+		// Never show promo banners on personal portfolio profiles.
+		if (document.body.classList.contains('gcm-page-portfolio')) {
+			var portfolioPopup = document.getElementById('gcm-promo-popup');
+			if (portfolioPopup) {
+				portfolioPopup.remove();
+			}
+			document.body.classList.remove('gcm-promo-open');
+			return;
+		}
+
 		function bindExistingPopup(popup) {
 			if (!popup) {
 				return false;

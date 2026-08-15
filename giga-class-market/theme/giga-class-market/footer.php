@@ -81,11 +81,13 @@ $socials  = array(
 <?php
 // Server-rendered popup so guests see it even when admin-ajax is blocked by the host WAF.
 // Cache purge on settings/course save keeps this HTML fresh for logged-out visitors.
-$popup_enabled  = (int) gcm_setting( 'popup_enabled', 0 );
-$popup_image_id = absint( gcm_setting( 'popup_image_id', 0 ) );
-$popup_link     = (string) gcm_setting( 'popup_link_url', '' );
-$popup_image    = $popup_image_id ? wp_get_attachment_image_url( $popup_image_id, 'full' ) : '';
-if ( $popup_enabled && $popup_image ) :
+// Hide on personal portfolio pages (share-only profiles).
+$hide_promo_popup = is_singular( 'gcm_portfolio' ) || is_page_template( 'page-templates/template-portfolio.php' );
+$popup_enabled    = (int) gcm_setting( 'popup_enabled', 0 );
+$popup_image_id   = absint( gcm_setting( 'popup_image_id', 0 ) );
+$popup_link       = (string) gcm_setting( 'popup_link_url', '' );
+$popup_image      = $popup_image_id ? wp_get_attachment_image_url( $popup_image_id, 'full' ) : '';
+if ( ! $hide_promo_popup && $popup_enabled && $popup_image ) :
 	?>
 	<div class="gcm-promo-popup" id="gcm-promo-popup" hidden data-popup-id="<?php echo esc_attr( (string) $popup_image_id ); ?>" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Promotional banner', 'giga-class-market' ); ?>">
 		<div class="gcm-promo-popup__backdrop" data-gcm-popup-close tabindex="-1"></div>
