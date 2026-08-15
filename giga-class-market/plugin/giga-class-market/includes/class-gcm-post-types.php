@@ -369,6 +369,14 @@ class GCM_Post_Types {
 				GCM_Curriculum_Service::save_course_curriculum( $post_id, $payload );
 			}
 		}
+
+		// Bust CDN/page cache so logged-out visitors see new sale prices immediately.
+		update_option( 'gcm_cache_bust', (string) time(), false );
+		if ( function_exists( 'wp_cache_flush' ) ) {
+			wp_cache_flush();
+		}
+		do_action( 'stackcache_purge_all' );
+		do_action( 'gcm_purge_front_caches' );
 	}
 
 	/**

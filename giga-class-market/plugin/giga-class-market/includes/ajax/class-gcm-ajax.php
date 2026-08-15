@@ -20,7 +20,7 @@ class GCM_Ajax {
 	 * @return void
 	 */
 	public function register() {
-		$public_actions = array( 'contact_submit', 'payment_submit', 'course_search', 'validate_coupon' );
+		$public_actions = array( 'contact_submit', 'payment_submit', 'course_search', 'validate_coupon', 'get_promo_popup' );
 		foreach ( $public_actions as $action ) {
 			add_action( 'wp_ajax_gcm_' . $action, array( $this, $action ) );
 			add_action( 'wp_ajax_nopriv_gcm_' . $action, array( $this, $action ) );
@@ -361,7 +361,73 @@ class GCM_Ajax {
 		$result   = GCM_Settings_Service::update_settings( $settings );
 		GCM_Audit_Service::log( 'settings_saved', 'settings', 0, array() );
 
-		$this->send_service_response( $result, __( 'Settings saved.', 'giga-class-market' ) );
+		$this->bust_front_caches();
+
+		$this->send_service_response( $result, __( 'Settings saved. Site cache was refreshed for visitors.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Public promo popup config (uncached) so guests see updates even when HTML is CDN-cached.
+	 *
+	 * @return void
+	 */
+	public function get_promo_popup() {
+		nocache_headers();
+		if ( ! headers_sent() ) {
+			header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+		}
+
+		$website = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_section( 'website' ) : array();
+		$enabled = ! empty( $website['popup_enabled'] );
+		$image_id = absint( $website['popup_image_id'] ?? 0 );
+		$image    = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
+		$link     = esc_url_raw( $website['popup_link_url'] ?? '' );
+
+		if ( ! $enabled || ! $image ) {
+			wp_send_json_success(
+				array(
+					'enabled' => false,
+				)
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'enabled' => true,
+				'id'      => (string) $image_id,
+				'image'   => $image,
+				'link'    => $link,
+				'alt'     => __( 'Promotional offer', 'giga-class-market' ),
+			)
+		);
+	}
+
+	/**
+	 * Bust page/object caches so logged-out visitors see fresh front-end markup.
+	 *
+	 * @return void
+	 */
+	private function bust_front_caches() {
+		update_option( 'gcm_cache_bust', (string) time(), false );
+
+		if ( function_exists( 'wp_cache_flush' ) ) {
+			wp_cache_flush();
+		}
+		if ( function_exists( 'rocket_clean_domain' ) ) {
+			rocket_clean_domain();
+		}
+
+		do_action( 'stackcache_purge_all' );
+		do_action( 'ce_clear_cache' );
+		do_action( 'litespeed_purge_all' );
+		do_action( 'cache_enabler_clear_complete_cache' );
+
+		/**
+		 * Allow hosts / cache plugins to purge CDN HTML after GCM settings change.
+		 */
+		do_action( 'gcm_purge_front_caches' );
 	}
 
 	/**

@@ -132,48 +132,120 @@
 	}
 
 	function initPromoPopup() {
-		var popup = document.getElementById('gcm-promo-popup');
-		if (!popup) {
+		var ajaxUrl = window.gcmTheme && gcmTheme.ajaxUrl ? gcmTheme.ajaxUrl : '';
+		if (!ajaxUrl || !window.fetch) {
 			return;
 		}
 
-		var popupId = popup.getAttribute('data-popup-id') || 'default';
-		var storageKey = 'gcmPromoPopupDismissed:' + popupId;
-
-		try {
-			if (window.localStorage.getItem(storageKey) === '1') {
+		function showPopup(config) {
+			if (!config || !config.enabled || !config.image) {
 				return;
 			}
-		} catch (err) {
-			/* ignore storage errors */
-		}
 
-		function closePopup() {
-			popup.hidden = true;
-			popup.classList.remove('is-open');
-			document.body.classList.remove('gcm-promo-open');
+			var popupId = String(config.id || 'default');
+			var storageKey = 'gcmPromoPopupDismissed:' + popupId;
+
 			try {
-				window.localStorage.setItem(storageKey, '1');
+				if (window.localStorage.getItem(storageKey) === '1') {
+					return;
+				}
 			} catch (err) {
 				/* ignore storage errors */
 			}
+
+			var existing = document.getElementById('gcm-promo-popup');
+			if (existing) {
+				existing.remove();
+			}
+
+			var popup = document.createElement('div');
+			popup.className = 'gcm-promo-popup';
+			popup.id = 'gcm-promo-popup';
+			popup.hidden = true;
+			popup.setAttribute('data-popup-id', popupId);
+			popup.setAttribute('role', 'dialog');
+			popup.setAttribute('aria-modal', 'true');
+			popup.setAttribute('aria-label', 'Promotional banner');
+
+			var backdrop = document.createElement('div');
+			backdrop.className = 'gcm-promo-popup__backdrop';
+			backdrop.setAttribute('data-gcm-popup-close', '');
+			backdrop.tabIndex = -1;
+
+			var panel = document.createElement('div');
+			panel.className = 'gcm-promo-popup__panel';
+
+			var closeBtn = document.createElement('button');
+			closeBtn.type = 'button';
+			closeBtn.className = 'gcm-promo-popup__close';
+			closeBtn.setAttribute('data-gcm-popup-close', '');
+			closeBtn.setAttribute('aria-label', 'Close');
+			closeBtn.innerHTML = '<span aria-hidden="true">&times;</span>';
+
+			var img = document.createElement('img');
+			img.src = config.image;
+			img.alt = config.alt || 'Promotional offer';
+
+			if (config.link) {
+				var link = document.createElement('a');
+				link.className = 'gcm-promo-popup__link';
+				link.href = config.link;
+				link.appendChild(img);
+				panel.appendChild(closeBtn);
+				panel.appendChild(link);
+			} else {
+				panel.appendChild(closeBtn);
+				panel.appendChild(img);
+			}
+
+			popup.appendChild(backdrop);
+			popup.appendChild(panel);
+			document.body.appendChild(popup);
+
+			function closePopup() {
+				popup.hidden = true;
+				popup.classList.remove('is-open');
+				document.body.classList.remove('gcm-promo-open');
+				try {
+					window.localStorage.setItem(storageKey, '1');
+				} catch (err) {
+					/* ignore storage errors */
+				}
+			}
+
+			popup.hidden = false;
+			window.requestAnimationFrame(function () {
+				popup.classList.add('is-open');
+				document.body.classList.add('gcm-promo-open');
+			});
+
+			popup.querySelectorAll('[data-gcm-popup-close]').forEach(function (el) {
+				el.addEventListener('click', closePopup);
+			});
+
+			document.addEventListener('keydown', function (event) {
+				if (event.key === 'Escape' && popup.classList.contains('is-open')) {
+					closePopup();
+				}
+			});
 		}
 
-		popup.hidden = false;
-		window.requestAnimationFrame(function () {
-			popup.classList.add('is-open');
-			document.body.classList.add('gcm-promo-open');
-		});
-
-		popup.querySelectorAll('[data-gcm-popup-close]').forEach(function (el) {
-			el.addEventListener('click', closePopup);
-		});
-
-		document.addEventListener('keydown', function (event) {
-			if (event.key === 'Escape' && popup.classList.contains('is-open')) {
-				closePopup();
-			}
-		});
+		window.fetch(ajaxUrl + '?action=gcm_get_promo_popup&_=' + Date.now(), {
+			method: 'GET',
+			credentials: 'same-origin',
+			cache: 'no-store'
+		})
+			.then(function (response) {
+				return response.json();
+			})
+			.then(function (payload) {
+				if (payload && payload.success && payload.data) {
+					showPopup(payload.data);
+				}
+			})
+			.catch(function () {
+				/* ignore popup fetch failures */
+			});
 	}
 
 	document.addEventListener('DOMContentLoaded', function () {

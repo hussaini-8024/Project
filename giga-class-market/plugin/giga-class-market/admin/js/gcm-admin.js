@@ -115,6 +115,10 @@
 		$.post(gcmAdmin.ajaxUrl, $form.serialize())
 			.done(function (response) {
 				$message.text(response.data && response.data.message ? response.data.message : 'Settings saved.');
+				// Purge StackCDN/page cache so logged-out visitors see the new banner/settings.
+				$.get(gcmAdmin.ajaxUrl, { action: 'purge-all' }).always(function () {
+					$.get(gcmAdmin.ajaxUrl, { action: 'purge_all' });
+				});
 			})
 			.fail(function (xhr) {
 				var message = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : 'Settings could not be saved.';

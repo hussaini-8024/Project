@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.7.2' );
+define( 'GCM_THEME_VERSION', '1.7.3' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -59,6 +59,12 @@ add_action( 'after_setup_theme', 'gcm_theme_setup' );
  * Enqueue theme assets.
  */
 function gcm_enqueue_assets() {
+	$asset_ver = GCM_THEME_VERSION;
+	$bust      = get_option( 'gcm_cache_bust', '' );
+	if ( $bust ) {
+		$asset_ver .= '.' . preg_replace( '/[^0-9]/', '', (string) $bust );
+	}
+
 	wp_enqueue_style(
 		'gcm-fonts',
 		'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Outfit:wght@500;600;700;800&display=swap',
@@ -70,7 +76,7 @@ function gcm_enqueue_assets() {
 		'gcm-main',
 		GCM_THEME_URI . '/assets/css/main.css',
 		array( 'gcm-fonts' ),
-		GCM_THEME_VERSION
+		$asset_ver
 	);
 
 	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) || is_page_template( 'page-templates/template-teacher-dashboard.php' ) ) {
@@ -78,7 +84,7 @@ function gcm_enqueue_assets() {
 			'gcm-dashboard',
 			GCM_THEME_URI . '/assets/css/dashboard.css',
 			array( 'gcm-main' ),
-			GCM_THEME_VERSION
+			$asset_ver
 		);
 	}
 
@@ -86,7 +92,7 @@ function gcm_enqueue_assets() {
 		'gcm-slider',
 		GCM_THEME_URI . '/assets/js/slider.js',
 		array(),
-		GCM_THEME_VERSION,
+		$asset_ver,
 		true
 	);
 
@@ -94,7 +100,7 @@ function gcm_enqueue_assets() {
 		'gcm-main',
 		GCM_THEME_URI . '/assets/js/main.js',
 		array( 'gcm-slider' ),
-		GCM_THEME_VERSION,
+		$asset_ver,
 		true
 	);
 
@@ -102,10 +108,10 @@ function gcm_enqueue_assets() {
 		'gcm-main',
 		'gcmTheme',
 		array(
-			'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-			'contactNonce' => wp_create_nonce( 'gcm_contact_nonce' ),
+			'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+			'contactNonce'  => wp_create_nonce( 'gcm_contact_nonce' ),
 			'progressNonce' => wp_create_nonce( 'gcm_progress_nonce' ),
-			'i18n'         => array(
+			'i18n'          => array(
 				'sending' => __( 'Sending...', 'giga-class-market' ),
 				'sent'    => __( 'Thank you. We will contact you shortly.', 'giga-class-market' ),
 				'error'   => __( 'Something went wrong. Please try again.', 'giga-class-market' ),
