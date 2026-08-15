@@ -34,28 +34,22 @@ class GCM_Data_Cleanup_Service {
 
 		$prefix = $wpdb->prefix;
 
-		// Collect student user IDs before deleting related rows.
-		$student_ids = get_users(
-			array(
-				'role'   => 'gcm_student',
-				'fields' => 'ID',
-				'number' => 9999,
+		// Collect student user IDs the same way the Students admin list does.
+		$cap_key     = $wpdb->prefix . 'capabilities';
+		$student_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value LIKE %s",
+				$cap_key,
+				'%"gcm_student"%'
 			)
 		);
-		$student_ids = array_map( 'absint', (array) $student_ids );
-
-		// Also include users flagged as GCM students.
-		$meta_students = get_users(
-			array(
-				'meta_key'   => 'gcm_is_student',
-				'meta_value' => '1',
-				'fields'     => 'ID',
-				'number'     => 9999,
+		$meta_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+				'gcm_is_student'
 			)
 		);
-		foreach ( (array) $meta_students as $uid ) {
-			$student_ids[] = absint( $uid );
-		}
+		$student_ids = array_map( 'absint', array_merge( (array) $student_ids, (array) $meta_ids ) );
 		$student_ids = array_values( array_unique( array_filter( $student_ids ) ) );
 
 		// Delete payment screenshot private files when present.
@@ -91,16 +85,32 @@ class GCM_Data_Cleanup_Service {
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 
 		$students_deleted = 0;
+		$current_id       = get_current_user_id();
 		foreach ( $student_ids as $user_id ) {
+			if ( (int) $user_id === (int) $current_id ) {
+				continue;
+			}
 			$user = get_userdata( $user_id );
 			if ( ! $user ) {
 				continue;
 			}
 			// Never delete administrators or teachers.
-			if ( user_can( $user_id, 'manage_options' ) || in_array( 'gcm_teacher', (array) $user->roles, true ) || in_array( 'administrator', (array) $user->roles, true ) ) {
+			$roles = (array) $user->roles;
+			if ( user_can( $user_id, 'manage_options' ) || in_array( 'administrator', $roles, true ) || in_array( 'gcm_teacher', $roles, true ) ) {
+				// Strip student flag/role from privileged accounts instead of deleting.
+				$user->remove_role( 'gcm_student' );
+				delete_user_meta( $user_id, 'gcm_is_student' );
 				continue;
 			}
-			if ( wp_delete_user( $user_id ) ) {
+
+			$deleted = wp_delete_user( $user_id );
+			if ( ! $deleted ) {
+				// Fallback: remove role + capabilities student flag, then force-delete user row.
+				$user->remove_role( 'gcm_student' );
+				delete_user_meta( $user_id, 'gcm_is_student' );
+				$deleted = wp_delete_user( $user_id, 1 );
+			}
+			if ( $deleted ) {
 				++$students_deleted;
 			}
 		}
