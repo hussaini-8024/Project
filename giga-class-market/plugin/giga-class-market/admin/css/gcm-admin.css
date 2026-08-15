@@ -1,0 +1,197 @@
+.gcm-admin-wrap {
+	--gcm-navy: #0b1f3a;
+	--gcm-gold: #d4af37;
+	--gcm-soft: #f7f4ea;
+}
+
+.gcm-admin-wrap h1 {
+	color: var(--gcm-navy);
+	font-weight: 700;
+}
+
+.gcm-stat-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 18px;
+	margin: 22px 0;
+}
+
+.gcm-stat-card,
+.gcm-admin-panel,
+.gcm-tab {
+	background: #fff;
+	border: 1px solid #e7e1d1;
+	border-radius: 14px;
+	box-shadow: 0 10px 30px rgba(11, 31, 58, 0.08);
+	padding: 20px;
+}
+
+.gcm-stat-card {
+	background: linear-gradient(135deg, var(--gcm-navy), #123a67);
+	color: #fff;
+	position: relative;
+	overflow: hidden;
+}
+
+.gcm-stat-card::after {
+	background: var(--gcm-gold);
+	border-radius: 999px;
+	content: "";
+	height: 80px;
+	opacity: 0.18;
+	position: absolute;
+	right: -24px;
+	top: -24px;
+	width: 80px;
+}
+
+.gcm-stat-card span {
+	display: block;
+	font-size: 13px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.gcm-stat-card strong {
+	color: var(--gcm-gold);
+	display: block;
+	font-size: 34px;
+	margin-top: 8px;
+}
+
+.gcm-table {
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.gcm-table th {
+	background: var(--gcm-navy);
+	color: #fff;
+}
+
+.gcm-status {
+	border-radius: 999px;
+	display: inline-block;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 4px 10px;
+}
+
+.gcm-status-approved,
+.gcm-status-resolved,
+.gcm-status-active {
+	background: #e6f7ec;
+	color: #136f2d;
+}
+
+.gcm-status-under_review,
+.gcm-status-pending,
+.gcm-status-new,
+.gcm-status-in_progress {
+	background: #fff6da;
+	color: #8a6400;
+}
+
+.gcm-status-rejected,
+.gcm-status-frozen {
+	background: #ffe7e7;
+	color: #a31414;
+}
+
+.gcm-tabs {
+	display: flex;
+	gap: 8px;
+	margin: 18px 0;
+}
+
+.gcm-tabs a {
+	background: #fff;
+	border: 1px solid #e7e1d1;
+	border-radius: 999px;
+	color: var(--gcm-navy);
+	padding: 9px 16px;
+	text-decoration: none;
+}
+
+.gcm-tabs a.active {
+	background: var(--gcm-navy);
+	color: var(--gcm-gold);
+}
+
+.gcm-tab {
+	display: none;
+	margin-bottom: 18px;
+	max-width: 900px;
+}
+
+.gcm-tab.active {
+	display: block;
+}
+
+.gcm-tab label,
+.gcm-admin-panel label {
+	display: block;
+	font-weight: 600;
+	margin: 12px 0;
+}
+
+.gcm-tab input[type="text"],
+.gcm-tab input[type="email"],
+.gcm-tab input[type="number"],
+.gcm-tab textarea,
+.gcm-admin-panel input[type="text"],
+.gcm-admin-panel textarea {
+	display: block;
+	margin-top: 6px;
+	max-width: 560px;
+	width: 100%;
+}
+
+.gcm-form-message {
+	color: var(--gcm-navy);
+	font-weight: 700;
+	margin-left: 10px;
+}
+
+.gcm-meta-grid label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.gcm-student-courses {
+	margin: 0;
+	padding-left: 1.1rem;
+}
+
+.gcm-student-courses li {
+	margin-bottom: 0.45rem;
+}
+
+.gcm-status {
+	display: inline-block;
+	margin-left: 0.35rem;
+	padding: 0.1rem 0.45rem;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	background: #eef2f7;
+	color: #0b1f3a;
+}
+
+.gcm-status-active,
+.gcm-status-completed {
+	background: #e8f6ee;
+	color: #0f6b3c;
+}
+
+.gcm-status-frozen,
+.gcm-status-rejected {
+	background: #fdecec;
+	color: #9b1c1c;
+}
+
+.gcm-status-under_review {
+	background: #fff6df;
+	color: #8a6d1d;
+}
