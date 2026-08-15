@@ -983,17 +983,20 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 
 .gcm-testimonial-card__person img,
 .gcm-avatar-placeholder {
-	width: 56px;
-	height: 56px;
+	width: 72px;
+	height: 72px;
 	border-radius: 50%;
 	object-fit: cover;
+	object-position: center top;
 	flex-shrink: 0;
-	box-shadow: 0 0 0 3px rgba(201,162,39,0.28);
+	box-shadow:
+		0 0 0 3px rgba(201,162,39,0.34),
+		0 8px 18px rgba(13, 59, 69, 0.16);
 }
 
 .gcm-avatar-placeholder {
-	font-size: 1rem;
-	min-height: 56px;
+	font-size: 1.05rem;
+	min-height: 72px;
 }
 
 .gcm-testimonial-card__person span {

@@ -84,34 +84,14 @@ get_template_part( 'template-parts/home/hero-slider' );
 				endwhile;
 				wp_reset_postdata();
 			else :
-				$defaults = array(
-					array(
-						'name'  => __( 'Ayesha Khan', 'giga-class-market' ),
-						'role'  => __( 'Networking Student', 'giga-class-market' ),
-						'quote' => __( 'The learning experience feels polished, clear, and genuinely premium. I knew exactly what to study next.', 'giga-class-market' ),
-					),
-					array(
-						'name'  => __( 'Omar Farooq', 'giga-class-market' ),
-						'role'  => __( 'Cyber Security Learner', 'giga-class-market' ),
-						'quote' => __( 'Giga Class Market helped me build practical confidence with elegant lessons and real project direction.', 'giga-class-market' ),
-					),
-					array(
-						'name'  => __( 'Sara Ali', 'giga-class-market' ),
-						'role'  => __( 'Web Development Student', 'giga-class-market' ),
-						'quote' => __( 'The course structure made advanced concepts approachable without feeling watered down.', 'giga-class-market' ),
-					),
-				);
+				$defaults = function_exists( 'gcm_default_student_reviews' ) ? gcm_default_student_reviews() : array();
 				foreach ( $defaults as $item ) :
-					$initials = '';
-					foreach ( explode( ' ', $item['name'] ) as $part ) {
-						$initials .= mb_substr( $part, 0, 1 );
-					}
 					?>
 					<article class="gcm-testimonial-card gcm-animate">
 						<div class="gcm-testimonial-card__stars" aria-label="<?php esc_attr_e( 'Five star review', 'giga-class-market' ); ?>">★★★★★</div>
 						<blockquote><?php echo esc_html( $item['quote'] ); ?></blockquote>
 						<div class="gcm-testimonial-card__person">
-							<span class="gcm-avatar-placeholder" aria-hidden="true"><?php echo esc_html( $initials ); ?></span>
+							<img src="<?php echo esc_url( $item['url'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" width="72" height="72" loading="lazy" decoding="async" />
 							<div>
 								<strong><?php echo esc_html( $item['name'] ); ?></strong>
 								<span><?php echo esc_html( $item['role'] ); ?></span>

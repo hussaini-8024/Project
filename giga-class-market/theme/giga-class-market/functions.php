@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.7.7' );
+define( 'GCM_THEME_VERSION', '1.7.8' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -254,6 +254,166 @@ function gcm_body_classes( $classes ) {
 	return $classes;
 }
 add_filter( 'body_class', 'gcm_body_classes' );
+
+/**
+ * Default student review avatars bundled with the theme.
+ *
+ * @return array[] List of name, role, quote, file, alt.
+ */
+function gcm_default_student_reviews() {
+	$base = GCM_THEME_URI . '/assets/images/testimonials';
+
+	return array(
+		array(
+			'name'  => __( 'Ayesha Khan', 'giga-class-market' ),
+			'role'  => __( 'Networking Student', 'giga-class-market' ),
+			'quote' => __( 'The learning experience feels polished, clear, and genuinely premium. I knew exactly what to study next.', 'giga-class-market' ),
+			'file'  => 'ayesha-khan.jpg',
+			'url'   => $base . '/ayesha-khan.jpg',
+		),
+		array(
+			'name'  => __( 'Omar Farooq', 'giga-class-market' ),
+			'role'  => __( 'Cyber Security Learner', 'giga-class-market' ),
+			'quote' => __( 'Giga Class Market helped me build practical confidence with elegant lessons and real project direction.', 'giga-class-market' ),
+			'file'  => 'omar-farooq.jpg',
+			'url'   => $base . '/omar-farooq.jpg',
+		),
+		array(
+			'name'  => __( 'Sara Ali', 'giga-class-market' ),
+			'role'  => __( 'Web Development Student', 'giga-class-market' ),
+			'quote' => __( 'The course structure made advanced concepts approachable without feeling watered down.', 'giga-class-market' ),
+			'file'  => 'sara-ali.jpg',
+			'url'   => $base . '/sara-ali.jpg',
+		),
+	);
+}
+
+/**
+ * Resolve a student avatar URL for a review card.
+ *
+ * @param string $name  Student name.
+ * @param int    $index Fallback index.
+ * @return string
+ */
+function gcm_student_review_avatar_url( $name = '', $index = 0 ) {
+	$reviews = gcm_default_student_reviews();
+	$name_l  = strtolower( trim( (string) $name ) );
+
+	foreach ( $reviews as $review ) {
+		if ( $name_l && strtolower( $review['name'] ) === $name_l ) {
+			return $review['url'];
+		}
+	}
+
+	$index = absint( $index ) % max( 1, count( $reviews ) );
+	return $reviews[ $index ]['url'];
+}
+
+/**
+ * Sideload a local theme image into the media library.
+ *
+ * @param string $absolute_path Absolute file path.
+ * @param int    $parent_id     Parent post ID.
+ * @param string $title         Attachment title.
+ * @return int Attachment ID.
+ */
+function gcm_sideload_theme_image( $absolute_path, $parent_id = 0, $title = '' ) {
+	if ( ! file_exists( $absolute_path ) || ! is_readable( $absolute_path ) ) {
+		return 0;
+	}
+
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+
+	$tmp = wp_tempnam( basename( $absolute_path ) );
+	if ( ! $tmp || ! copy( $absolute_path, $tmp ) ) {
+		return 0;
+	}
+
+	$file_array = array(
+		'name'     => basename( $absolute_path ),
+		'tmp_name' => $tmp,
+	);
+
+	$attachment_id = media_handle_sideload( $file_array, absint( $parent_id ), $title );
+	if ( is_wp_error( $attachment_id ) ) {
+		@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		return 0;
+	}
+
+	return (int) $attachment_id;
+}
+
+/**
+ * Ensure homepage student reviews exist with realistic photos.
+ *
+ * @return void
+ */
+function gcm_maybe_seed_student_reviews() {
+	if ( get_option( 'gcm_student_reviews_seeded_v1' ) ) {
+		return;
+	}
+
+	if ( ! post_type_exists( 'gcm_testimonial' ) ) {
+		return;
+	}
+
+	$reviews = gcm_default_student_reviews();
+	$existing = get_posts(
+		array(
+			'post_type'      => 'gcm_testimonial',
+			'post_status'    => array( 'publish', 'draft' ),
+			'posts_per_page' => 20,
+			'orderby'        => 'date',
+			'order'          => 'ASC',
+		)
+	);
+
+	// If testimonials already exist, only backfill missing featured images.
+	if ( ! empty( $existing ) ) {
+		foreach ( array_values( $existing ) as $i => $post ) {
+			if ( has_post_thumbnail( $post->ID ) ) {
+				continue;
+			}
+			$review = $reviews[ $i % count( $reviews ) ];
+			$path   = GCM_THEME_DIR . '/assets/images/testimonials/' . $review['file'];
+			$att_id = gcm_sideload_theme_image( $path, $post->ID, $review['name'] );
+			if ( $att_id ) {
+				set_post_thumbnail( $post->ID, $att_id );
+			}
+		}
+		update_option( 'gcm_student_reviews_seeded_v1', 1, false );
+		return;
+	}
+
+	foreach ( $reviews as $review ) {
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => 'gcm_testimonial',
+				'post_status'  => 'publish',
+				'post_title'   => $review['name'],
+				'post_content' => $review['quote'],
+				'post_excerpt' => $review['quote'],
+			),
+			true
+		);
+		if ( is_wp_error( $post_id ) || ! $post_id ) {
+			continue;
+		}
+		update_post_meta( $post_id, '_gcm_role', $review['role'] );
+		update_post_meta( $post_id, '_gcm_rating', 5 );
+		$path   = GCM_THEME_DIR . '/assets/images/testimonials/' . $review['file'];
+		$att_id = gcm_sideload_theme_image( $path, $post_id, $review['name'] );
+		if ( $att_id ) {
+			set_post_thumbnail( $post_id, $att_id );
+		}
+	}
+
+	update_option( 'gcm_student_reviews_seeded_v1', 1, false );
+}
+add_action( 'admin_init', 'gcm_maybe_seed_student_reviews' );
+add_action( 'after_switch_theme', 'gcm_maybe_seed_student_reviews' );
 
 /**
  * Meta lookup with alternate key support.
