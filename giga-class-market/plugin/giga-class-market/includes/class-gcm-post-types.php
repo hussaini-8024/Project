@@ -475,7 +475,11 @@ class GCM_Post_Types {
 	}
 
 	/**
-	 * Block publishing a course without a thumbnail image.
+	 * Allow course publish even when thumbnail timing is ambiguous.
+	 *
+	 * The block editor attaches featured media AFTER wp_insert_post_data runs, so
+	 * forcing draft here incorrectly blocked Publish. Thumbnail is encouraged via
+	 * admin notices instead of silently demoting to draft.
 	 *
 	 * @param array $data    Sanitized post data.
 	 * @param array $postarr Raw post data.
@@ -486,12 +490,21 @@ class GCM_Post_Types {
 			return $data;
 		}
 
-		if ( 'publish' !== $data['post_status'] ) {
+		if ( 'publish' !== ( $data['post_status'] ?? '' ) ) {
+			return $data;
+		}
+
+		// Block/REST editor sets featured_media after this filter — never demote those saves.
+		if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
 			return $data;
 		}
 
 		$post_id = isset( $postarr['ID'] ) ? absint( $postarr['ID'] ) : 0;
 		$thumb   = 0;
+
+		if ( isset( $postarr['_thumbnail_id'] ) ) {
+			$thumb = absint( $postarr['_thumbnail_id'] );
+		}
 
 		if ( isset( $_POST['_thumbnail_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$thumb = absint( wp_unslash( $_POST['_thumbnail_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -501,15 +514,30 @@ class GCM_Post_Types {
 			$thumb = (int) get_post_thumbnail_id( $post_id );
 		}
 
-		// -1 means "remove featured image" in classic editor.
-		if ( $thumb > 0 ) {
-			return $data;
+		// Classic editor: still guide editors, but do not force draft — Publish must stick.
+		if ( $thumb <= 0 ) {
+			set_transient( 'gcm_course_thumb_required_' . get_current_user_id(), 1, 90 );
 		}
 
-		$data['post_status'] = 'draft';
-		set_transient( 'gcm_course_thumb_required_' . get_current_user_id(), 1, 90 );
-
 		return $data;
+	}
+
+	/**
+	 * After REST insert/update, remind if a published course has no thumbnail.
+	 *
+	 * @param WP_Post         $post     Post.
+	 * @param WP_REST_Request $request  Request.
+	 * @param bool            $creating Creating.
+	 * @return void
+	 */
+	public function remind_thumbnail_after_rest( $post, $request, $creating ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+		if ( ! $post instanceof WP_Post || 'gcm_course' !== $post->post_type || 'publish' !== $post->post_status ) {
+			return;
+		}
+
+		if ( ! has_post_thumbnail( $post->ID ) ) {
+			set_transient( 'gcm_course_thumb_required_' . get_current_user_id(), 1, 90 );
+		}
 	}
 
 	/**
@@ -526,8 +554,8 @@ class GCM_Post_Types {
 		$user_id = get_current_user_id();
 		if ( get_transient( 'gcm_course_thumb_required_' . $user_id ) ) {
 			delete_transient( 'gcm_course_thumb_required_' . $user_id );
-			echo '<div class="notice notice-error is-dismissible"><p>';
-			echo esc_html__( 'Course not published: please set a Course Thumbnail image first, then publish again. The thumbnail is shown on the website course cards and course page.', 'giga-class-market' );
+			echo '<div class="notice notice-warning is-dismissible"><p>';
+			echo esc_html__( 'Tip: add a Course Thumbnail (sidebar) so this course shows an image on the website course cards and course page.', 'giga-class-market' );
 			echo '</p></div>';
 		}
 
