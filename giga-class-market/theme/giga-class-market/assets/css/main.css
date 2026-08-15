@@ -283,6 +283,18 @@ textarea {
 	justify-content: flex-end;
 }
 
+.gcm-header-link {
+	color: var(--gcm-muted);
+	font-size: 0.92rem;
+	font-weight: 600;
+	white-space: nowrap;
+	transition: color 180ms ease;
+}
+
+.gcm-header-link:hover {
+	color: var(--gcm-gold);
+}
+
 .gcm-theme-toggle,
 .gcm-nav-toggle {
 	border: 0;
@@ -319,7 +331,6 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	display: none;
 	background: transparent;
 	padding: 0.5rem;
-	margin-left: auto;
 }
 
 .gcm-nav-toggle span:not(.screen-reader-text) {
@@ -1708,8 +1719,10 @@ textarea {
 @media (max-width: 1024px) {
 	.gcm-nav-toggle {
 		display: block;
-		order: 3;
-		margin-left: auto;
+		order: 1;
+		margin-left: 0;
+		margin-right: 0.15rem;
+		flex-shrink: 0;
 	}
 
 	.gcm-header__inner {
@@ -1717,13 +1730,15 @@ textarea {
 	}
 
 	.gcm-brand {
-		order: 1;
+		order: 2;
+		min-width: 0;
 	}
 
 	.gcm-header__actions {
-		order: 2;
-		margin-left: 0;
-		margin-right: 0.35rem;
+		order: 3;
+		margin-left: auto;
+		margin-right: 0;
+		flex-shrink: 0;
 	}
 
 	.gcm-primary-nav {
@@ -1843,6 +1858,11 @@ textarea {
 		font-size: 0.85rem;
 	}
 
+	.gcm-header-link,
+	.gcm-verify-link {
+		font-size: 0.78rem;
+	}
+
 	.gcm-logout-link {
 		display: inline-flex !important;
 	}
@@ -1953,6 +1973,16 @@ textarea {
 }
 
 /* —— Premium certificate + verification —— */
+.gcm-verify-link {
+	font-weight: 700;
+	color: var(--gcm-muted);
+	letter-spacing: 0.01em;
+}
+
+.gcm-verify-link:hover {
+	color: var(--gcm-gold);
+}
+
 .gcm-page-hero--verify {
 	background:
 		radial-gradient(circle at 80% 15%, rgba(224,160,69,0.2), transparent 32%),
