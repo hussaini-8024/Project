@@ -222,15 +222,21 @@ class LinuxRuntime:
         if (merged / "etc").exists():
             self._write_guest_files(merged, spec)
 
+    def _live_addr(self, ref: str) -> str:
+        shown = _sudo(
+            ["ip", "netns", "exec", self.ns_name(ref), "ip", "-4", "addr", "show", "dev", "eth0"],
+            check=False,
+        )
+        return shown.stdout or ""
+
     def start(self, spec: GuestSpec) -> None:
-        previous = self.load_spec(spec.ref)
         self.save_spec(spec)
         if self.running(spec.ref):
-            if previous and (previous.ipv4 != spec.ipv4 or previous.cidr != spec.cidr):
-                self.stop(spec.ref)
-            else:
+            live = self._live_addr(spec.ref)
+            if cidr_addr(spec.ipv4, spec.cidr) in live:
                 self.refresh_hosts(spec)
                 return
+            self.stop(spec.ref)
         bridge = self.bridge_name(spec.lab_key, spec.bridge)
         gateway = gateway_ip(spec.cidr)
         self._bridge_up(bridge, gateway, spec.cidr)
