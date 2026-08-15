@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.9.4' );
+define( 'GCM_THEME_VERSION', '1.9.3' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -876,91 +876,3 @@ function gcm_user_can_access_course( $course_id, $user_id = 0 ) {
 
 	return (bool) gcm_service_call( 'GCM_Enrollment_Service', 'is_enrolled', array( $user_id, $course_id ), false );
 }
-
-/**
- * Absolute path to the public platform guide PDF.
- *
- * @return string
- */
-function gcm_platform_guide_pdf_path() {
-	return trailingslashit( GCM_THEME_DIR ) . 'assets/docs/Giga-Class-Market-Platform-Guide.pdf';
-}
-
-/**
- * Public download URL for the platform guide PDF.
- *
- * @return string
- */
-function gcm_platform_guide_download_url() {
-	return home_url( '/platform-guide.pdf' );
-}
-
-/**
- * Register pretty download rewrite for the platform guide.
- *
- * @return void
- */
-function gcm_register_platform_guide_rewrite() {
-	add_rewrite_rule( '^platform-guide\.pdf$', 'index.php?gcm_platform_guide=1', 'top' );
-	add_rewrite_tag( '%gcm_platform_guide%', '1' );
-}
-add_action( 'init', 'gcm_register_platform_guide_rewrite' );
-
-/**
- * Flush rewrite rules once after theme update that adds platform-guide.pdf.
- *
- * @return void
- */
-function gcm_maybe_flush_platform_guide_rewrites() {
-	$flag = 'gcm_platform_guide_rewrite_v1';
-	if ( get_option( $flag ) ) {
-		return;
-	}
-	flush_rewrite_rules( false );
-	update_option( $flag, 1, false );
-}
-add_action( 'init', 'gcm_maybe_flush_platform_guide_rewrites', 99 );
-
-/**
- * Serve the platform guide PDF as a downloadable attachment.
- *
- * @return void
- */
-function gcm_serve_platform_guide_pdf() {
-	$wants = false;
-	if ( isset( $_GET['gcm_download'] ) && 'platform-guide' === sanitize_key( wp_unslash( $_GET['gcm_download'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$wants = true;
-	}
-	if ( get_query_var( 'gcm_platform_guide' ) ) {
-		$wants = true;
-	}
-	$request_path = isset( $_SERVER['REQUEST_URI'] ) ? wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	$request_path = is_string( $request_path ) ? untrailingslashit( $request_path ) : '';
-	if ( $request_path && substr( $request_path, -18 ) === '/platform-guide.pdf' ) {
-		$wants = true;
-	}
-	if ( '/platform-guide.pdf' === $request_path ) {
-		$wants = true;
-	}
-	if ( ! $wants ) {
-		return;
-	}
-
-	$file = gcm_platform_guide_pdf_path();
-	if ( ! is_readable( $file ) ) {
-		status_header( 404 );
-		nocache_headers();
-		wp_die( esc_html__( 'Platform guide is temporarily unavailable.', 'giga-class-market' ), 404 );
-	}
-
-	$filename = 'Giga-Class-Market-Platform-Guide.pdf';
-	nocache_headers();
-	header( 'Content-Type: application/pdf' );
-	header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
-	header( 'Content-Length: ' . (string) filesize( $file ) );
-	header( 'X-Content-Type-Options: nosniff' );
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-	readfile( $file );
-	exit;
-}
-add_action( 'template_redirect', 'gcm_serve_platform_guide_pdf', 0 );
