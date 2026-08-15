@@ -24,7 +24,10 @@ export function Lab() {
         <div className="card p-4">
           <div className="text-xs text-slate-400">Isolation</div>
           <div className="mt-1">{data?.network?.isolated ? "Strict — no lab-to-lab traffic" : "Peered"}</div>
-          <div className="text-xs text-slate-500">Other student labs are unreachable</div>
+          <div className="text-xs text-slate-500">
+            Other student labs are unreachable. Ping lab peers by IP or hostname (for example{" "}
+            <span className="font-mono">ping dvwa-target</span>).
+          </div>
         </div>
         <div className="card p-4">
           <div className="text-xs text-slate-400">Internet</div>

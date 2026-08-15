@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     threshold_block: int = 90
 
     # Provider: mock for development, hybrid/live for production
-    compute_provider: Literal["mock", "docker", "libvirt", "hybrid"] = "mock"
+    compute_provider: Literal["auto", "mock", "namespace", "docker", "libvirt", "hybrid"] = "auto"
     docker_socket: str = "unix:///var/run/docker.sock"
     libvirt_uri: str = "qemu:///system"
 

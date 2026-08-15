@@ -12,6 +12,7 @@ from app.models import (
     Assignment,
     AssignmentStatus,
     AssignmentSubmission,
+    Machine,
     MachineKind,
     MachineTemplate,
     Role,
@@ -100,6 +101,14 @@ def start_assignment(assignment_id: str, user: User = Depends(current_user), db:
     for slug in a.required_templates:
         tmpl = db.query(MachineTemplate).filter(MachineTemplate.slug == slug).first()
         if not tmpl:
+            continue
+        existing = (
+            db.query(Machine)
+            .filter(Machine.owner_id == user.id, Machine.template_id == tmpl.id)
+            .first()
+        )
+        if existing:
+            created.append(existing.public_id)
             continue
         m, _ = create_machine(
             db,

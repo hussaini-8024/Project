@@ -70,7 +70,9 @@ Open http://localhost:5173 and sign in as `student`.
 - API docs: http://localhost:8000/docs
 - Health: http://localhost:8000/api/health
 
-Development uses SQLite (`backend/data/cyberrange.db`) and `COMPUTE_PROVIDER=mock`.
+Development uses SQLite (`backend/data/cyberrange.db`) and `COMPUTE_PROVIDER=auto`.
+
+Linux terminals are **real shells** inside isolated guests (Alpine userspace + Linux network namespaces). Machines in the same student lab share a private bridge, so `ping dvwa-target` and `ping 10.142.0.3` work. Other student labs stay unreachable.
 
 ---
 

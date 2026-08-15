@@ -5,6 +5,10 @@ from app.providers.mock import MockProvider
 
 def get_provider() -> ComputeProvider:
     settings = get_settings()
+    if settings.compute_provider in ("auto", "namespace"):
+        from app.providers.namespace import NamespaceProvider
+
+        return NamespaceProvider()
     if settings.compute_provider == "docker":
         from app.providers.docker_provider import DockerProvider
 

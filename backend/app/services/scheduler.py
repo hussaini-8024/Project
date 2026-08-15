@@ -3,16 +3,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.config import get_settings
 from app.models import (
     ComputeNode,
+    LabNetwork,
     Machine,
     MachineKind,
     MachineStatus,
     MachineTemplate,
+    NetworkInterface,
     QuotaProfile,
+    StudentLab,
     User,
 )
 from app.providers import get_provider
@@ -199,6 +202,16 @@ def start_machine(db: Session, machine: Machine, user: User) -> ScheduleDecision
     machine.status = MachineStatus.STARTING
     machine.node_id = decision.node_id
     db.commit()
+    machine = (
+        db.query(Machine)
+        .options(
+            joinedload(Machine.lab).joinedload(StudentLab.network).joinedload(LabNetwork.interfaces).joinedload(NetworkInterface.machine),
+            joinedload(Machine.interfaces),
+            joinedload(Machine.template),
+        )
+        .filter(Machine.id == machine.id)
+        .one()
+    )
     provider = get_provider()
     result = provider.start(machine.provider_ref or machine.public_id, machine.kind.value)
     if not result.ok:
@@ -207,6 +220,17 @@ def start_machine(db: Session, machine: Machine, user: User) -> ScheduleDecision
         db.commit()
         decision.allowed = False
         decision.reason = result.message
+        return decision
+    try:
+        from app.services.guest import provision_guest
+
+        provision_guest(machine)
+    except Exception as exc:
+        machine.status = MachineStatus.ERROR
+        machine.error_message = str(exc)[:500]
+        db.commit()
+        decision.allowed = False
+        decision.reason = str(exc)
         return decision
     machine.status = MachineStatus.RUNNING
     machine.last_started_at = datetime.utcnow()

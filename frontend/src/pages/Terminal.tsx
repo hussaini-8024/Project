@@ -35,7 +35,14 @@ export function Terminal() {
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(data);
     });
-    const onResize = () => tryFit();
+    const sendResize = () => {
+      tryFit();
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+      }
+    };
+    ws.onopen = () => sendResize();
+    const onResize = () => sendResize();
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
@@ -49,7 +56,8 @@ export function Terminal() {
       <div>
         <h1 className="text-2xl font-semibold">Browser terminal</h1>
         <p className="text-sm text-slate-400">
-          HTTPS/WSS → terminal gateway → student container/VM. The virtualization host is not reachable.
+          Real Linux shell inside your isolated guest. Ping other machines on your lab network by IP or hostname.
+          The virtualization host and other student labs are not reachable.
         </p>
       </div>
       <div className="card overflow-hidden p-2">

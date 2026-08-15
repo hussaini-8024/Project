@@ -10,10 +10,13 @@ from jose import JWTError
 from sqlalchemy.orm import joinedload
 
 from app.database import SessionLocal
-from app.models import ConsoleSession, Machine, Role, TerminalSession, User
+from app.models import ConsoleSession, LabNetwork, Machine, NetworkInterface, Role, StudentLab, TerminalSession, User
+from app.runtime.linux import get_runtime
+from app.runtime.pty import PtySession
 from app.security import decode_token
 from app.services import audit
 from app.services.capacity import occupancy, sample_host
+from app.services.guest import provision_guest
 
 router = APIRouter(tags=["websockets"])
 
@@ -102,7 +105,10 @@ async def terminal(ws: WebSocket, machine_id: str) -> None:
     db = SessionLocal()
     machine = (
         db.query(Machine)
-        .options(joinedload(Machine.lab))
+        .options(
+            joinedload(Machine.lab).joinedload(StudentLab.network).joinedload(LabNetwork.interfaces).joinedload(NetworkInterface.machine),
+            joinedload(Machine.interfaces),
+        )
         .filter((Machine.id == machine_id) | (Machine.public_id == machine_id))
         .first()
     )
@@ -112,8 +118,17 @@ async def terminal(ws: WebSocket, machine_id: str) -> None:
         return
     name = machine.name
     public_id = machine.public_id
-    kind = machine.kind.value
+    ref = machine.provider_ref or machine.public_id
     lab_public = machine.lab.public_id if machine.lab else ""
+    try:
+        provision_guest(machine)
+        argv = get_runtime().shell_command(ref)
+    except Exception as exc:
+        db.close()
+        await ws.accept()
+        await ws.send_text(f"\r\nUnable to attach Linux guest: {exc}\r\n")
+        await ws.close()
+        return
     sess = TerminalSession(user_id=user.id, machine_id=machine.id)
     db.add(sess)
     audit.record(
@@ -127,50 +142,45 @@ async def terminal(ws: WebSocket, machine_id: str) -> None:
     db.commit()
     db.close()
     await ws.accept()
-    banner = (
-        f"\r\n\x1b[36mUniversity Cyber Range\x1b[0m — isolated lab terminal\r\n"
-        f"Machine: {name} ({public_id})  Kind: {kind}\r\n"
-        f"This session is proxied through the terminal gateway. "
-        f"The virtualization host is not reachable.\r\n"
-        f"Security testing is limited to your own laboratory.\r\n\r\n"
-        f"{name.lower().replace(' ', '-')}$ "
-    )
-    await ws.send_text(banner)
-    buffer = ""
+    pty = PtySession(argv)
+    pty.resize(120, 32)
+    stop = asyncio.Event()
+
+    async def on_output(text: str) -> None:
+        try:
+            await ws.send_text(text)
+        except Exception:
+            stop.set()
+
+    loop = asyncio.get_running_loop()
+
+    def _ready() -> None:
+        data = pty.read()
+        if data:
+            loop.create_task(on_output(data.decode("utf-8", errors="replace")))
+
+    loop.add_reader(pty.master_fd, _ready)
     try:
         while True:
-            data = await ws.receive_text()
-            if data in ("\r", "\n"):
-                cmd = buffer.strip()
-                buffer = ""
-                reply = _simulate_shell(cmd, name)
-                await ws.send_text(f"\r\n{reply}\r\n{name.lower().replace(' ', '-')}$ ")
-            elif data in ("\x7f", "\b"):
-                buffer = buffer[:-1]
-                await ws.send_text("\b \b")
-            else:
-                buffer += data
-                await ws.send_text(data)
+            message = await ws.receive()
+            if message.get("type") == "websocket.disconnect":
+                break
+            text = message.get("text")
+            if text is None:
+                continue
+            if text.startswith("{") and '"type":"resize"' in text:
+                try:
+                    payload = json.loads(text)
+                    pty.resize(int(payload.get("cols", 120)), int(payload.get("rows", 32)))
+                except Exception:
+                    pass
+                continue
+            pty.write(text.encode("utf-8", errors="replace"))
     except WebSocketDisconnect:
-        return
-
-
-def _simulate_shell(cmd: str, machine: str) -> str:
-    if not cmd:
-        return ""
-    if cmd in ("help", "?"):
-        return "Authorized lab shell. Commands: help, id, hostname, ip a, nmap --help, exit"
-    if cmd == "id":
-        return "uid=1000(student) gid=1000(student) groups=1000(student)"
-    if cmd == "hostname":
-        return machine.lower().replace(" ", "-")
-    if cmd.startswith("ip"):
-        return "eth0  10.lab.0.12/24  UP  isolated-namespace"
-    if cmd.startswith("nmap"):
-        return "Nmap 7.94 ( https://nmap.org )\nUsage restricted to this student lab network."
-    if cmd == "exit":
-        return "logout"
-    return f"{cmd}: executed in isolated lab namespace (training gateway)"
+        pass
+    finally:
+        loop.remove_reader(pty.master_fd)
+        pty.close()
 
 
 @router.websocket("/ws/console/{machine_id}")
