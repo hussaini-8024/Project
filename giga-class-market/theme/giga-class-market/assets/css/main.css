@@ -86,8 +86,6 @@ h4,
 .gcm-hero .gcm-hero__title,
 .gcm-dashboard-hero h1,
 .gcm-dashboard-hero h2,
-.gcm-page-hero h1,
-.gcm-page-hero h2,
 .gcm-page-hero--about h1,
 .gcm-page-hero--about h2,
 .gcm-page-hero--verify h1,
@@ -96,6 +94,12 @@ h4,
 .gcm-course-hero h2,
 .gcm-contact-cta h2 {
 	color: #fff;
+}
+
+/* Light page heroes (courses archive, contact, legal, etc.) need dark titles */
+.gcm-page-hero h1,
+.gcm-page-hero h2 {
+	color: var(--gcm-text);
 }
 
 h1 {
@@ -1038,6 +1042,11 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 		radial-gradient(circle at 85% 20%, rgba(201,162,39,0.22), transparent 30%),
 		radial-gradient(circle at 10% 80%, rgba(30,107,255,0.18), transparent 28%),
 		linear-gradient(135deg, var(--gcm-navy-deep), var(--gcm-navy));
+	color: #fff;
+}
+
+.gcm-page-hero--about h1,
+.gcm-page-hero--about h2 {
 	color: #fff;
 }
 
