@@ -28,6 +28,79 @@ class GCM_SEO {
 		add_filter( 'robots_txt', array( $this, 'filter_robots_txt' ), 10, 2 );
 		add_filter( 'wp_sitemaps_posts_query_args', array( $this, 'filter_sitemap_posts_query' ), 10, 2 );
 		add_filter( 'wp_sitemaps_add_provider', array( $this, 'filter_sitemap_providers' ), 10, 2 );
+		add_action( 'init', array( $this, 'ensure_google_verification_file' ), 5 );
+		add_action( 'template_redirect', array( $this, 'serve_google_verification_file' ), 0 );
+	}
+
+	/**
+	 * Google Search Console HTML verification filename.
+	 *
+	 * @return string
+	 */
+	public static function google_verification_filename() {
+		return 'googleba1261e92aab8d99.html';
+	}
+
+	/**
+	 * Exact body Google expects for HTML-file verification.
+	 *
+	 * @return string
+	 */
+	public static function google_verification_body() {
+		return 'google-site-verification: googleba1261e92aab8d99.html';
+	}
+
+	/**
+	 * Write the verification HTML into the WordPress root when possible.
+	 *
+	 * @return void
+	 */
+	public function ensure_google_verification_file() {
+		$filename = self::google_verification_filename();
+		$target   = trailingslashit( ABSPATH ) . $filename;
+		$body     = self::google_verification_body();
+
+		if ( file_exists( $target ) ) {
+			$current = (string) file_get_contents( $target );
+			if ( false !== strpos( $current, 'google-site-verification' ) ) {
+				return;
+			}
+		}
+
+		// Prefer copying the packaged file when present.
+		$packaged = trailingslashit( GCM_PLUGIN_DIR ) . 'public/seo/' . $filename;
+		if ( file_exists( $packaged ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy
+			@copy( $packaged, $target );
+		}
+
+		if ( ! file_exists( $target ) || false === strpos( (string) file_get_contents( $target ), 'google-site-verification' ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			@file_put_contents( $target, $body );
+		}
+	}
+
+	/**
+	 * Fallback: serve the verification file through WordPress if the root file is missing.
+	 *
+	 * @return void
+	 */
+	public function serve_google_verification_file() {
+		$filename = self::google_verification_filename();
+		$request  = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		$path     = wp_parse_url( $request, PHP_URL_PATH );
+		$path     = is_string( $path ) ? untrailingslashit( $path ) : '';
+
+		if ( '/' . $filename !== $path && $filename !== ltrim( $path, '/' ) ) {
+			return;
+		}
+
+		nocache_headers();
+		status_header( 200 );
+		header( 'Content-Type: text/html; charset=utf-8' );
+		header( 'X-Robots-Tag: noindex' );
+		echo self::google_verification_body(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		exit;
 	}
 
 	/**
