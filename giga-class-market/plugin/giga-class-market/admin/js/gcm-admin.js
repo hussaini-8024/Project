@@ -154,20 +154,18 @@
 		var $button = $(this);
 		var target = $button.data('target');
 		var preview = $button.data('preview');
+		var title = $button.data('title') || 'Select image';
 
-		if (!mediaFrame) {
-			mediaFrame = wp.media({
-				title: 'Select banner image',
-				button: { text: 'Use this image' },
-				multiple: false
-			});
-		}
+		mediaFrame = wp.media({
+			title: title,
+			button: { text: 'Use this image' },
+			multiple: false
+		});
 
-		mediaFrame.off('select');
 		mediaFrame.on('select', function () {
 			var attachment = mediaFrame.state().get('selection').first().toJSON();
 			$(target).val(attachment.id);
-			var url = (attachment.sizes && attachment.sizes.large) ? attachment.sizes.large.url : attachment.url;
+			var url = (attachment.sizes && attachment.sizes.medium) ? attachment.sizes.medium.url : ((attachment.sizes && attachment.sizes.large) ? attachment.sizes.large.url : attachment.url);
 			$(preview).addClass('has-image').html('<img src="' + url + '" alt="" />');
 		});
 
@@ -177,7 +175,8 @@
 	$(document).on('click', '.gcm-media-clear', function (event) {
 		event.preventDefault();
 		var $button = $(this);
+		var emptyLabel = $button.data('empty') || 'No image selected';
 		$($button.data('target')).val('0');
-		$($button.data('preview')).removeClass('has-image').html('<span>No banner selected</span>');
+		$($button.data('preview')).removeClass('has-image').html('<span>' + emptyLabel + '</span>');
 	});
 })(jQuery);

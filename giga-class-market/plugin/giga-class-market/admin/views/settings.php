@@ -21,6 +21,7 @@ $methods = $settings['payment']['methods'];
 			<a href="#gcm-tab-payment"><?php esc_html_e( 'Payment', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-whatsapp"><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-website"><?php esc_html_e( 'Website', 'giga-class-market' ); ?></a>
+			<a href="#gcm-tab-about"><?php esc_html_e( 'About / Team', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-course"><?php esc_html_e( 'Course', 'giga-class-market' ); ?></a>
 			<a href="#gcm-tab-zoom"><?php esc_html_e( 'Zoom', 'giga-class-market' ); ?></a>
 		</nav>
@@ -86,11 +87,63 @@ $methods = $settings['payment']['methods'];
 					<?php endif; ?>
 				</div>
 				<p>
-					<button type="button" class="button gcm-media-upload" data-target="#gcm_popup_image_id" data-preview="#gcm_popup_image_preview"><?php esc_html_e( 'Upload / select banner', 'giga-class-market' ); ?></button>
-					<button type="button" class="button gcm-media-clear" data-target="#gcm_popup_image_id" data-preview="#gcm_popup_image_preview"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
+					<button type="button" class="button gcm-media-upload" data-target="#gcm_popup_image_id" data-preview="#gcm_popup_image_preview" data-title="<?php echo esc_attr__( 'Select banner image', 'giga-class-market' ); ?>" data-empty="<?php echo esc_attr__( 'No banner selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Upload / select banner', 'giga-class-market' ); ?></button>
+					<button type="button" class="button gcm-media-clear" data-target="#gcm_popup_image_id" data-preview="#gcm_popup_image_preview" data-empty="<?php echo esc_attr__( 'No banner selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
 				</p>
 			</div>
 			<label><?php esc_html_e( 'Optional banner link URL', 'giga-class-market' ); ?><input type="url" name="settings[website][popup_link_url]" value="<?php echo esc_attr( $settings['website']['popup_link_url'] ?? '' ); ?>" placeholder="https://" /></label>
+		</section>
+
+		<section id="gcm-tab-about" class="gcm-tab">
+			<h2><?php esc_html_e( 'CEO Section', 'giga-class-market' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Shown on the About page. Upload the CEO portrait from the WordPress media library.', 'giga-class-market' ); ?></p>
+			<?php
+			$about           = isset( $settings['about'] ) && is_array( $settings['about'] ) ? $settings['about'] : array();
+			$ceo_photo_id    = absint( $about['ceo_photo_id'] ?? 0 );
+			$ceo_photo_url   = $ceo_photo_id ? wp_get_attachment_image_url( $ceo_photo_id, 'medium' ) : '';
+			$team_photo_id   = absint( $about['team_photo_id'] ?? 0 );
+			$team_photo_url  = $team_photo_id ? wp_get_attachment_image_url( $team_photo_id, 'medium' ) : '';
+			?>
+			<label><?php esc_html_e( 'CEO name', 'giga-class-market' ); ?><input type="text" name="settings[about][ceo_name]" value="<?php echo esc_attr( $about['ceo_name'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'CEO designation', 'giga-class-market' ); ?><input type="text" name="settings[about][ceo_designation]" value="<?php echo esc_attr( $about['ceo_designation'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'CEO message title', 'giga-class-market' ); ?><input type="text" name="settings[about][ceo_title]" value="<?php echo esc_attr( $about['ceo_title'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'CEO message', 'giga-class-market' ); ?><textarea name="settings[about][ceo_message]" rows="4"><?php echo esc_textarea( $about['ceo_message'] ?? '' ); ?></textarea></label>
+			<div class="gcm-media-field">
+				<p><strong><?php esc_html_e( 'CEO photo', 'giga-class-market' ); ?></strong></p>
+				<input type="hidden" name="settings[about][ceo_photo_id]" id="gcm_ceo_photo_id" value="<?php echo esc_attr( (string) $ceo_photo_id ); ?>" />
+				<div id="gcm_ceo_photo_preview" class="gcm-media-preview<?php echo $ceo_photo_url ? ' has-image' : ''; ?>">
+					<?php if ( $ceo_photo_url ) : ?>
+						<img src="<?php echo esc_url( $ceo_photo_url ); ?>" alt="" />
+					<?php else : ?>
+						<span><?php esc_html_e( 'No photo selected', 'giga-class-market' ); ?></span>
+					<?php endif; ?>
+				</div>
+				<p>
+					<button type="button" class="button gcm-media-upload" data-target="#gcm_ceo_photo_id" data-preview="#gcm_ceo_photo_preview" data-title="<?php echo esc_attr__( 'Select CEO photo', 'giga-class-market' ); ?>" data-empty="<?php echo esc_attr__( 'No photo selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Upload / select from media library', 'giga-class-market' ); ?></button>
+					<button type="button" class="button gcm-media-clear" data-target="#gcm_ceo_photo_id" data-preview="#gcm_ceo_photo_preview" data-empty="<?php echo esc_attr__( 'No photo selected', 'giga-class-market' ); ?>"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
+				</p>
+			</div>
+
+			<h2><?php esc_html_e( 'Core Team Member', 'giga-class-market' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Shown under the CEO section. Name, role, intro, and photo are editable and saved with your settings.', 'giga-class-market' ); ?></p>
+			<label><?php esc_html_e( 'Name', 'giga-class-market' ); ?><input type="text" name="settings[about][team_name]" value="<?php echo esc_attr( $about['team_name'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Role', 'giga-class-market' ); ?><input type="text" name="settings[about][team_role]" value="<?php echo esc_attr( $about['team_role'] ?? '' ); ?>" placeholder="Web Developer" /></label>
+			<label><?php esc_html_e( 'Short intro', 'giga-class-market' ); ?><textarea name="settings[about][team_bio]" rows="4"><?php echo esc_textarea( $about['team_bio'] ?? '' ); ?></textarea></label>
+			<div class="gcm-media-field">
+				<p><strong><?php esc_html_e( 'Team member photo', 'giga-class-market' ); ?></strong></p>
+				<input type="hidden" name="settings[about][team_photo_id]" id="gcm_team_photo_id" value="<?php echo esc_attr( (string) $team_photo_id ); ?>" />
+				<div id="gcm_team_photo_preview" class="gcm-media-preview<?php echo $team_photo_url ? ' has-image' : ''; ?>">
+					<?php if ( $team_photo_url ) : ?>
+						<img src="<?php echo esc_url( $team_photo_url ); ?>" alt="" />
+					<?php else : ?>
+						<span><?php esc_html_e( 'No photo selected — theme default will be used', 'giga-class-market' ); ?></span>
+					<?php endif; ?>
+				</div>
+				<p>
+					<button type="button" class="button gcm-media-upload" data-target="#gcm_team_photo_id" data-preview="#gcm_team_photo_preview" data-title="<?php echo esc_attr__( 'Select team member photo', 'giga-class-market' ); ?>" data-empty="<?php echo esc_attr__( 'No photo selected — theme default will be used', 'giga-class-market' ); ?>"><?php esc_html_e( 'Upload / select from media library', 'giga-class-market' ); ?></button>
+					<button type="button" class="button gcm-media-clear" data-target="#gcm_team_photo_id" data-preview="#gcm_team_photo_preview" data-empty="<?php echo esc_attr__( 'No photo selected — theme default will be used', 'giga-class-market' ); ?>"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
+				</p>
+			</div>
 		</section>
 
 		<section id="gcm-tab-course" class="gcm-tab">

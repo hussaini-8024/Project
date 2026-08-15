@@ -38,15 +38,8 @@ $about_cards = array(
 	),
 );
 
-$team_uri = trailingslashit( GCM_THEME_URI ) . 'assets/images/team/';
-$core_team = array(
-	array(
-		'name'  => __( 'Navyan Baig', 'giga-class-market' ),
-		'role'  => __( 'Web Developer', 'giga-class-market' ),
-		'bio'   => __( 'Navyan builds and maintains the Giga Class Market web platform — from course pages and student dashboards to smooth enrollment and payment flows — so learners get a fast, reliable experience.', 'giga-class-market' ),
-		'photo' => $team_uri . 'navyan-baig.jpg',
-	),
-);
+$ceo        = gcm_get_about_ceo();
+$core_team  = array( gcm_get_about_team_member() );
 ?>
 <section class="gcm-page-hero gcm-page-hero--about">
 	<div class="gcm-container">
@@ -74,22 +67,19 @@ $core_team = array(
 <section class="gcm-section gcm-section--surface">
 	<div class="gcm-container gcm-ceo-panel gcm-animate">
 		<div class="gcm-ceo-panel__photo">
-			<?php
-			$ceo_photo = gcm_setting( 'gcm_ceo_photo' );
-			if ( $ceo_photo ) :
-				?>
-				<img src="<?php echo esc_url( $ceo_photo ); ?>" alt="<?php echo esc_attr( gcm_setting( 'gcm_ceo_name', __( 'CEO of Giga Class Market', 'giga-class-market' ) ) ); ?>">
+			<?php if ( ! empty( $ceo['photo'] ) ) : ?>
+				<img src="<?php echo esc_url( $ceo['photo'] ); ?>" alt="<?php echo esc_attr( $ceo['name'] ); ?>">
 			<?php else : ?>
 				<div class="gcm-ceo-placeholder" aria-hidden="true">GCM</div>
 			<?php endif; ?>
 		</div>
 		<div class="gcm-ceo-panel__message">
 			<p class="gcm-eyebrow"><?php esc_html_e( 'CEO Message', 'giga-class-market' ); ?></p>
-			<h2><?php echo esc_html( gcm_setting( 'gcm_ceo_title', __( 'Learning should feel as premium as the future it creates.', 'giga-class-market' ) ) ); ?></h2>
-			<p><?php echo esc_html( gcm_setting( 'gcm_ceo_message', __( 'We built Giga Class Market for students who want clarity, elegant study experiences, and real skill progress. Our promise is simple: every course journey should help you move forward with confidence.', 'giga-class-market' ) ) ); ?></p>
+			<h2><?php echo esc_html( $ceo['title'] ); ?></h2>
+			<p><?php echo esc_html( $ceo['message'] ); ?></p>
 			<div class="gcm-ceo-panel__identity">
-				<strong><?php echo esc_html( gcm_setting( 'gcm_ceo_name', __( 'Qasim Hussaini', 'giga-class-market' ) ) ); ?></strong>
-				<span><?php echo esc_html( gcm_setting( 'gcm_ceo_designation', __( 'CEO, Giga Class Market', 'giga-class-market' ) ) ); ?></span>
+				<strong><?php echo esc_html( $ceo['name'] ); ?></strong>
+				<span><?php echo esc_html( $ceo['designation'] ); ?></span>
 			</div>
 		</div>
 	</div>

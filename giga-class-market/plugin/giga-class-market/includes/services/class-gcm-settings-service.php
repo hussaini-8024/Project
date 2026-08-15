@@ -65,6 +65,17 @@ class GCM_Settings_Service {
 				'popup_image_id'      => 0,
 				'popup_link_url'      => '',
 			),
+			'about'    => array(
+				'ceo_name'        => 'Qasim Hussaini',
+				'ceo_designation' => 'CEO, Giga Class Market',
+				'ceo_title'       => 'Learning should feel as premium as the future it creates.',
+				'ceo_message'     => 'We built Giga Class Market for students who want clarity, elegant study experiences, and real skill progress. Our promise is simple: every course journey should help you move forward with confidence.',
+				'ceo_photo_id'    => 0,
+				'team_name'       => 'Navyan Baig',
+				'team_role'       => 'Web Developer',
+				'team_bio'        => 'Navyan builds and maintains the Giga Class Market web platform — from course pages and student dashboards to smooth enrollment and payment flows — so learners get a fast, reliable experience.',
+				'team_photo_id'   => 0,
+			),
 			'course'   => array(
 				'featured_count'   => 3,
 				'default_duration' => '',
@@ -249,6 +260,18 @@ class GCM_Settings_Service {
 			$clean['website']['popup_enabled']       = ! empty( $settings['website']['popup_enabled'] ) ? 1 : 0;
 			$clean['website']['popup_image_id']      = absint( $settings['website']['popup_image_id'] ?? 0 );
 			$clean['website']['popup_link_url']      = esc_url_raw( $settings['website']['popup_link_url'] ?? '' );
+		}
+
+		if ( isset( $settings['about'] ) && is_array( $settings['about'] ) ) {
+			$clean['about']['ceo_name']        = sanitize_text_field( $settings['about']['ceo_name'] ?? $clean['about']['ceo_name'] );
+			$clean['about']['ceo_designation'] = sanitize_text_field( $settings['about']['ceo_designation'] ?? $clean['about']['ceo_designation'] );
+			$clean['about']['ceo_title']       = sanitize_text_field( $settings['about']['ceo_title'] ?? $clean['about']['ceo_title'] );
+			$clean['about']['ceo_message']     = sanitize_textarea_field( $settings['about']['ceo_message'] ?? $clean['about']['ceo_message'] );
+			$clean['about']['ceo_photo_id']    = absint( $settings['about']['ceo_photo_id'] ?? 0 );
+			$clean['about']['team_name']       = sanitize_text_field( $settings['about']['team_name'] ?? $clean['about']['team_name'] );
+			$clean['about']['team_role']       = sanitize_text_field( $settings['about']['team_role'] ?? $clean['about']['team_role'] );
+			$clean['about']['team_bio']        = sanitize_textarea_field( $settings['about']['team_bio'] ?? $clean['about']['team_bio'] );
+			$clean['about']['team_photo_id']   = absint( $settings['about']['team_photo_id'] ?? 0 );
 		}
 
 		if ( isset( $settings['course'] ) && is_array( $settings['course'] ) ) {

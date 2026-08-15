@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.7.9' );
+define( 'GCM_THEME_VERSION', '1.8.0' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -122,7 +122,7 @@ function gcm_enqueue_assets() {
 add_action( 'wp_enqueue_scripts', 'gcm_enqueue_assets' );
 
 /**
- * Theme customizer for About / CEO content.
+ * Theme customizer for About / CEO / Team content.
  *
  * @param WP_Customize_Manager $wp_customize Customizer.
  */
@@ -130,29 +130,92 @@ function gcm_customize_register( $wp_customize ) {
 	$wp_customize->add_section(
 		'gcm_about_ceo',
 		array(
-			'title'    => __( 'GCM About / CEO', 'giga-class-market' ),
-			'priority' => 35,
+			'title'       => __( 'GCM About / CEO / Team', 'giga-class-market' ),
+			'description' => __( 'You can also manage these fields (with media library uploads) under Giga Class Market → Settings → About / Team.', 'giga-class-market' ),
+			'priority'    => 35,
 		)
 	);
 
-	$fields = array(
-		'gcm_ceo_name'        => __( 'CEO name', 'giga-class-market' ),
-		'gcm_ceo_designation' => __( 'CEO designation', 'giga-class-market' ),
-		'gcm_ceo_title'        => __( 'CEO message title', 'giga-class-market' ),
-		'gcm_ceo_message'     => __( 'CEO message', 'giga-class-market' ),
-		'gcm_ceo_photo'       => __( 'CEO photo URL', 'giga-class-market' ),
-		'about_mission'       => __( 'Mission text', 'giga-class-market' ),
-		'about_vision'        => __( 'Vision text', 'giga-class-market' ),
+	$text_fields = array(
+		'gcm_ceo_name'        => array(
+			'label' => __( 'CEO name', 'giga-class-market' ),
+			'type'  => 'text',
+		),
+		'gcm_ceo_designation' => array(
+			'label' => __( 'CEO designation', 'giga-class-market' ),
+			'type'  => 'text',
+		),
+		'gcm_ceo_title'       => array(
+			'label' => __( 'CEO message title', 'giga-class-market' ),
+			'type'  => 'text',
+		),
+		'gcm_ceo_message'     => array(
+			'label' => __( 'CEO message', 'giga-class-market' ),
+			'type'  => 'textarea',
+		),
+		'gcm_team_name'       => array(
+			'label' => __( 'Team member name', 'giga-class-market' ),
+			'type'  => 'text',
+		),
+		'gcm_team_role'       => array(
+			'label' => __( 'Team member role', 'giga-class-market' ),
+			'type'  => 'text',
+		),
+		'gcm_team_bio'        => array(
+			'label' => __( 'Team member intro', 'giga-class-market' ),
+			'type'  => 'textarea',
+		),
+		'about_mission'       => array(
+			'label' => __( 'Mission text', 'giga-class-market' ),
+			'type'  => 'textarea',
+		),
+		'about_vision'        => array(
+			'label' => __( 'Vision text', 'giga-class-market' ),
+			'type'  => 'textarea',
+		),
 	);
 
-	foreach ( $fields as $id => $label ) {
-		$wp_customize->add_setting( $id, array( 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ) );
+	foreach ( $text_fields as $id => $field ) {
+		$sanitize = 'textarea' === $field['type'] ? 'sanitize_textarea_field' : 'sanitize_text_field';
+		$wp_customize->add_setting(
+			$id,
+			array(
+				'default'           => '',
+				'sanitize_callback' => $sanitize,
+			)
+		);
 		$wp_customize->add_control(
 			$id,
 			array(
-				'label'   => $label,
+				'label'   => $field['label'],
 				'section' => 'gcm_about_ceo',
-				'type'    => false !== strpos( $id, 'message' ) || false !== strpos( $id, 'mission' ) || false !== strpos( $id, 'vision' ) ? 'textarea' : 'text',
+				'type'    => $field['type'],
+			)
+		);
+	}
+
+	$media_fields = array(
+		'gcm_ceo_photo_id'  => __( 'CEO photo (media library)', 'giga-class-market' ),
+		'gcm_team_photo_id' => __( 'Team member photo (media library)', 'giga-class-market' ),
+	);
+
+	foreach ( $media_fields as $id => $label ) {
+		$wp_customize->add_setting(
+			$id,
+			array(
+				'default'           => 0,
+				'sanitize_callback' => 'absint',
+			)
+		);
+		$wp_customize->add_control(
+			new WP_Customize_Media_Control(
+				$wp_customize,
+				$id,
+				array(
+					'label'     => $label,
+					'section'   => 'gcm_about_ceo',
+					'mime_type' => 'image',
+				)
 			)
 		);
 	}
@@ -200,6 +263,18 @@ function gcm_get_settings() {
 		$flat['popup_link_url']    = $settings['website']['popup_link_url'] ?? '';
 		$flat['website']           = $settings['website'];
 	}
+	if ( ! empty( $settings['about'] ) && is_array( $settings['about'] ) ) {
+		$flat['gcm_ceo_name']        = $settings['about']['ceo_name'] ?? ( $flat['gcm_ceo_name'] ?? '' );
+		$flat['gcm_ceo_designation'] = $settings['about']['ceo_designation'] ?? ( $flat['gcm_ceo_designation'] ?? '' );
+		$flat['gcm_ceo_title']       = $settings['about']['ceo_title'] ?? ( $flat['gcm_ceo_title'] ?? '' );
+		$flat['gcm_ceo_message']     = $settings['about']['ceo_message'] ?? ( $flat['gcm_ceo_message'] ?? '' );
+		$flat['gcm_ceo_photo_id']    = absint( $settings['about']['ceo_photo_id'] ?? 0 );
+		$flat['gcm_team_name']       = $settings['about']['team_name'] ?? ( $flat['gcm_team_name'] ?? '' );
+		$flat['gcm_team_role']       = $settings['about']['team_role'] ?? ( $flat['gcm_team_role'] ?? '' );
+		$flat['gcm_team_bio']        = $settings['about']['team_bio'] ?? ( $flat['gcm_team_bio'] ?? '' );
+		$flat['gcm_team_photo_id']   = absint( $settings['about']['team_photo_id'] ?? 0 );
+		$flat['about']               = $settings['about'];
+	}
 
 	return $flat;
 }
@@ -219,6 +294,76 @@ function gcm_setting( $key, $default = '' ) {
 
 	$settings = gcm_get_settings();
 	return isset( $settings[ $key ] ) && '' !== $settings[ $key ] ? $settings[ $key ] : $default;
+}
+
+/**
+ * Resolve an image URL from a media attachment setting, optional legacy URL, then fallback.
+ *
+ * @param string $id_key Attachment ID setting key.
+ * @param string $url_key Optional legacy URL setting key.
+ * @param string $fallback Fallback URL.
+ * @return string
+ */
+function gcm_resolve_image_url( $id_key, $url_key = '', $fallback = '' ) {
+	$candidates = array();
+
+	$mod_id = absint( get_theme_mod( $id_key, 0 ) );
+	if ( $mod_id ) {
+		$candidates[] = $mod_id;
+	}
+
+	$settings = gcm_get_settings();
+	$opt_id   = absint( $settings[ $id_key ] ?? 0 );
+	if ( $opt_id && $opt_id !== $mod_id ) {
+		$candidates[] = $opt_id;
+	}
+
+	foreach ( $candidates as $id ) {
+		$url = wp_get_attachment_image_url( $id, 'large' );
+		if ( $url ) {
+			return $url;
+		}
+	}
+
+	if ( $url_key ) {
+		$url = (string) gcm_setting( $url_key, '' );
+		if ( $url ) {
+			return $url;
+		}
+	}
+
+	return $fallback;
+}
+
+/**
+ * CEO content for the About page.
+ *
+ * @return array{name:string,designation:string,title:string,message:string,photo:string}
+ */
+function gcm_get_about_ceo() {
+	return array(
+		'name'        => (string) gcm_setting( 'gcm_ceo_name', __( 'Qasim Hussaini', 'giga-class-market' ) ),
+		'designation' => (string) gcm_setting( 'gcm_ceo_designation', __( 'CEO, Giga Class Market', 'giga-class-market' ) ),
+		'title'       => (string) gcm_setting( 'gcm_ceo_title', __( 'Learning should feel as premium as the future it creates.', 'giga-class-market' ) ),
+		'message'     => (string) gcm_setting( 'gcm_ceo_message', __( 'We built Giga Class Market for students who want clarity, elegant study experiences, and real skill progress. Our promise is simple: every course journey should help you move forward with confidence.', 'giga-class-market' ) ),
+		'photo'       => gcm_resolve_image_url( 'gcm_ceo_photo_id', 'gcm_ceo_photo', '' ),
+	);
+}
+
+/**
+ * Core team member content for the About page.
+ *
+ * @return array{name:string,role:string,bio:string,photo:string}
+ */
+function gcm_get_about_team_member() {
+	$default_photo = trailingslashit( GCM_THEME_URI ) . 'assets/images/team/navyan-baig.jpg';
+
+	return array(
+		'name'  => (string) gcm_setting( 'gcm_team_name', __( 'Navyan Baig', 'giga-class-market' ) ),
+		'role'  => (string) gcm_setting( 'gcm_team_role', __( 'Web Developer', 'giga-class-market' ) ),
+		'bio'   => (string) gcm_setting( 'gcm_team_bio', __( 'Navyan builds and maintains the Giga Class Market web platform — from course pages and student dashboards to smooth enrollment and payment flows — so learners get a fast, reliable experience.', 'giga-class-market' ) ),
+		'photo' => gcm_resolve_image_url( 'gcm_team_photo_id', '', $default_photo ),
+	);
 }
 
 /**
