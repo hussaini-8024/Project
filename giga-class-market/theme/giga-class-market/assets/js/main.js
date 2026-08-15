@@ -131,10 +131,56 @@
 		});
 	}
 
+	function initPromoPopup() {
+		var popup = document.getElementById('gcm-promo-popup');
+		if (!popup) {
+			return;
+		}
+
+		var popupId = popup.getAttribute('data-popup-id') || 'default';
+		var storageKey = 'gcmPromoPopupDismissed:' + popupId;
+
+		try {
+			if (window.localStorage.getItem(storageKey) === '1') {
+				return;
+			}
+		} catch (err) {
+			/* ignore storage errors */
+		}
+
+		function closePopup() {
+			popup.hidden = true;
+			popup.classList.remove('is-open');
+			document.body.classList.remove('gcm-promo-open');
+			try {
+				window.localStorage.setItem(storageKey, '1');
+			} catch (err) {
+				/* ignore storage errors */
+			}
+		}
+
+		popup.hidden = false;
+		window.requestAnimationFrame(function () {
+			popup.classList.add('is-open');
+			document.body.classList.add('gcm-promo-open');
+		});
+
+		popup.querySelectorAll('[data-gcm-popup-close]').forEach(function (el) {
+			el.addEventListener('click', closePopup);
+		});
+
+		document.addEventListener('keydown', function (event) {
+			if (event.key === 'Escape' && popup.classList.contains('is-open')) {
+				closePopup();
+			}
+		});
+	}
+
 	document.addEventListener('DOMContentLoaded', function () {
 		initThemeToggle();
 		initMobileNav();
 		initScrollAnimations();
 		initAjaxForms();
+		initPromoPopup();
 	});
 })();

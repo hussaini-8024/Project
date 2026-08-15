@@ -59,6 +59,7 @@ class GCM_Admin {
 		}
 
 		wp_enqueue_style( 'gcm-admin', GCM_PLUGIN_URL . 'admin/css/gcm-admin.css', array(), GCM_VERSION );
+		wp_enqueue_media();
 		wp_enqueue_script( 'gcm-admin', GCM_PLUGIN_URL . 'admin/js/gcm-admin.js', array( 'jquery' ), GCM_VERSION, true );
 		wp_localize_script(
 			'gcm-admin',

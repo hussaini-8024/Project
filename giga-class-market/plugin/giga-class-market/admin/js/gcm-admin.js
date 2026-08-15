@@ -142,4 +142,38 @@
 				$message.text(message);
 			});
 	});
+
+	var mediaFrame;
+
+	$(document).on('click', '.gcm-media-upload', function (event) {
+		event.preventDefault();
+		var $button = $(this);
+		var target = $button.data('target');
+		var preview = $button.data('preview');
+
+		if (!mediaFrame) {
+			mediaFrame = wp.media({
+				title: 'Select banner image',
+				button: { text: 'Use this image' },
+				multiple: false
+			});
+		}
+
+		mediaFrame.off('select');
+		mediaFrame.on('select', function () {
+			var attachment = mediaFrame.state().get('selection').first().toJSON();
+			$(target).val(attachment.id);
+			var url = (attachment.sizes && attachment.sizes.large) ? attachment.sizes.large.url : attachment.url;
+			$(preview).addClass('has-image').html('<img src="' + url + '" alt="" />');
+		});
+
+		mediaFrame.open();
+	});
+
+	$(document).on('click', '.gcm-media-clear', function (event) {
+		event.preventDefault();
+		var $button = $(this);
+		$($button.data('target')).val('0');
+		$($button.data('preview')).removeClass('has-image').html('<span>No banner selected</span>');
+	});
 })(jQuery);

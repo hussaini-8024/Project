@@ -61,6 +61,9 @@ class GCM_Settings_Service {
 				'student_page_slug'   => 'student-dashboard',
 				'currency_symbol'     => 'PKR ',
 				'community_whatsapp'  => '',
+				'popup_enabled'       => 0,
+				'popup_image_id'      => 0,
+				'popup_link_url'      => '',
 			),
 			'course'   => array(
 				'featured_count'   => 3,
@@ -243,6 +246,9 @@ class GCM_Settings_Service {
 			$clean['website']['student_page_slug']   = sanitize_title( $settings['website']['student_page_slug'] ?? 'student-dashboard' );
 			$clean['website']['currency_symbol']     = sanitize_text_field( $settings['website']['currency_symbol'] ?? ( $clean['website']['currency_symbol'] ?? 'PKR ' ) );
 			$clean['website']['community_whatsapp']  = sanitize_text_field( $settings['website']['community_whatsapp'] ?? '' );
+			$clean['website']['popup_enabled']       = ! empty( $settings['website']['popup_enabled'] ) ? 1 : 0;
+			$clean['website']['popup_image_id']      = absint( $settings['website']['popup_image_id'] ?? 0 );
+			$clean['website']['popup_link_url']      = esc_url_raw( $settings['website']['popup_link_url'] ?? '' );
 		}
 
 		if ( isset( $settings['course'] ) && is_array( $settings['course'] ) ) {

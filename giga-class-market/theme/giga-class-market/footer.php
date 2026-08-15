@@ -78,6 +78,30 @@ $socials  = array(
 	</div>
 </footer>
 
+<?php
+$popup_enabled  = (int) gcm_setting( 'popup_enabled', 0 );
+$popup_image_id = absint( gcm_setting( 'popup_image_id', 0 ) );
+$popup_link     = (string) gcm_setting( 'popup_link_url', '' );
+$popup_image    = $popup_image_id ? wp_get_attachment_image_url( $popup_image_id, 'full' ) : '';
+if ( $popup_enabled && $popup_image ) :
+	?>
+	<div class="gcm-promo-popup" id="gcm-promo-popup" hidden data-popup-id="<?php echo esc_attr( (string) $popup_image_id ); ?>" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Promotional banner', 'giga-class-market' ); ?>">
+		<div class="gcm-promo-popup__backdrop" data-gcm-popup-close tabindex="-1"></div>
+		<div class="gcm-promo-popup__panel">
+			<button type="button" class="gcm-promo-popup__close" data-gcm-popup-close aria-label="<?php esc_attr_e( 'Close', 'giga-class-market' ); ?>">
+				<span aria-hidden="true">&times;</span>
+			</button>
+			<?php if ( $popup_link ) : ?>
+				<a class="gcm-promo-popup__link" href="<?php echo esc_url( $popup_link ); ?>">
+					<img src="<?php echo esc_url( $popup_image ); ?>" alt="<?php esc_attr_e( 'Promotional offer', 'giga-class-market' ); ?>" />
+				</a>
+			<?php else : ?>
+				<img src="<?php echo esc_url( $popup_image ); ?>" alt="<?php esc_attr_e( 'Promotional offer', 'giga-class-market' ); ?>" />
+			<?php endif; ?>
+		</div>
+	</div>
+<?php endif; ?>
+
 <?php wp_footer(); ?>
 </body>
 </html>

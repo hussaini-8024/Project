@@ -65,6 +65,32 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'Accent color', 'giga-class-market' ); ?><input type="text" name="settings[website][accent_color]" value="<?php echo esc_attr( $settings['website']['accent_color'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Student page slug', 'giga-class-market' ); ?><input type="text" name="settings[website][student_page_slug]" value="<?php echo esc_attr( $settings['website']['student_page_slug'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Community WhatsApp (site-wide)', 'giga-class-market' ); ?><input type="text" name="settings[website][community_whatsapp]" value="<?php echo esc_attr( $settings['website']['community_whatsapp'] ?? '' ); ?>" placeholder="+966509136037 or https://chat.whatsapp.com/…" /></label>
+
+			<h2><?php esc_html_e( 'Promo Popup Banner', 'giga-class-market' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Shown as a newsletter-style overlay when visitors open the site. Upload a banner image from the media library.', 'giga-class-market' ); ?></p>
+			<label class="gcm-checkbox-label">
+				<input type="checkbox" name="settings[website][popup_enabled]" value="1" <?php checked( ! empty( $settings['website']['popup_enabled'] ) ); ?> />
+				<?php esc_html_e( 'Enable promo popup', 'giga-class-market' ); ?>
+			</label>
+			<?php
+			$popup_image_id  = absint( $settings['website']['popup_image_id'] ?? 0 );
+			$popup_image_url = $popup_image_id ? wp_get_attachment_image_url( $popup_image_id, 'large' ) : '';
+			?>
+			<div class="gcm-media-field">
+				<input type="hidden" name="settings[website][popup_image_id]" id="gcm_popup_image_id" value="<?php echo esc_attr( (string) $popup_image_id ); ?>" />
+				<div id="gcm_popup_image_preview" class="gcm-media-preview<?php echo $popup_image_url ? ' has-image' : ''; ?>">
+					<?php if ( $popup_image_url ) : ?>
+						<img src="<?php echo esc_url( $popup_image_url ); ?>" alt="" />
+					<?php else : ?>
+						<span><?php esc_html_e( 'No banner selected', 'giga-class-market' ); ?></span>
+					<?php endif; ?>
+				</div>
+				<p>
+					<button type="button" class="button gcm-media-upload" data-target="#gcm_popup_image_id" data-preview="#gcm_popup_image_preview"><?php esc_html_e( 'Upload / select banner', 'giga-class-market' ); ?></button>
+					<button type="button" class="button gcm-media-clear" data-target="#gcm_popup_image_id" data-preview="#gcm_popup_image_preview"><?php esc_html_e( 'Remove', 'giga-class-market' ); ?></button>
+				</p>
+			</div>
+			<label><?php esc_html_e( 'Optional banner link URL', 'giga-class-market' ); ?><input type="url" name="settings[website][popup_link_url]" value="<?php echo esc_attr( $settings['website']['popup_link_url'] ?? '' ); ?>" placeholder="https://" /></label>
 		</section>
 
 		<section id="gcm-tab-course" class="gcm-tab">

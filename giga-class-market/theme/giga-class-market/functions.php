@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.7.1' );
+define( 'GCM_THEME_VERSION', '1.7.2' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -188,7 +188,11 @@ function gcm_get_settings() {
 		$flat['social_youtube']   = $settings['company']['youtube'] ?? ( $flat['social_youtube'] ?? '' );
 	}
 	if ( ! empty( $settings['website'] ) && is_array( $settings['website'] ) ) {
-		$flat['currency_symbol'] = $settings['website']['currency_symbol'] ?? ( $flat['currency_symbol'] ?? 'PKR ' );
+		$flat['currency_symbol']   = $settings['website']['currency_symbol'] ?? ( $flat['currency_symbol'] ?? 'PKR ' );
+		$flat['popup_enabled']     = ! empty( $settings['website']['popup_enabled'] ) ? 1 : 0;
+		$flat['popup_image_id']    = absint( $settings['website']['popup_image_id'] ?? 0 );
+		$flat['popup_link_url']    = $settings['website']['popup_link_url'] ?? '';
+		$flat['website']           = $settings['website'];
 	}
 
 	return $flat;

@@ -164,8 +164,17 @@
 				return;
 			}
 			grid.innerHTML = json.data.courses.map(function (course) {
-				var img = course.thumbnail ? '<img src="' + course.thumbnail + '" alt="' + escapeHtml(course.title) + '">' : '';
-				return '<article class="gcm-course-card">' + img + '<h3><a href="' + course.permalink + '">' + escapeHtml(course.title) + '</a></h3><p>' + escapeHtml(course.excerpt || '') + '</p><p class="gcm-price">' + Number(course.price).toFixed(2) + '</p><a class="gcm-button" href="' + window.gcmPublic.paymentUrl + '?course_id=' + course.id + '">Enroll now</a></article>';
+				var regular = Number(course.price) || 0;
+				var sale = Number(course.discount_price) || 0;
+				var onSale = sale > 0 && sale < regular;
+				var badge = course.sale_label ? escapeHtml(course.sale_label) : 'Sale';
+				var img = course.thumbnail
+					? '<div class="gcm-course-card__media"><img src="' + course.thumbnail + '" alt="' + escapeHtml(course.title) + '">' + (onSale ? '<span class="gcm-sale-badge">' + badge + '</span>' : '') + '</div>'
+					: (onSale ? '<div class="gcm-course-card__media"><span class="gcm-sale-badge">' + badge + '</span></div>' : '');
+				var priceHtml = onSale
+					? '<p class="gcm-price gcm-price-block"><span class="gcm-price-block__sale">' + sale.toFixed(2) + '</span><s class="gcm-price-block__original">' + regular.toFixed(2) + '</s></p>'
+					: '<p class="gcm-price">' + regular.toFixed(2) + '</p>';
+				return '<article class="gcm-course-card' + (onSale ? ' gcm-course-card--sale' : '') + '">' + img + '<h3><a href="' + course.permalink + '">' + escapeHtml(course.title) + '</a></h3><p>' + escapeHtml(course.excerpt || '') + '</p>' + priceHtml + '<a class="gcm-button" href="' + window.gcmPublic.paymentUrl + '?course_id=' + course.id + '">Enroll now</a></article>';
 			}).join('');
 		}).catch(function () {
 			grid.innerHTML = '<p>Search failed.</p>';

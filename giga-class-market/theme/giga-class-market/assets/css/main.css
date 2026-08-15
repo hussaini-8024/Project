@@ -735,6 +735,7 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 }
 
 .gcm-course-card__media {
+	position: relative;
 	display: block;
 	aspect-ratio: 16 / 10;
 	overflow: hidden;
@@ -817,6 +818,70 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 .gcm-course-card__footer {
 	margin: 1.1rem 0 1.25rem;
 	color: var(--gcm-text);
+}
+
+.gcm-price-block {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.15rem;
+	line-height: 1.15;
+}
+
+.gcm-price-block__sale {
+	font-family: var(--gcm-font-display);
+	font-size: 1.35rem;
+	font-weight: var(--gcm-weight-display);
+	color: var(--gcm-text);
+	letter-spacing: -0.02em;
+}
+
+.gcm-price-block__original {
+	font-size: 0.92rem;
+	font-weight: 600;
+	color: var(--gcm-muted);
+	opacity: 0.85;
+}
+
+.gcm-price-block--buy {
+	margin-bottom: 1rem;
+}
+
+.gcm-price-block--buy .gcm-price-block__sale {
+	font-size: 2rem;
+}
+
+.gcm-price-block--buy .gcm-price-block__original {
+	font-size: 1.05rem;
+}
+
+.gcm-sale-badge {
+	position: absolute;
+	top: 0.85rem;
+	left: 0.85rem;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.15rem;
+	padding: 0.45rem 0.85rem;
+	font-size: 0.92rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #0d3b45;
+	background: linear-gradient(135deg, #f0c56d, #e0a045);
+	border-radius: 0.35rem;
+	box-shadow: 0 8px 20px rgba(13, 59, 69, 0.28);
+	pointer-events: none;
+}
+
+.gcm-sale-badge--lg {
+	top: 1rem;
+	left: 1rem;
+	min-height: 2.55rem;
+	padding: 0.55rem 1.05rem;
+	font-size: 1.05rem;
 }
 
 .gcm-course-card .gcm-button {
@@ -1394,6 +1459,10 @@ textarea {
 	overflow: hidden;
 	background: var(--gcm-surface);
 	color: var(--gcm-text);
+}
+
+.gcm-course-buy-card__media {
+	position: relative;
 }
 
 .gcm-course-buy-card img {
@@ -2521,14 +2590,102 @@ textarea {
 }
 
 .gcm-sale-label {
-	display: inline-block;
-	margin-right: 0.4rem;
-	padding: 0.15rem 0.45rem;
-	font-size: 0.75rem;
-	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	margin: 0 0 0.65rem;
+	padding: 0.45rem 0.85rem;
+	font-size: 0.95rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
 	color: #0d3b45;
-	background: #f3e6d0;
-	border-radius: 0.25rem;
+	background: linear-gradient(135deg, #f0c56d, #e0a045);
+	border-radius: 0.35rem;
+	box-shadow: 0 6px 16px rgba(13, 59, 69, 0.18);
+}
+
+.gcm-promo-popup {
+	position: fixed;
+	inset: 0;
+	z-index: 10050;
+	display: grid;
+	place-items: center;
+	padding: 1.25rem;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.gcm-promo-popup.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+}
+
+.gcm-promo-popup__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(8, 24, 30, 0.72);
+}
+
+.gcm-promo-popup__panel {
+	position: relative;
+	z-index: 1;
+	width: min(92vw, 640px);
+	max-height: min(88vh, 820px);
+	overflow: hidden;
+	background: #fff;
+	border-radius: 1rem;
+	box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+	transform: translateY(12px) scale(0.98);
+	transition: transform 260ms ease;
+}
+
+.gcm-promo-popup.is-open .gcm-promo-popup__panel {
+	transform: translateY(0) scale(1);
+}
+
+.gcm-promo-popup__close {
+	position: absolute;
+	top: 0.65rem;
+	right: 0.65rem;
+	z-index: 2;
+	width: 2.5rem;
+	height: 2.5rem;
+	display: grid;
+	place-items: center;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(13, 59, 69, 0.92);
+	color: #fff;
+	font-size: 1.65rem;
+	line-height: 1;
+	cursor: pointer;
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.gcm-promo-popup__close:hover,
+.gcm-promo-popup__close:focus-visible {
+	background: #0d3b45;
+}
+
+.gcm-promo-popup__link,
+.gcm-promo-popup__panel > img {
+	display: block;
+}
+
+.gcm-promo-popup__panel img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: min(88vh, 820px);
+	object-fit: contain;
+	background: #f4f7f8;
+}
+
+body.gcm-promo-open {
+	overflow: hidden;
 }
 
 .gcm-faq-item {

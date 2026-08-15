@@ -87,23 +87,26 @@ get_header();
 						<span>★ <?php echo esc_html( $rating ); ?></span>
 					</div>
 				</div>
-				<aside class="gcm-course-buy-card" aria-label="<?php esc_attr_e( 'Course enrollment', 'giga-class-market' ); ?>">
-					<?php if ( has_post_thumbnail() ) : ?>
-						<?php the_post_thumbnail( 'large', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
-					<?php else : ?>
-						<div class="gcm-course-card__placeholder" aria-hidden="true">
-							<span><?php esc_html_e( 'GCM', 'giga-class-market' ); ?></span>
-						</div>
-					<?php endif; ?>
+				<aside class="gcm-course-buy-card<?php echo $on_sale ? ' gcm-course-buy-card--sale' : ''; ?>" aria-label="<?php esc_attr_e( 'Course enrollment', 'giga-class-market' ); ?>">
+					<div class="gcm-course-buy-card__media">
+						<?php if ( has_post_thumbnail() ) : ?>
+							<?php the_post_thumbnail( 'large', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+						<?php else : ?>
+							<div class="gcm-course-card__placeholder" aria-hidden="true">
+								<span><?php esc_html_e( 'GCM', 'giga-class-market' ); ?></span>
+							</div>
+						<?php endif; ?>
+						<?php if ( $on_sale ) : ?>
+							<span class="gcm-sale-badge gcm-sale-badge--lg"><?php echo esc_html( $sale_label ? $sale_label : __( 'Sale', 'giga-class-market' ) ); ?></span>
+						<?php endif; ?>
+					</div>
 					<div class="gcm-course-buy-card__body">
 						<?php if ( $on_sale ) : ?>
-							<?php if ( $sale_label ) : ?>
-								<span class="gcm-sale-label"><?php echo esc_html( $sale_label ); ?></span>
-							<?php endif; ?>
-							<strong>
-								<s style="opacity:.65;font-weight:500;"><?php echo esc_html( gcm_format_price( $price ) ); ?></s>
-								<?php echo esc_html( gcm_format_price( $display_price ) ); ?>
-							</strong>
+							<span class="gcm-sale-label"><?php echo esc_html( $sale_label ? $sale_label : __( 'On sale', 'giga-class-market' ) ); ?></span>
+							<div class="gcm-price-block gcm-price-block--buy">
+								<span class="gcm-price-block__sale"><?php echo esc_html( gcm_format_price( $display_price ) ); ?></span>
+								<s class="gcm-price-block__original"><?php echo esc_html( gcm_format_price( $price ) ); ?></s>
+							</div>
 						<?php else : ?>
 							<strong><?php echo esc_html( gcm_format_price( $display_price ) ); ?></strong>
 						<?php endif; ?>

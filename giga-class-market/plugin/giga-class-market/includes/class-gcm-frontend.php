@@ -579,14 +579,31 @@ class GCM_Frontend {
 
 		ob_start();
 		foreach ( $courses as $course ) :
+			$regular   = (float) ( $course['price'] ?? 0 );
+			$sale      = (float) ( $course['discount_price'] ?? 0 );
+			$on_sale   = $sale > 0 && $sale < $regular;
+			$badge     = ! empty( $course['sale_label'] ) ? $course['sale_label'] : __( 'Sale', 'giga-class-market' );
+			$show_price = $on_sale ? $sale : $regular;
 			?>
-			<article class="gcm-course-card">
-				<?php if ( $course['thumbnail'] ) : ?>
-					<img src="<?php echo esc_url( $course['thumbnail'] ); ?>" alt="<?php echo esc_attr( $course['title'] ); ?>" />
-				<?php endif; ?>
+			<article class="gcm-course-card<?php echo $on_sale ? ' gcm-course-card--sale' : ''; ?>">
+				<div class="gcm-course-card__media">
+					<?php if ( ! empty( $course['thumbnail'] ) ) : ?>
+						<img src="<?php echo esc_url( $course['thumbnail'] ); ?>" alt="<?php echo esc_attr( $course['title'] ); ?>" />
+					<?php endif; ?>
+					<?php if ( $on_sale ) : ?>
+						<span class="gcm-sale-badge"><?php echo esc_html( $badge ); ?></span>
+					<?php endif; ?>
+				</div>
 				<h3><a href="<?php echo esc_url( $course['permalink'] ); ?>"><?php echo esc_html( $course['title'] ); ?></a></h3>
 				<p><?php echo esc_html( $course['excerpt'] ); ?></p>
-				<p class="gcm-price"><?php echo esc_html( number_format_i18n( $course['price'], 2 ) ); ?></p>
+				<?php if ( $on_sale ) : ?>
+					<p class="gcm-price gcm-price-block">
+						<span class="gcm-price-block__sale"><?php echo esc_html( number_format_i18n( $show_price, 2 ) ); ?></span>
+						<s class="gcm-price-block__original"><?php echo esc_html( number_format_i18n( $regular, 2 ) ); ?></s>
+					</p>
+				<?php else : ?>
+					<p class="gcm-price"><?php echo esc_html( number_format_i18n( $show_price, 2 ) ); ?></p>
+				<?php endif; ?>
 				<a class="gcm-button" href="<?php echo esc_url( add_query_arg( 'course_id', $course['id'], home_url( '/payment/' ) ) ); ?>"><?php esc_html_e( 'Enroll now', 'giga-class-market' ); ?></a>
 			</article>
 			<?php

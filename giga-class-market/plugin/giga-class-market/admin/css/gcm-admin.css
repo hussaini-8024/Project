@@ -153,6 +153,48 @@
 	margin-left: 10px;
 }
 
+.gcm-checkbox-label {
+	display: flex !important;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+}
+
+.gcm-checkbox-label input {
+	margin: 0 !important;
+	width: auto !important;
+	max-width: none !important;
+}
+
+.gcm-media-field {
+	margin: 12px 0 18px;
+	max-width: 560px;
+}
+
+.gcm-media-preview {
+	display: grid;
+	place-items: center;
+	min-height: 140px;
+	margin-bottom: 10px;
+	border: 1px dashed #c5d0d4;
+	background: #f7fafb;
+	color: #5a6f76;
+	overflow: hidden;
+}
+
+.gcm-media-preview.has-image {
+	border-style: solid;
+	background: #fff;
+}
+
+.gcm-media-preview img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: 280px;
+	object-fit: contain;
+}
+
 .gcm-meta-grid label {
 	display: block;
 	font-weight: 600;
