@@ -150,8 +150,17 @@ def create_machine(
             raise ValueError("Network not found")
         if target_net.lab_id:
             lab = target_net.lab or lab
-    quota_user = user if user.role != Role.STUDENT else owner
-    decision = evaluate(db, quota_user, kind=kind, ram_mb=ram_mb, vcpu=vcpu, disk_gb=disk_gb, template=template)
+    staff = user.role != Role.STUDENT
+    decision = evaluate(
+        db,
+        user if staff else owner,
+        kind=kind,
+        ram_mb=ram_mb,
+        vcpu=vcpu,
+        disk_gb=disk_gb,
+        template=template,
+        ignore_quota=staff,
+    )
     kind = MachineKind(decision.recommended_kind)
     machine = Machine(
         public_id=public_id("MCH"),
@@ -221,7 +230,7 @@ def create_machine(
 
     machine.status = MachineStatus.STOPPED
     db.commit()
-    start_machine(db, machine, quota_user)
+    start_machine(db, machine, user if staff else owner, ignore_quota=staff)
     audit.record(db, user=user, action="machine.create", resource=machine.public_id, machine=machine.name, ip=ip)
     db.commit()
     return machine, {"decision": decision.__dict__}

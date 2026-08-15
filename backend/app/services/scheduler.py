@@ -135,11 +135,12 @@ def evaluate(
     disk_gb: int,
     template: MachineTemplate | None,
     existing: Machine | None = None,
+    ignore_quota: bool = False,
 ) -> ScheduleDecision:
     settings = get_settings()
     recommended, alts = recommend_kind(template, kind)
     kind = recommended
-    qerr = quota_ok(db, user, kind, ram_mb, vcpu, disk_gb, existing=existing)
+    qerr = None if ignore_quota else quota_ok(db, user, kind, ram_mb, vcpu, disk_gb, existing=existing)
     if qerr:
         return ScheduleDecision(False, False, qerr, None, alts + ["Stop another machine to free quota"], 0, None, ram_mb, vcpu, disk_gb, kind.value)
 
@@ -175,7 +176,7 @@ def _queue(db: Session, reason: str, alts: list[str], ram: int, cpu: int, disk: 
     return ScheduleDecision(False, True, reason, None, alts, wait, pos, ram, cpu, disk, kind.value)
 
 
-def start_machine(db: Session, machine: Machine, user: User) -> ScheduleDecision:
+def start_machine(db: Session, machine: Machine, user: User, *, ignore_quota: bool = False) -> ScheduleDecision:
     template = machine.template
     decision = evaluate(
         db,
@@ -186,6 +187,7 @@ def start_machine(db: Session, machine: Machine, user: User) -> ScheduleDecision
         disk_gb=machine.disk_gb,
         template=template,
         existing=machine,
+        ignore_quota=ignore_quota,
     )
     if decision.queued:
         machine.status = MachineStatus.QUEUED
