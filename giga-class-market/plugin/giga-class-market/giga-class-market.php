@@ -3,7 +3,7 @@
  * Plugin Name: Giga Class Market
  * Plugin URI:  https://gigaclassmarket.com/
  * Description: Core course marketplace, enrollment, payment verification, student dashboard, and administration plugin for Giga Class Market.
- * Version:     1.3.3
+ * Version:     1.3.5
  * Author:      Giga Class Market
  * Text Domain: giga-class-market
  * Domain Path: /languages

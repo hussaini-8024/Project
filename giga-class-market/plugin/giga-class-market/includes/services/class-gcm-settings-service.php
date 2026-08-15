@@ -24,7 +24,7 @@ class GCM_Settings_Service {
 			'company'  => array(
 				'name'      => 'Giga Class Market',
 				'email'     => 'Official@gigaclassmarket.com',
-				'phone'     => '+966509136037',
+				'phone'     => '03288966951',
 				'whatsapp'  => '+966509136037',
 				'address'   => '',
 				'hours'     => 'Mon–Sat, 9:00 AM – 6:00 PM',
