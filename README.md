@@ -108,7 +108,7 @@ The **Capacity Manager** and **load-test suite** (`POST /api/resources/loadtest`
 ```text
 backend/          FastAPI services, scheduler, providers, Alembic
 frontend/         React + TypeScript + Vite + Tailwind
-docs/             Production deployment and operations
+docs/             Production deployment, API, project report PDF
 loadtest/         CLI capacity runner
 docker-compose.yml
 ```
@@ -127,3 +127,10 @@ Ansible playbooks that were already in this repository remain under `playbooks/`
 - Administrators can enable TOTP MFA.
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for TLS, KVM, storage layout, and multi-node notes.
+
+A full project report (why the range exists, how it was built, software and strategies, and solved installation/configuration questions) is in [docs/University-Cyber-Range-Project-Report.pdf](docs/University-Cyber-Range-Project-Report.pdf). Regenerate it with:
+
+```bash
+pip install reportlab
+python docs/generate_project_report.py
+```
