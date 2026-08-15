@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app import __version__
+from app.api import assignments, auth, catalog, labs, resources, users, ws
+from app.config import get_settings
+from app.database import Base, SessionLocal, engine
+from app.seed import seed
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    settings = get_settings()
+    Path(settings.storage_root).mkdir(parents=True, exist_ok=True)
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed(db)
+    finally:
+        db.close()
+    yield
+
+
+settings = get_settings()
+app = FastAPI(
+    title="University Cyber Range API",
+    description=(
+        "Private university cybersecurity virtual lab / cyber range. "
+        "Container-first, VM-when-required. Students never receive host Docker or libvirt sockets."
+    ),
+    version=__version__,
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["X-Range-Plane"] = "management"
+    return response
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(_request: Request, exc: ValueError):
+    return JSONResponse({"detail": str(exc)}, status_code=400)
+
+
+app.include_router(auth.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+app.include_router(labs.router, prefix="/api")
+app.include_router(catalog.router, prefix="/api")
+app.include_router(assignments.router, prefix="/api")
+app.include_router(resources.router, prefix="/api")
+app.include_router(ws.router)
+
+
+@app.get("/api/health")
+def health() -> dict:
+    return {"status": "ok", "version": __version__, "provider": settings.compute_provider}
+
+
+@app.get("/api")
+def root() -> dict:
+    return {
+        "name": settings.app_name,
+        "version": __version__,
+        "docs": "/docs",
+        "principle": "container-first, VM-when-required",
+    }

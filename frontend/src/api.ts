@@ -1,0 +1,92 @@
+const TOKEN_KEY = "cr_token";
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string | null) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+export async function api<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(path, { ...init, headers });
+  if (res.status === 401) {
+    setToken(null);
+    if (!path.includes("/auth/login")) window.location.href = "/login";
+  }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      /* ignore */
+    }
+    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+export type User = {
+  id: string;
+  public_id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  role: string;
+  status: string;
+  course: string;
+  mfa_enabled: boolean;
+  lab_id: string | null;
+  quota: string | null;
+};
+
+export type Machine = {
+  id: string;
+  public_id: string;
+  name: string;
+  kind: "container" | "vm";
+  status: string;
+  vcpu: number;
+  ram_mb: number;
+  disk_gb: number;
+  internet: boolean;
+  isolated: boolean;
+  ephemeral: boolean;
+  template: string | null;
+  template_name: string | null;
+  vulnerable: boolean;
+  warning_label: string;
+  ip: string | null;
+  mac: string | null;
+  queue_position: number | null;
+  queue_reason: string;
+  error: string;
+  node: string | null;
+  created_at: string;
+};
+
+export type Template = {
+  slug: string;
+  name: string;
+  environment: string;
+  recommended_kind: string;
+  description: string;
+  category: string;
+  default_vcpu: number;
+  default_ram_mb: number;
+  default_disk_gb: number;
+  is_vulnerable_target: boolean;
+  requires_full_os: boolean;
+  tools: string[];
+  warning_label: string;
+  container_first: boolean;
+};

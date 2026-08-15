@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(62, 224, 200, 0.08), transparent 50%),
+    radial-gradient(900px 500px at 110% 0%, rgba(56, 189, 248, 0.06), transparent 45%),
+    #070b12;
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.card {
+  @apply rounded-xl border border-white/10 bg-ink-900/80 backdrop-blur-sm;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition;
+}
+
+.btn-primary {
+  @apply btn bg-cyan-glow text-ink-950 hover:brightness-110;
+}
+
+.btn-ghost {
+  @apply btn border border-white/10 bg-white/5 hover:bg-white/10;
+}
+
+.btn-danger {
+  @apply btn bg-rose-500/90 text-white hover:bg-rose-500;
+}
+
+.input {
+  @apply w-full rounded-lg border border-white/10 bg-ink-950/70 px-3 py-2 text-sm outline-none ring-cyan-glow/40 focus:ring-2;
+}
+
+.status-dot {
+  @apply inline-block h-2 w-2 rounded-full;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #243044;
+  border-radius: 999px;
+}

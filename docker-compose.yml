@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cyberrange
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cyberrange}
+      POSTGRES_DB: cyberrange
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cyberrange"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      DATABASE_URL: postgresql+psycopg2://cyberrange:${POSTGRES_PASSWORD:-cyberrange}@postgres:5432/cyberrange
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      COMPUTE_PROVIDER: ${COMPUTE_PROVIDER:-mock}
+      HOST_TOTAL_RAM_MB: ${HOST_TOTAL_RAM_MB:-131072}
+      HOST_RESERVE_RAM_MB: ${HOST_RESERVE_RAM_MB:-20480}
+      COOKIE_SECURE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - range-storage:/app/data/storage
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg2://cyberrange:${POSTGRES_PASSWORD:-cyberrange}@postgres:5432/cyberrange
+      REDIS_URL: redis://redis:6379/0
+      COMPUTE_PROVIDER: ${COMPUTE_PROVIDER:-mock}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  range-storage:

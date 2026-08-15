@@ -7,8 +7,36 @@ inventory/hosts.yml
 *.vault
 .vault_pass
 .env
+*.pem
+*.key
 
 # OS / editor
 .DS_Store
 Thumbs.db
 *.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+backend/data/
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# Uploads / runtime
+storage/uploads/
+storage/backups/
+storage/isos/
+storage/volumes/
+logs/
+*.log
