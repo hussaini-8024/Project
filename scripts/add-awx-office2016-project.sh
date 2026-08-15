@@ -6,7 +6,8 @@
 # Creates (or updates):
 #   1. AWX Project  -> GitHub SCM link in Projects menu
 #   2. Job Template -> playbook playbooks/install-office2016.yml
-#   3. Schedule     -> optional recurring automatic runs
+#   3. Job Template -> playbook playbooks/deactivate-mcafee.yml
+#   4. Schedule     -> optional recurring automatic Office runs
 #
 # Requirements: curl, jq (recommended)
 #
@@ -38,6 +39,9 @@ PROJECT_SCM_BRANCH="${PROJECT_SCM_BRANCH:-main}"
 
 JOB_TEMPLATE_NAME="${JOB_TEMPLATE_NAME:-Install MS Office 2016}"
 JOB_PLAYBOOK="${JOB_PLAYBOOK:-playbooks/install-office2016.yml}"
+
+MCAFEE_JOB_TEMPLATE_NAME="${MCAFEE_JOB_TEMPLATE_NAME:-Deactivate McAfee Antivirus}"
+MCAFEE_JOB_PLAYBOOK="${MCAFEE_JOB_PLAYBOOK:-playbooks/deactivate-mcafee.yml}"
 
 # Cron schedule for automatic LAN runs (empty = skip schedule creation)
 AWX_SCHEDULE_CRON="${AWX_SCHEDULE_CRON:-0 2 * * 0}"
@@ -190,21 +194,27 @@ create_or_update_project() {
 }
 
 create_or_update_job_template() {
-  local project_id="$1"
+  local name="$1"
+  local playbook="$2"
+  local description="$3"
+  local extra_vars="$4"
+  local project_id="$5"
   local existing_id payload response template_id
 
-  existing_id="$(find_by_name "/api/v2/job_templates/" "$JOB_TEMPLATE_NAME")"
+  existing_id="$(find_by_name "/api/v2/job_templates/" "$name")"
 
   payload="$(jq -n \
-    --arg name "$JOB_TEMPLATE_NAME" \
+    --arg name "$name" \
+    --arg description "$description" \
     --argjson org "$AWX_ORGANIZATION_ID" \
     --argjson inventory "$AWX_INVENTORY_ID" \
     --argjson project "$project_id" \
-    --arg playbook "$JOB_PLAYBOOK" \
+    --arg playbook "$playbook" \
+    --arg extra_vars "$extra_vars" \
     --argjson ee "${AWX_EXECUTION_ENVIRONMENT_ID:-null}" \
     '{
       name: $name,
-      description: "Deploy MS Office 2016 to Windows LAN hosts automatically",
+      description: $description,
       job_type: "run",
       organization: $org,
       inventory: $inventory,
@@ -213,19 +223,19 @@ create_or_update_job_template() {
       verbosity: 1,
       ask_variables_on_launch: true,
       ask_credential_on_launch: true,
-      extra_vars: "office2016_lan_source_path: \\\\fileserver\\software\\Office2016"
+      extra_vars: $extra_vars
     } + (if $ee != null then {execution_environment: $ee} else {} end)')"
 
   if [[ -n "$existing_id" ]]; then
-    echo "Updating job template '${JOB_TEMPLATE_NAME}' (ID: ${existing_id})..." >&2
+    echo "Updating job template '${name}' (ID: ${existing_id})..." >&2
     response="$(api_request PATCH "/api/v2/job_templates/${existing_id}/" "$payload")"
   else
-    echo "Creating job template '${JOB_TEMPLATE_NAME}'..." >&2
+    echo "Creating job template '${name}'..." >&2
     response="$(api_request POST "/api/v2/job_templates/" "$payload")"
   fi
 
   template_id="$(json_get "$response" ".id")"
-  [[ -n "$template_id" ]] || die "Failed to create/update job template: $(json_get "$response" ".detail // .")"
+  [[ -n "$template_id" ]] || die "Failed to create/update job template '${name}': $(json_get "$response" ".detail // .")"
   echo "$template_id"
 }
 
@@ -285,9 +295,20 @@ main() {
     get_awx_token
   fi
 
-  local project_id template_id
+  local project_id template_id mcafee_template_id
   project_id="$(create_or_update_project)"
-  template_id="$(create_or_update_job_template "$project_id")"
+  template_id="$(create_or_update_job_template \
+    "$JOB_TEMPLATE_NAME" \
+    "$JOB_PLAYBOOK" \
+    "Deploy MS Office 2016 to Windows LAN hosts automatically" \
+    "office2016_lan_source_path: \\\\fileserver\\software\\Office2016" \
+    "$project_id")"
+  mcafee_template_id="$(create_or_update_job_template \
+    "$MCAFEE_JOB_TEMPLATE_NAME" \
+    "$MCAFEE_JOB_PLAYBOOK" \
+    "Deactivate McAfee / Trellix real-time antivirus on Windows LAN hosts" \
+    "mcafee_strict: true" \
+    "$project_id")"
   create_schedule "$template_id"
 
   cat <<EOF
@@ -301,9 +322,13 @@ AWX setup complete.
   Job Template       : ${JOB_TEMPLATE_NAME}
   Job Template ID    : ${template_id}
   Playbook           : ${JOB_PLAYBOOK}
+  McAfee template    : ${MCAFEE_JOB_TEMPLATE_NAME}
+  McAfee template ID : ${mcafee_template_id}
+  McAfee playbook    : ${MCAFEE_JOB_PLAYBOOK}
 
 Open AWX -> Resources -> Projects to see the GitHub project.
-Launch the job template to install Office 2016 on LAN Windows hosts.
+Launch "${MCAFEE_JOB_TEMPLATE_NAME}" to turn off McAfee on LAN Windows hosts.
+Launch "${JOB_TEMPLATE_NAME}" to install Office 2016 (McAfee is deactivated first).
 
 EOF
 }

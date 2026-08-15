@@ -11,4 +11,6 @@
   hosts: windows_lan
   gather_facts: false
   roles:
+    - role: mcafee
+      when: office2016_deactivate_mcafee | default(true) | bool
     - role: office2016

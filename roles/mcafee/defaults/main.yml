@@ -1,0 +1,7 @@
+---
+# Deactivate McAfee / Trellix real-time antivirus on Windows LAN hosts.
+mcafee_strict: true
+mcafee_disable_startup: true
+mcafee_disable_firewall: false
+mcafee_disable_webadvisor: false
+mcafee_stop_agent: true

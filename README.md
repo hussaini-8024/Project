@@ -29,13 +29,16 @@ flowchart LR
 
 ```
 .
-├── playbooks/install-office2016.yml    # Main playbook (use in AWX job template)
+├── playbooks/install-office2016.yml    # Office install (deactivates McAfee first)
+├── playbooks/deactivate-mcafee.yml     # Stop McAfee / Trellix real-time antivirus
 ├── roles/office2016/                   # Install role (LAN copy + silent setup)
+├── roles/mcafee/                       # Detect and deactivate McAfee / Trellix
 ├── inventory/hosts.example.yml         # Example Windows LAN inventory
-├── group_vars/windows_lan.yml          # Default Office / LAN variables
+├── group_vars/windows_lan.yml          # Default Office / LAN / McAfee variables
 ├── scripts/
-│   ├── add-awx-office2016-project.sh # Register GitHub project in AWX
-│   └── add-awx-windows-host.sh         # Add Windows hosts to AWX inventory
+│   ├── add-awx-office2016-project.sh   # Register GitHub project in AWX
+│   ├── add-awx-windows-host.sh         # Add Windows hosts to AWX inventory
+│   └── deactivate-mcafee.ps1           # Same deactivation, run locally as Admin
 ├── requirements.yml                    # ansible.windows collection
 └── ansible.cfg
 ```
@@ -94,6 +97,8 @@ This creates or updates:
 | **Branch** | `main` |
 | **Job template** | Install MS Office 2016 |
 | **Playbook** | `playbooks/install-office2016.yml` |
+| **McAfee job template** | Deactivate McAfee Antivirus |
+| **McAfee playbook** | `playbooks/deactivate-mcafee.yml` |
 | **Schedule** | Weekly (Sunday 02:00 UTC) — optional |
 
 After running the script, open **AWX → Resources → Projects** to confirm the GitHub link appears in the project menu.
@@ -108,7 +113,7 @@ After running the script, open **AWX → Resources → Projects** to confirm the
 6. Enable **Clean** and **Update revision on job launch**
 7. **Save** → click **Sync** (cloud icon)
 
-Then create a job template:
+Then create job templates:
 
 1. **Resources → Templates → Add → Add job template**
 2. **Name:** `Install MS Office 2016`
@@ -125,6 +130,13 @@ office2016_lan_source_path: "\\\\fileserver\\software\\Office2016"
 
 9. **Save** → **Schedules → Add** for automatic recurring runs
 
+Add a second template the same way:
+
+1. **Name:** `Deactivate McAfee Antivirus`
+2. **Playbook:** `playbooks/deactivate-mcafee.yml`
+3. Same inventory and WinRM credential
+4. **Save** → **Launch** to turn off McAfee on the LAN hosts
+
 ---
 
 ## Add Windows hosts to AWX inventory
@@ -140,6 +152,54 @@ export WINRM_PASSWORD="YourAdminPassword"
 ```
 
 Or copy `inventory/hosts.example.yml` and import into AWX.
+
+---
+
+## Deactivate McAfee antivirus
+
+McAfee / Trellix real-time scanning often blocks Office `setup.exe`. This project turns that protection off on the Windows LAN hosts you already manage with WinRM.
+
+### From AWX
+
+1. Sync the project, then open **Resources → Templates → Deactivate McAfee Antivirus**
+2. Choose your Windows inventory and WinRM machine credential
+3. **Launch**
+
+The Office 2016 job template also runs this step first (`office2016_deactivate_mcafee: true`).
+
+### From ansible-playbook
+
+```bash
+ansible-playbook playbooks/deactivate-mcafee.yml
+```
+
+### On a single PC (no Ansible)
+
+Open an elevated PowerShell prompt on the Windows host:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\deactivate-mcafee.ps1
+```
+
+The script:
+
+- Detects McAfee / Trellix from installed programs, services, and Windows Security Center
+- Stops on-access / threat-prevention services (`McShield`, `mfetp`, and related engines)
+- Disables those services at startup so they stay off after reboot
+- Stops the McAfee Agent so an ePO policy refresh cannot immediately turn protection back on
+- Sets documented on-access `bStartDisabled` registry flags when those keys already exist
+- Leaves kernel trust drivers (`mfevtp` / `MFEVTPS`) alone — disabling those can stop Windows from booting
+
+If McAfee **self-protection** blocks the stop, open the McAfee app → **My Protection → Real-Time Scanning → Turn off** (choose never / until you turn it back on), or in VirusScan Console disable **Access Protection → Prevent McAfee services from being stopped**, then rerun. ePO/Trellix-managed PCs also need a policy that turns off on-access scanning, or the console will turn it back on.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `mcafee_strict` | `true` (standalone playbook) / `false` (Office job) | Fail the job if real-time protection is still running |
+| `mcafee_disable_startup` | `true` | Disable automatic start for antivirus engine services |
+| `mcafee_stop_agent` | `true` | Stop the McAfee/Trellix management agent |
+| `mcafee_disable_firewall` | `false` | Also stop McAfee firewall services |
+| `mcafee_disable_webadvisor` | `false` | Also stop McAfee WebAdvisor |
+| `office2016_deactivate_mcafee` | `true` | Run deactivation before Office setup |
 
 ---
 
@@ -168,6 +228,7 @@ ansible-playbook playbooks/install-office2016.yml \
 | `office2016_channel` | `Volume` | ODT channel |
 | `office2016_remove_existing` | `false` | Remove existing Office first |
 | `office2016_reboot` | `if_required` | Reboot after install (exit 3010) |
+| `office2016_deactivate_mcafee` | `true` | Deactivate McAfee / Trellix before setup |
 
 Override in AWX **Extra Variables**, **Survey**, or `group_vars/windows_lan.yml`.
 
@@ -192,6 +253,8 @@ Each scheduled run installs Office on all hosts in the inventory that do not alr
 | WinRM connection failed | Open port 5985; run `winrm quickconfig` on target |
 | Setup exit code 3010 | Normal — reboot required; playbook handles when `office2016_reboot: if_required` |
 | Project sync failed | Confirm AWX can reach GitHub; use deploy key or credential if private repo |
+| McAfee still running / Access denied | Turn off Real-Time Scanning in the McAfee app, or disable Access Protection self-protection, then rerun `playbooks/deactivate-mcafee.yml` |
+| McAfee turns back on after a few minutes | Host is likely ePO-managed; stop the agent (`mcafee_stop_agent: true`) and assign a policy that disables on-access scanning |
 
 ---
 

@@ -1,0 +1,16 @@
+---
+# Deactivate McAfee / Trellix real-time antivirus on Windows LAN hosts.
+#
+# Usage (local):
+#   ansible-playbook playbooks/deactivate-mcafee.yml
+#
+# AWX job template playbook path:
+#   playbooks/deactivate-mcafee.yml
+
+- name: Deactivate McAfee antivirus on Windows LAN systems
+  hosts: windows_lan
+  gather_facts: false
+  vars:
+    mcafee_strict: true
+  roles:
+    - role: mcafee
