@@ -12,3 +12,6 @@ inventory/hosts.yml
 .DS_Store
 Thumbs.db
 *.swp
+
+# Course ad render cache
+course-ads/**/build/
