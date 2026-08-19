@@ -50,6 +50,11 @@ class GCM_Activator {
 				'content'  => '',
 				'template' => 'page-templates/template-about.php',
 			),
+			'services'             => array(
+				'title'    => __( 'Services', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-services.php',
+			),
 			'contact'              => array(
 				'title'    => __( 'Contact', 'giga-class-market' ),
 				'content'  => '',

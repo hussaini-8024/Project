@@ -7,14 +7,24 @@
 
 get_header();
 
-$company_name = gcm_setting( 'company_name', 'Giga Class Market' );
-$hours        = gcm_setting( 'business_hours', __( 'Mon–Sat, 9:00 AM – 6:00 PM', 'giga-class-market' ) );
+$company_name    = gcm_setting( 'company_name', 'Giga Class Market' );
+$hours           = gcm_setting( 'business_hours', __( 'Mon–Sat, 9:00 AM – 6:00 PM', 'giga-class-market' ) );
+$prefill_subject = isset( $_GET['subject'] ) ? sanitize_text_field( wp_unslash( $_GET['subject'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$prefill_service = isset( $_GET['service'] ) ? sanitize_title( wp_unslash( $_GET['service'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$prefill_message = '';
+if ( $prefill_service ) {
+	$prefill_message = sprintf(
+		/* translators: %s: service slug or label */
+		__( "I'm interested in your %s service. Here are my project details:\n\n", 'giga-class-market' ),
+		str_replace( '-', ' ', $prefill_service )
+	);
+}
 ?>
 <section class="gcm-page-hero">
 	<div class="gcm-container">
 		<p class="gcm-eyebrow"><?php esc_html_e( 'Contact', 'giga-class-market' ); ?></p>
 		<h1><?php esc_html_e( 'Speak with Giga Class Market', 'giga-class-market' ); ?></h1>
-		<p><?php esc_html_e( 'Questions about courses, enrollment, or partnerships? Send a message and our team will respond.', 'giga-class-market' ); ?></p>
+		<p><?php esc_html_e( 'Questions about courses, enrollment, partnerships, or professional services? Send a message and our team will respond.', 'giga-class-market' ); ?></p>
 	</div>
 </section>
 
@@ -59,6 +69,9 @@ $hours        = gcm_setting( 'business_hours', __( 'Mon–Sat, 9:00 AM – 6:00 
 		<form class="gcm-contact-form gcm-animate" data-gcm-ajax-form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
 			<input type="hidden" name="action" value="gcm_contact_submit">
 			<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
+			<?php if ( $prefill_service ) : ?>
+				<input type="hidden" name="service" value="<?php echo esc_attr( $prefill_service ); ?>">
+			<?php endif; ?>
 			<label>
 				<span><?php esc_html_e( 'Full Name', 'giga-class-market' ); ?></span>
 				<input type="text" name="full_name" required autocomplete="name">
@@ -73,11 +86,11 @@ $hours        = gcm_setting( 'business_hours', __( 'Mon–Sat, 9:00 AM – 6:00 
 			</label>
 			<label>
 				<span><?php esc_html_e( 'Subject', 'giga-class-market' ); ?></span>
-				<input type="text" name="subject" required>
+				<input type="text" name="subject" value="<?php echo esc_attr( $prefill_subject ); ?>" required>
 			</label>
 			<label>
 				<span><?php esc_html_e( 'Message', 'giga-class-market' ); ?></span>
-				<textarea name="message" rows="6" required></textarea>
+				<textarea name="message" rows="6" required><?php echo esc_textarea( $prefill_message ); ?></textarea>
 			</label>
 			<button class="gcm-button gcm-button--gold" type="submit"><?php esc_html_e( 'Send Message', 'giga-class-market' ); ?></button>
 			<p class="gcm-form-status" role="status" aria-live="polite"></p>

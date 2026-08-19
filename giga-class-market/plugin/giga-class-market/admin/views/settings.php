@@ -170,6 +170,10 @@ $methods = $settings['payment']['methods'];
 			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][about_title]" value="<?php echo esc_attr( $seo['about_title'] ?? '' ); ?>" /></label>
 			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][about_description]" rows="3"><?php echo esc_textarea( $seo['about_description'] ?? '' ); ?></textarea></label>
 
+			<h3><?php esc_html_e( 'Services page', 'giga-class-market' ); ?></h3>
+			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][services_title]" value="<?php echo esc_attr( $seo['services_title'] ?? '' ); ?>" /></label>
+			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][services_description]" rows="3"><?php echo esc_textarea( $seo['services_description'] ?? '' ); ?></textarea></label>
+
 			<h3><?php esc_html_e( 'Contact page', 'giga-class-market' ); ?></h3>
 			<label><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?><input type="text" name="settings[seo][contact_title]" value="<?php echo esc_attr( $seo['contact_title'] ?? '' ); ?>" /></label>
 			<label><?php esc_html_e( 'Meta description', 'giga-class-market' ); ?><textarea name="settings[seo][contact_description]" rows="3"><?php echo esc_textarea( $seo['contact_description'] ?? '' ); ?></textarea></label>

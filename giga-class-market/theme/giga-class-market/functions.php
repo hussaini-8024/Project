@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.9.3' );
+define( 'GCM_THEME_VERSION', '1.9.4' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 

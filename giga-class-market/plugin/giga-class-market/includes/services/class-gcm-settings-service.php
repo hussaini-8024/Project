@@ -302,6 +302,8 @@ class GCM_Settings_Service {
 			$clean['seo']['home_description']         = sanitize_textarea_field( $settings['seo']['home_description'] ?? ( $seo_defaults['home_description'] ?? '' ) );
 			$clean['seo']['about_title']              = sanitize_text_field( $settings['seo']['about_title'] ?? ( $seo_defaults['about_title'] ?? '' ) );
 			$clean['seo']['about_description']        = sanitize_textarea_field( $settings['seo']['about_description'] ?? ( $seo_defaults['about_description'] ?? '' ) );
+			$clean['seo']['services_title']           = sanitize_text_field( $settings['seo']['services_title'] ?? ( $seo_defaults['services_title'] ?? '' ) );
+			$clean['seo']['services_description']     = sanitize_textarea_field( $settings['seo']['services_description'] ?? ( $seo_defaults['services_description'] ?? '' ) );
 			$clean['seo']['contact_title']            = sanitize_text_field( $settings['seo']['contact_title'] ?? ( $seo_defaults['contact_title'] ?? '' ) );
 			$clean['seo']['contact_description']      = sanitize_textarea_field( $settings['seo']['contact_description'] ?? ( $seo_defaults['contact_description'] ?? '' ) );
 			$clean['seo']['courses_title']            = sanitize_text_field( $settings['seo']['courses_title'] ?? ( $seo_defaults['courses_title'] ?? '' ) );

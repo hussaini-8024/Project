@@ -117,8 +117,10 @@ class GCM_SEO {
 			'home_description'        => 'Learn practical skills with premium online courses from Giga Class Market. Browse courses, enroll securely, track progress, and earn verified certificates.',
 			'about_title'             => 'About Us | ' . $brand,
 			'about_description'       => 'Learn about Giga Class Market — a premium education marketplace built for ambitious students, with verified enrollment, structured courses, and career-ready skills.',
+			'services_title'          => 'Digital Services | Web Development, Marketing & SEO | ' . $brand,
+			'services_description'    => 'Hire Giga Class Market for web development, digital marketing, SEO, social media, branding, and LMS setup. Contact us to start your project.',
 			'contact_title'           => 'Contact Us | ' . $brand,
-			'contact_description'     => 'Contact Giga Class Market for course support, enrollment help, and partnership questions. Reach us by phone, WhatsApp, or email.',
+			'contact_description'     => 'Contact Giga Class Market for course support, enrollment help, professional services, and partnership questions. Reach us by phone, WhatsApp, or email.',
 			'courses_title'           => 'Explore Premium Courses | ' . $brand,
 			'courses_description'     => 'Browse premium digital courses on Giga Class Market. Compare prices, enroll online, and build skills with structured lessons and verified certificates.',
 			'default_og_image_id'     => 0,
@@ -212,6 +214,10 @@ class GCM_SEO {
 
 		if ( is_page( 'about' ) && ! empty( $seo['about_title'] ) ) {
 			return array( 'title' => $seo['about_title'] );
+		}
+
+		if ( is_page( 'services' ) && ! empty( $seo['services_title'] ) ) {
+			return array( 'title' => $seo['services_title'] );
 		}
 
 		if ( is_page( 'contact' ) && ! empty( $seo['contact_title'] ) ) {
@@ -340,7 +346,7 @@ class GCM_SEO {
 			);
 		}
 
-		if ( is_page( 'about' ) || is_page( 'contact' ) ) {
+		if ( is_page( 'about' ) || is_page( 'services' ) || is_page( 'contact' ) ) {
 			$graphs[] = $this->organization_schema();
 			$graphs[] = $this->breadcrumb_schema(
 				array(
@@ -426,6 +432,7 @@ class GCM_SEO {
 		$extra  = "\n# Giga Class Market SEO\n";
 		$extra .= "Allow: /courses/\n";
 		$extra .= "Allow: /about/\n";
+		$extra .= "Allow: /services/\n";
 		$extra .= "Allow: /contact/\n";
 		$extra .= "Disallow: /student-dashboard/\n";
 		$extra .= "Disallow: /teacher-dashboard/\n";
@@ -497,6 +504,10 @@ class GCM_SEO {
 
 		if ( is_page( 'about' ) ) {
 			return $this->trim_description( $seo['about_description'] );
+		}
+
+		if ( is_page( 'services' ) ) {
+			return $this->trim_description( $seo['services_description'] );
 		}
 
 		if ( is_page( 'contact' ) ) {

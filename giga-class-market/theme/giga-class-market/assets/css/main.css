@@ -1058,6 +1058,134 @@ html[data-theme="dark"] .gcm-benefit-card__icon {
 	max-width: 680px;
 }
 
+/* Services page */
+.gcm-services-hero-actions {
+	margin-top: 1.35rem;
+}
+
+.gcm-services-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1.5rem;
+}
+
+.gcm-service-card {
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+	min-height: 100%;
+	padding: 1.7rem 1.55rem 1.55rem;
+	background:
+		linear-gradient(165deg, color-mix(in srgb, var(--gcm-surface) 90%, #fff), var(--gcm-surface));
+	border: 1px solid var(--gcm-border);
+	border-radius: calc(var(--gcm-radius) + 8px);
+	box-shadow: var(--gcm-shadow);
+	transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+}
+
+.gcm-service-card::before {
+	content: "";
+	position: absolute;
+	inset: auto -18% -42% auto;
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(224, 160, 69, 0.2), transparent 70%);
+	pointer-events: none;
+}
+
+.gcm-service-card:hover {
+	transform: translateY(-6px);
+	box-shadow: 0 22px 56px rgba(7, 38, 46, 0.14);
+	border-color: rgba(224, 160, 69, 0.34);
+}
+
+.gcm-service-card__code {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: fit-content;
+	min-width: 2.4rem;
+	padding: 0.2rem 0.55rem;
+	border-radius: 999px;
+	background: rgba(13, 59, 69, 0.08);
+	color: var(--gcm-navy);
+	font-family: var(--gcm-font-ui);
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+}
+
+html[data-theme="dark"] .gcm-service-card__code {
+	background: rgba(240, 208, 142, 0.12);
+	color: var(--gcm-gold-soft);
+}
+
+.gcm-service-card h3 {
+	margin: 0;
+	font-family: var(--gcm-font-display);
+	font-size: clamp(1.35rem, 2vw, 1.65rem);
+	font-weight: var(--gcm-weight-display);
+	line-height: 1.15;
+	letter-spacing: -0.02em;
+}
+
+.gcm-service-card > p {
+	margin: 0;
+	color: var(--gcm-muted);
+}
+
+.gcm-service-card ul {
+	margin: 0.15rem 0 0.35rem;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.45rem;
+	flex: 1;
+}
+
+.gcm-service-card li {
+	position: relative;
+	padding-left: 1.1rem;
+	color: var(--gcm-text);
+	font-size: 0.95rem;
+	line-height: 1.45;
+}
+
+.gcm-service-card li::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0.55em;
+	width: 0.45rem;
+	height: 0.45rem;
+	border-radius: 50%;
+	background: linear-gradient(145deg, var(--gcm-gold-soft), var(--gcm-gold));
+}
+
+.gcm-service-card .gcm-button {
+	margin-top: auto;
+	align-self: flex-start;
+}
+
+.gcm-services-cta {
+	text-align: center;
+	max-width: 720px;
+	margin-inline: auto;
+}
+
+.gcm-services-cta h2 {
+	margin: 0 0 0.75rem;
+}
+
+.gcm-services-cta p {
+	margin: 0 auto 1.25rem;
+	color: var(--gcm-muted);
+	max-width: 540px;
+}
+
 .gcm-about-card {
 	position: relative;
 	overflow: hidden;
@@ -1929,7 +2057,8 @@ textarea {
 	.gcm-course-grid,
 	.gcm-benefit-grid,
 	.gcm-testimonial-grid,
-	.gcm-post-grid {
+	.gcm-post-grid,
+	.gcm-services-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
@@ -1995,6 +2124,7 @@ textarea {
 	.gcm-benefit-grid,
 	.gcm-testimonial-grid,
 	.gcm-post-grid,
+	.gcm-services-grid,
 	.gcm-market-filters,
 	.gcm-search-form,
 	.gcm-footer__grid {

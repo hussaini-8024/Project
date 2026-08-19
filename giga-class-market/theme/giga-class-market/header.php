@@ -55,6 +55,7 @@
 		<nav id="gcm-primary-nav" class="gcm-primary-nav" aria-label="<?php esc_attr_e( 'Primary menu', 'giga-class-market' ); ?>">
 			<ul class="gcm-menu">
 				<li><a href="<?php echo esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ); ?>"><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></a></li>
+				<li><a href="<?php echo esc_url( home_url( '/services/' ) ); ?>"><?php esc_html_e( 'Services', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/contact/' ) ); ?>"><?php esc_html_e( 'Contact Us', 'giga-class-market' ); ?></a></li>
 				<li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php esc_html_e( 'About Us', 'giga-class-market' ); ?></a></li>
 				<?php if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) : ?>
