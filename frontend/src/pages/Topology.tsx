@@ -23,9 +23,9 @@ export function Topology() {
         style: nodeStyle("#3ee0c8"),
       });
     }
-    const es = [];
+    const es: any[] = [];
     machines.forEach((m, i) => {
-      const parent = (m.network_id && ns.find((n) => n.id === m.network_id)) || ns[0];
+      const parent = (m.network_id && ns.find((n: any) => n.id === m.network_id)) || ns[0];
       ns.push({
         id: m.id,
         position: { x: 40 + (i % 3) * 240, y: 160 + Math.floor(i / 3) * 120 },

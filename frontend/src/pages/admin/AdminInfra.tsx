@@ -8,7 +8,7 @@ export function AdminInfra() {
   const storage = useQuery({ queryKey: ["storage"], queryFn: () => api<any>("/api/storage") });
   const quotas = useQuery({ queryKey: ["quotas"], queryFn: () => api<any[]>("/api/quotas") });
   const load = useMutation({
-    mutationFn: () => api("/api/resources/loadtest", { method: "POST", body: JSON.stringify({}) }),
+    mutationFn: () => api<any>("/api/resources/loadtest", { method: "POST", body: JSON.stringify({}) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["load"] }),
   });
   const loadSummary = useQuery({ queryKey: ["load"], queryFn: () => api<any>("/api/resources/loadtest") });
