@@ -6,7 +6,7 @@ Pehle `leads.csv` kholo. `{BUSINESS}` ki jagah naam likho. `[Aapka Naam]` ki jag
 - Company: **Giga Developers** (web, portals) + **Giga Class Market** (LMS / online learning)
 - Phone / WhatsApp: `0334-1002229` · `0336-9771614` · `0328-8966951`
 - Email: `Official@gigaclassmarket.com` · `info@gigadevelopers.com`
-- Web: [gigadevelopers.com](https://gigadevelopers.com) · [gigaclassmarket.com](https://gigaclassmarket.com)
+- Web: [gigaclassmarket.com/services/](https://gigaclassmarket.com/services/) (inquiry form yahan hai) · [gigadevelopers.com](https://gigadevelopers.com)
 - Office: Office #2, AK Plaza, Haripur
 
 Har message short rakho. Pehle call, phir WhatsApp. Bulk blast mat karo.
@@ -34,9 +34,9 @@ Hum aap ke liye ye bana sakte hain:
 
 Pehli baat 10–15 minute, free. Koi advance nahi.
 
-Agar interest ho to "OK" likh dein ya call karein:
+Agar interest ho to "OK" likh dein, call karein, ya form bhar dein:
 0334-1002229
-gigadevelopers.com
+https://gigaclassmarket.com/services/#inquiry
 ```
 
 ### WhatsApp (Urdu)
@@ -56,8 +56,9 @@ gigadevelopers.com
 
 پہلی بات 10–15 منٹ، مفت ہے۔
 
-اگر دلچسپی ہو تو OK لکھیں یا کال کریں:
+اگر دلچسپی ہو تو OK لکھیں، کال کریں، یا فارم بھریں:
 0334-1002229
+https://gigaclassmarket.com/services/#inquiry
 ```
 
 ### Short SMS (160 chars style)
@@ -87,9 +88,9 @@ Hum aap ko de sakte hain:
 • Branches ke liye ek portal
 • Google Maps pe behtar listing
 
-Pehli consult free. Reply "OK" ya call:
+Pehli consult free. Reply "OK", call, ya form:
 0334-1002229
-gigadevelopers.com
+https://gigaclassmarket.com/services/#inquiry
 ```
 
 ### WhatsApp (Urdu)
@@ -135,10 +136,9 @@ Hum yeh portal bana kar manage bhi karte hain (LMS + school/college portal).
 
 Aap ke campus ke hisaab se 15 minute demo de sakte hain — free, Haripur/Abbottabad.
 
-Reply "DEMO" ya call:
+Reply "DEMO", call, ya form:
 0334-1002229
-gigaclassmarket.com
-gigadevelopers.com
+https://gigaclassmarket.com/services/?service=school#inquiry
 ```
 
 ### WhatsApp (Urdu)
@@ -179,9 +179,9 @@ Hum bana sakte hain:
 • Doctor profiles
 • Reports / patient portal (login)
 
-Pehli baat free. Reply "OK":
+Pehli baat free. Reply "OK" ya form:
 0334-1002229
-gigadevelopers.com
+https://gigaclassmarket.com/services/?service=hospital#inquiry
 ```
 
 ---
@@ -205,10 +205,10 @@ Hum aap ke liye:
 • Client login / documents portal (optional)
 • Google pe local ranking
 
-banate hain. Chamber visit ya 10 min call free.
+banate hain. Chamber visit, 10 min call, ya form.
 
 0334-1002229
-gigadevelopers.com
+https://gigaclassmarket.com/services/?service=law#inquiry
 ```
 
 ### WhatsApp (Urdu)
@@ -239,8 +239,8 @@ Main [Aapka Naam], Giga Developers Haripur.
 
 Aap ka business chal raha hai. Hum website, WhatsApp catalogue, aur simple online order/portal bana kar manage karte hain.
 
-Free consult: 0334-1002229
-gigadevelopers.com
+Free consult ya form: 0334-1002229
+https://gigaclassmarket.com/services/#inquiry
 ```
 
 ---

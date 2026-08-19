@@ -19,7 +19,7 @@ Chhoti hotels, guest houses, cafes aur advocates ke listed mobile **aksar owner/
 
 Har number **send se pehle verify** karo. Purane listings galat ho sakte hain.
 
-**Spam mat karo.** Pehle call, phir 1 WhatsApp. Agar stop kahe to band. Pakistan mein unsolicited bulk WhatsApp/SMS legally aur brand ke liye nuksan deh hai.
+**Spam mat karo.** Pehle call, phir 1 WhatsApp. Inquiry form **Services page** pe hai: https://gigaclassmarket.com/services/#inquiry — alag Contact page nahi. Agar stop kahe to band.
 
 ## Kis ko pehle contact karo
 
