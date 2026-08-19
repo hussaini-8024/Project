@@ -12,3 +12,11 @@ inventory/hosts.yml
 .DS_Store
 Thumbs.db
 *.swp
+
+# Android / LocalMesh
+LocalMeshChat/.gradle/
+LocalMeshChat/build/
+LocalMeshChat/app/build/
+LocalMeshChat/local.properties
+*.apk
+*.aab
