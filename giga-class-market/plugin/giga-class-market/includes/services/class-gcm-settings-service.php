@@ -22,16 +22,17 @@ class GCM_Settings_Service {
 	public static function defaults() {
 		return array(
 			'company'  => array(
-				'name'      => 'Giga Class Market',
-				'email'     => 'Official@gigaclassmarket.com',
-				'phone'     => '03288966951',
-				'whatsapp'  => '+966509136037',
-				'address'   => '',
-				'hours'     => 'Mon–Sat, 9:00 AM – 6:00 PM',
-				'facebook'  => '',
-				'instagram' => '',
-				'linkedin'  => '',
-				'youtube'   => '',
+				'name'         => 'Giga Class Market',
+				'email'        => 'Official@gigaclassmarket.com',
+				'inbox_email'  => 'info@gigaclassmarket.com',
+				'phone'        => '03288966951',
+				'whatsapp'     => '+966509136037',
+				'address'      => '',
+				'hours'        => 'Mon–Sat, 9:00 AM – 6:00 PM',
+				'facebook'     => '',
+				'instagram'    => '',
+				'linkedin'     => '',
+				'youtube'      => '',
 			),
 			'payment'  => array(
 				'methods' => array(
@@ -200,6 +201,20 @@ class GCM_Settings_Service {
 	}
 
 	/**
+	 * Inbox address for contact-form notifications and public Contact display.
+	 *
+	 * @return string
+	 */
+	public static function get_inbox_email() {
+		$settings = self::get_settings();
+		$email    = isset( $settings['company']['inbox_email'] ) ? sanitize_email( $settings['company']['inbox_email'] ) : '';
+		if ( ! is_email( $email ) ) {
+			$email = 'info@gigaclassmarket.com';
+		}
+		return $email;
+	}
+
+	/**
 	 * Outgoing From display name for site mail.
 	 *
 	 * @return string
@@ -221,12 +236,13 @@ class GCM_Settings_Service {
 		$clean    = self::defaults();
 
 		if ( isset( $settings['company'] ) && is_array( $settings['company'] ) ) {
-			$clean['company']['name']      = sanitize_text_field( $settings['company']['name'] ?? $clean['company']['name'] );
-			$clean['company']['email']     = sanitize_email( $settings['company']['email'] ?? $clean['company']['email'] );
-			$clean['company']['phone']     = sanitize_text_field( $settings['company']['phone'] ?? '' );
-			$clean['company']['whatsapp']  = sanitize_text_field( $settings['company']['whatsapp'] ?? '' );
-			$clean['company']['address']   = sanitize_textarea_field( $settings['company']['address'] ?? '' );
-			$clean['company']['hours']     = sanitize_text_field( $settings['company']['hours'] ?? ( $clean['company']['hours'] ?? '' ) );
+			$clean['company']['name']        = sanitize_text_field( $settings['company']['name'] ?? $clean['company']['name'] );
+			$clean['company']['email']       = sanitize_email( $settings['company']['email'] ?? $clean['company']['email'] );
+			$clean['company']['inbox_email'] = sanitize_email( $settings['company']['inbox_email'] ?? $clean['company']['inbox_email'] );
+			$clean['company']['phone']       = sanitize_text_field( $settings['company']['phone'] ?? '' );
+			$clean['company']['whatsapp']    = sanitize_text_field( $settings['company']['whatsapp'] ?? '' );
+			$clean['company']['address']     = sanitize_textarea_field( $settings['company']['address'] ?? '' );
+			$clean['company']['hours']       = sanitize_text_field( $settings['company']['hours'] ?? ( $clean['company']['hours'] ?? '' ) );
 			$clean['company']['facebook']  = esc_url_raw( $settings['company']['facebook'] ?? '' );
 			$clean['company']['instagram'] = esc_url_raw( $settings['company']['instagram'] ?? '' );
 			$clean['company']['linkedin']  = esc_url_raw( $settings['company']['linkedin'] ?? '' );

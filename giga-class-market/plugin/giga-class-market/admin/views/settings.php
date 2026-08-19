@@ -31,7 +31,9 @@ $methods = $settings['payment']['methods'];
 			<h2><?php esc_html_e( 'Company Information', 'giga-class-market' ); ?></h2>
 			<label><?php esc_html_e( 'Company name', 'giga-class-market' ); ?><input type="text" name="settings[company][name]" value="<?php echo esc_attr( $settings['company']['name'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Email (outgoing From address)', 'giga-class-market' ); ?><input type="email" name="settings[company][email]" value="<?php echo esc_attr( $settings['company']['email'] ); ?>" placeholder="Official@gigaclassmarket.com" /></label>
-			<p class="description"><?php esc_html_e( 'Used as the From / Reply-To address for student and admin emails (instead of wordpress@…).', 'giga-class-market' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Used only to SEND emails (From address) — students, certificates, reminders. Recommended: Official@gigaclassmarket.com', 'giga-class-market' ); ?></p>
+			<label><?php esc_html_e( 'Inbox email (receive contact messages)', 'giga-class-market' ); ?><input type="email" name="settings[company][inbox_email]" value="<?php echo esc_attr( $settings['company']['inbox_email'] ?? 'info@gigaclassmarket.com' ); ?>" placeholder="info@gigaclassmarket.com" /></label>
+			<p class="description"><?php esc_html_e( 'Contact form messages and the public Contact/Footer email go here. Recommended: info@gigaclassmarket.com', 'giga-class-market' ); ?></p>
 			<label><?php esc_html_e( 'Phone', 'giga-class-market' ); ?><input type="text" name="settings[company][phone]" value="<?php echo esc_attr( $settings['company']['phone'] ); ?>" /></label>
 			<label><?php esc_html_e( 'Address', 'giga-class-market' ); ?><textarea name="settings[company][address]" rows="3"><?php echo esc_textarea( $settings['company']['address'] ); ?></textarea></label>
 			<label><?php esc_html_e( 'Business hours', 'giga-class-market' ); ?><input type="text" name="settings[company][hours]" value="<?php echo esc_attr( $settings['company']['hours'] ?? '' ); ?>" /></label>

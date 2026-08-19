@@ -49,21 +49,40 @@ class GCM_Contact_Service {
 		}
 
 		$contact_id = (int) $wpdb->insert_id;
-		$settings   = GCM_Settings_Service::get_settings();
-		$admin_mail = $settings['company']['email'] ?? get_option( 'admin_email' );
+		$admin_mail = class_exists( 'GCM_Settings_Service' )
+			? GCM_Settings_Service::get_inbox_email()
+			: 'info@gigaclassmarket.com';
+
+		$visitor_name    = sanitize_text_field( $data['full_name'] ?? '' );
+		$visitor_subject = sanitize_text_field( $data['subject'] ?? '' );
+		$visitor_whatsapp = sanitize_text_field( $data['whatsapp'] ?? '' );
+		$visitor_message = sanitize_textarea_field( $data['message'] ?? '' );
+
+		$body = sprintf(
+			/* translators: 1: name, 2: email, 3: whatsapp, 4: subject, 5: message */
+			__( "A new contact message was submitted.\n\nName: %1\$s\nEmail: %2\$s\nWhatsApp: %3\$s\nSubject: %4\$s\n\nMessage:\n%5\$s", 'giga-class-market' ),
+			$visitor_name,
+			$email,
+			$visitor_whatsapp,
+			$visitor_subject,
+			$visitor_message
+		);
 
 		GCM_Notification_Service::queue_email(
 			0,
 			'contact_received',
-			__( 'New contact message received', 'giga-class-market' ),
 			sprintf(
-				/* translators: 1: name, 2: subject */
-				__( 'A new contact message was submitted by %1$s about "%2$s".', 'giga-class-market' ),
-				esc_html( $data['full_name'] ?? '' ),
-				esc_html( $data['subject'] ?? '' )
+				/* translators: %s: subject */
+				__( 'New contact message: %s', 'giga-class-market' ),
+				$visitor_subject ? $visitor_subject : __( 'Website inquiry', 'giga-class-market' )
 			),
+			$body,
 			$admin_mail,
-			array( 'contact_id' => $contact_id )
+			array(
+				'contact_id'    => $contact_id,
+				'reply_to'      => $email,
+				'reply_to_name' => $visitor_name,
+			)
 		);
 
 		return $contact_id;

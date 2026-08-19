@@ -684,8 +684,8 @@ class GCM_SEO {
 			}
 		}
 
-		if ( ! empty( $company['email'] ) ) {
-			$org['email'] = $company['email'];
+		if ( ! empty( $company['email'] ) || ! empty( $company['inbox_email'] ) ) {
+			$org['email'] = ! empty( $company['inbox_email'] ) ? $company['inbox_email'] : $company['email'];
 		}
 		if ( ! empty( $company['phone'] ) ) {
 			$org['telephone'] = $company['phone'];

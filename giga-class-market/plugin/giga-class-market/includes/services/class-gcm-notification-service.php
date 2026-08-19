@@ -61,10 +61,22 @@ class GCM_Notification_Service {
 			$headers    = array(
 				'Content-Type: text/html; charset=UTF-8',
 				sprintf( 'From: %s <%s>', $from_name, $from_email ),
-				sprintf( 'Reply-To: %s <%s>', $from_name, $from_email ),
 			);
-			$sent       = wp_mail( $email, $title, wpautop( $message ), $headers );
-			$status     = $sent ? 'sent' : 'failed';
+
+			$reply_to      = isset( $meta['reply_to'] ) ? sanitize_email( (string) $meta['reply_to'] ) : '';
+			$reply_to_name = isset( $meta['reply_to_name'] ) ? sanitize_text_field( (string) $meta['reply_to_name'] ) : '';
+			if ( is_email( $reply_to ) ) {
+				$headers[] = sprintf(
+					'Reply-To: %s <%s>',
+					$reply_to_name ? $reply_to_name : $reply_to,
+					$reply_to
+				);
+			} else {
+				$headers[] = sprintf( 'Reply-To: %s <%s>', $from_name, $from_email );
+			}
+
+			$sent   = wp_mail( $email, $title, wpautop( $message ), $headers );
+			$status = $sent ? 'sent' : 'failed';
 		}
 
 		if ( $notification_id ) {

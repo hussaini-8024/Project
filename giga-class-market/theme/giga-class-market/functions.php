@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.9.5' );
+define( 'GCM_THEME_VERSION', '1.9.6' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -262,7 +262,11 @@ function gcm_get_settings() {
 	$flat = $settings;
 	if ( ! empty( $settings['company'] ) && is_array( $settings['company'] ) ) {
 		$flat['company_name']     = $settings['company']['name'] ?? '';
-		$flat['contact_email']    = $settings['company']['email'] ?? '';
+		$inbox                    = $settings['company']['inbox_email'] ?? '';
+		$from                     = $settings['company']['email'] ?? '';
+		$flat['contact_email']    = $inbox ? $inbox : $from;
+		$flat['from_email']       = $from;
+		$flat['inbox_email']      = $inbox ? $inbox : 'info@gigaclassmarket.com';
 		$flat['contact_phone']    = $settings['company']['phone'] ?? '';
 		$flat['whatsapp_number']  = $settings['company']['whatsapp'] ?? '';
 		$flat['company_address']  = $settings['company']['address'] ?? '';

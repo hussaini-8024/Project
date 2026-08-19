@@ -451,11 +451,12 @@ class GCM_Installer {
 			'gcm_settings',
 			array(
 				'company'  => array(
-					'name'     => 'Giga Class Market',
-					'email'    => 'Official@gigaclassmarket.com',
-					'phone'    => '03288966951',
-					'whatsapp' => '+966509136037',
-					'address'  => '',
+					'name'        => 'Giga Class Market',
+					'email'       => 'Official@gigaclassmarket.com',
+					'inbox_email' => 'info@gigaclassmarket.com',
+					'phone'       => '03288966951',
+					'whatsapp'    => '+966509136037',
+					'address'     => '',
 				),
 				'payment'  => array(
 					'methods' => array(
@@ -531,6 +532,7 @@ class GCM_Installer {
 			$settings['company']['whatsapp'] = '+966509136037';
 		}
 		$settings['company']['email'] = 'Official@gigaclassmarket.com';
+		$settings['company']['inbox_email'] = 'info@gigaclassmarket.com';
 		if ( empty( $settings['company']['name'] ) ) {
 			$settings['company']['name'] = 'Giga Class Market';
 		}
