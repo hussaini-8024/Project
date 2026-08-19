@@ -71,7 +71,7 @@
 
 	$(document).on('submit', '.gcm-ajax-form', function (event) {
 		var $form = $(this);
-		if ($form.hasClass('gcm-settings-form') || $form.hasClass('gcm-create-teacher-form') || $form.hasClass('gcm-set-teacher-password') || $form.hasClass('gcm-assign-teacher-courses') || $form.hasClass('gcm-admin-schedule-class')) {
+		if ($form.hasClass('gcm-settings-form') || $form.hasClass('gcm-create-teacher-form') || $form.hasClass('gcm-set-teacher-password') || $form.hasClass('gcm-set-teacher-zoom-host') || $form.hasClass('gcm-assign-teacher-courses') || $form.hasClass('gcm-admin-schedule-class')) {
 			return;
 		}
 		event.preventDefault();
@@ -135,7 +135,7 @@
 			});
 	});
 
-	$(document).on('submit', '.gcm-create-teacher-form, .gcm-set-teacher-password, .gcm-assign-teacher-courses, .gcm-admin-schedule-class', function (event) {
+	$(document).on('submit', '.gcm-create-teacher-form, .gcm-set-teacher-password, .gcm-set-teacher-zoom-host, .gcm-assign-teacher-courses, .gcm-admin-schedule-class', function (event) {
 		event.preventDefault();
 		var $form = $(this);
 		var $message = $form.find('.gcm-form-message').first();
