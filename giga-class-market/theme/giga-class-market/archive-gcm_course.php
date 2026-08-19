@@ -71,9 +71,9 @@ get_header();
 ?>
 <section class="gcm-page-hero">
 	<div class="gcm-container">
-		<p class="gcm-eyebrow"><?php esc_html_e( 'Marketplace', 'giga-class-market' ); ?></p>
-		<h1><?php esc_html_e( 'Explore premium courses', 'giga-class-market' ); ?></h1>
-		<p><?php esc_html_e( 'Search, compare, and enroll in polished learning experiences built for modern careers.', 'giga-class-market' ); ?></p>
+		<p class="gcm-eyebrow"><?php esc_html_e( 'Online Courses', 'giga-class-market' ); ?></p>
+		<h1><?php esc_html_e( 'Online courses for CCNA, ethical hacking & AI coding', 'giga-class-market' ); ?></h1>
+		<p><?php esc_html_e( 'Search and enroll in career-focused online courses from Giga Class Market — practical lessons, expert instructors, and verified certificates.', 'giga-class-market' ); ?></p>
 	</div>
 </section>
 

@@ -582,6 +582,37 @@ class GCM_Installer {
 		}
 
 		update_option( 'gcm_settings', $settings, false );
+
+		// Deep course SEO: keyword titles/descriptions/FAQs for every published course.
+		if ( class_exists( 'GCM_Course_SEO' ) ) {
+			GCM_Course_SEO::ensure_all_published();
+		}
+
+		// Keep marketplace SEO strings search-focused.
+		if ( empty( $settings['seo'] ) || ! is_array( $settings['seo'] ) ) {
+			$settings['seo'] = array();
+		}
+		$seo_defaults = class_exists( 'GCM_SEO' ) ? GCM_SEO::defaults() : array();
+		foreach ( array( 'courses_title', 'courses_description', 'home_title', 'home_description' ) as $seo_key ) {
+			if ( empty( $settings['seo'][ $seo_key ] ) && ! empty( $seo_defaults[ $seo_key ] ) ) {
+				$settings['seo'][ $seo_key ] = $seo_defaults[ $seo_key ];
+			}
+		}
+		// Refresh courses archive SEO copy to the stronger defaults when still generic.
+		if ( ! empty( $seo_defaults['courses_title'] ) ) {
+			$current_courses_title = (string) ( $settings['seo']['courses_title'] ?? '' );
+			if ( '' === $current_courses_title || false !== stripos( $current_courses_title, 'Explore Premium Courses' ) ) {
+				$settings['seo']['courses_title'] = $seo_defaults['courses_title'];
+			}
+		}
+		if ( ! empty( $seo_defaults['courses_description'] ) ) {
+			$current_courses_desc = (string) ( $settings['seo']['courses_description'] ?? '' );
+			if ( '' === $current_courses_desc || false !== stripos( $current_courses_desc, 'Browse premium digital courses' ) ) {
+				$settings['seo']['courses_description'] = $seo_defaults['courses_description'];
+			}
+		}
+		update_option( 'gcm_settings', $settings, false );
+
 		update_option( 'gcm_plugin_version', GCM_VERSION, false );
 	}
 }

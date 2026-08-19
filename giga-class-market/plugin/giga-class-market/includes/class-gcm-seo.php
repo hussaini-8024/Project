@@ -30,6 +30,26 @@ class GCM_SEO {
 		add_filter( 'wp_sitemaps_add_provider', array( $this, 'filter_sitemap_providers' ), 10, 2 );
 		add_action( 'init', array( $this, 'ensure_google_verification_file' ), 5 );
 		add_action( 'template_redirect', array( $this, 'serve_google_verification_file' ), 0 );
+		add_action( 'save_post_gcm_course', array( $this, 'on_course_saved' ), 40, 2 );
+	}
+
+	/**
+	 * Keep course SEO meta filled whenever a course is saved/published.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function on_course_saved( $post_id, $post ) {
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+			return;
+		}
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return;
+		}
+		if ( class_exists( 'GCM_Course_SEO' ) ) {
+			GCM_Course_SEO::ensure_course( (int) $post_id );
+		}
 	}
 
 	/**
@@ -121,8 +141,8 @@ class GCM_SEO {
 			'services_description'    => 'Hire Giga Class Market for web development, digital marketing, SEO, social media, branding, and LMS setup. Contact us to start your project.',
 			'contact_title'           => 'Contact Us | ' . $brand,
 			'contact_description'     => 'Contact Giga Class Market for course support, enrollment help, professional services, and partnership questions. Reach us by phone, WhatsApp, or email.',
-			'courses_title'           => 'Explore Premium Courses | ' . $brand,
-			'courses_description'     => 'Browse premium digital courses on Giga Class Market. Compare prices, enroll online, and build skills with structured lessons and verified certificates.',
+			'courses_title'           => 'Online Courses | CCNA, Ethical Hacking & AI Coding | ' . $brand,
+			'courses_description'     => 'Enroll in premium online courses at Giga Class Market — CCNA networking, ethical hacking, AI coding, and more. Practical lessons, expert instructors, and verified certificates.',
 			'default_og_image_id'     => 0,
 			'organization_description'=> 'Giga Class Market is a premium online learning marketplace offering structured digital courses, secure enrollment, student dashboards, and verified certificates.',
 			'google_site_verification'=> '',
@@ -225,12 +245,12 @@ class GCM_SEO {
 		}
 
 		if ( is_singular( 'gcm_course' ) ) {
-			$custom = (string) get_post_meta( get_the_ID(), '_gcm_seo_title', true );
-			$title  = $custom ? $custom : get_the_title();
-			return array(
-				'title' => $title,
-				'site'  => $site,
-			);
+			$course_id = get_the_ID();
+			$title     = class_exists( 'GCM_Course_SEO' )
+				? GCM_Course_SEO::resolve_seo_title( $course_id )
+				: get_the_title( $course_id );
+			// Full SERP title already includes brand — avoid "title - domain" duplicates.
+			return array( 'title' => $title );
 		}
 
 		if ( is_singular() && ! empty( $parts['title'] ) && empty( $parts['site'] ) ) {
@@ -258,6 +278,13 @@ class GCM_SEO {
 			echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
 		}
 
+		if ( is_singular( 'gcm_course' ) && class_exists( 'GCM_Course_SEO' ) ) {
+			$keyword = GCM_Course_SEO::resolve_focus_keyword( get_the_ID() );
+			if ( $keyword ) {
+				echo '<meta name="keywords" content="' . esc_attr( $keyword ) . '" />' . "\n";
+			}
+		}
+
 		if ( ! empty( $seo['google_site_verification'] ) ) {
 			echo '<meta name="google-site-verification" content="' . esc_attr( $seo['google_site_verification'] ) . '" />' . "\n";
 		}
@@ -267,8 +294,8 @@ class GCM_SEO {
 		}
 
 		$canonical = $this->get_canonical_url();
-		if ( $canonical && ! is_singular() ) {
-			// Core prints singular canonicals; fill gaps for home/archives/pages that miss it.
+		if ( $canonical && ( ! is_singular() || is_post_type_archive( 'gcm_course' ) ) ) {
+			// Core prints singular canonicals; force clean archive canonicals too.
 			echo '<link rel="canonical" href="' . esc_url( $canonical ) . '" />' . "\n";
 		}
 	}
@@ -287,7 +314,7 @@ class GCM_SEO {
 		$description = $this->get_meta_description();
 		$url         = $this->get_canonical_url();
 		$image       = $this->get_share_image();
-		$type        = is_singular( 'gcm_course' ) ? 'product' : ( is_singular() ? 'article' : 'website' );
+		$type        = is_singular( 'gcm_course' ) ? 'website' : ( is_singular() ? 'article' : 'website' );
 		$site_name   = get_bloginfo( 'name', 'display' );
 
 		echo '<meta property="og:locale" content="' . esc_attr( str_replace( '-', '_', get_locale() ) ) . '" />' . "\n";
@@ -310,6 +337,15 @@ class GCM_SEO {
 		echo '<meta name="twitter:title" content="' . esc_attr( $title ) . '" />' . "\n";
 		if ( $description ) {
 			echo '<meta name="twitter:description" content="' . esc_attr( $description ) . '" />' . "\n";
+		}
+
+		if ( is_singular( 'gcm_course' ) && class_exists( 'GCM_Course_Service' ) ) {
+			$course = GCM_Course_Service::get( get_the_ID() );
+			if ( $course ) {
+				$price = $course['discount_price'] > 0 ? $course['discount_price'] : $course['price'];
+				echo '<meta property="product:price:amount" content="' . esc_attr( (string) $price ) . '" />' . "\n";
+				echo '<meta property="product:price:currency" content="PKR" />' . "\n";
+			}
 		}
 	}
 
@@ -344,6 +380,10 @@ class GCM_SEO {
 					),
 				)
 			);
+			$item_list = $this->course_item_list_schema();
+			if ( $item_list ) {
+				$graphs[] = $item_list;
+			}
 		}
 
 		if ( is_page( 'about' ) || is_page( 'services' ) || is_page( 'contact' ) ) {
@@ -412,6 +452,17 @@ class GCM_SEO {
 		if ( $this->is_private_view() ) {
 			$robots['noindex']  = true;
 			$robots['nofollow'] = true;
+			return $robots;
+		}
+
+		// Avoid indexing filtered/search marketplace URLs (canonical stays clean /courses/).
+		if ( is_post_type_archive( 'gcm_course' ) ) {
+			$has_filter = ! empty( $_GET['course_search'] ) || ! empty( $_GET['course_category'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$sort       = isset( $_GET['sort'] ) ? sanitize_key( wp_unslash( $_GET['sort'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( $has_filter || ( $sort && 'newest' !== $sort ) ) {
+				$robots['noindex'] = true;
+				$robots['follow']  = true;
+			}
 		}
 
 		return $robots;
@@ -515,11 +566,15 @@ class GCM_SEO {
 		}
 
 		if ( is_singular( 'gcm_course' ) ) {
-			$custom = (string) get_post_meta( get_the_ID(), '_gcm_seo_description', true );
+			$course_id = get_the_ID();
+			if ( class_exists( 'GCM_Course_SEO' ) ) {
+				return $this->trim_description( GCM_Course_SEO::resolve_seo_description( $course_id ) );
+			}
+			$custom = (string) get_post_meta( $course_id, '_gcm_seo_description', true );
 			if ( $custom ) {
 				return $this->trim_description( $custom );
 			}
-			$course = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::get( get_the_ID() ) : null;
+			$course = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::get( $course_id ) : null;
 			if ( $course ) {
 				$text = $course['excerpt'] ? $course['excerpt'] : wp_trim_words( wp_strip_all_tags( $course['content'] ), 35 );
 				return $this->trim_description( $text );
@@ -665,10 +720,61 @@ class GCM_SEO {
 				'@type'       => 'SearchAction',
 				'target'      => array(
 					'@type'       => 'EntryPoint',
-					'urlTemplate' => home_url( '/?s={search_term_string}' ),
+					'urlTemplate' => home_url( '/courses/?course_search={search_term_string}' ),
 				),
 				'query-input' => 'required name=search_term_string',
 			),
+		);
+	}
+
+	/**
+	 * Course list carousel schema for /courses/ (Google Course list eligibility).
+	 *
+	 * @return array|null
+	 */
+	private function course_item_list_schema() {
+		$query = new WP_Query(
+			array(
+				'post_type'              => 'gcm_course',
+				'post_status'            => 'publish',
+				'posts_per_page'         => 50,
+				'orderby'                => 'date',
+				'order'                  => 'DESC',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => true,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		if ( ! $query->have_posts() ) {
+			return null;
+		}
+
+		$elements = array();
+		$position = 0;
+		foreach ( $query->posts as $post ) {
+			++$position;
+			$course_node = $this->course_schema( (int) $post->ID );
+			if ( ! $course_node ) {
+				continue;
+			}
+			$elements[] = array(
+				'@type'    => 'ListItem',
+				'position' => $position,
+				'item'     => $course_node,
+			);
+		}
+		wp_reset_postdata();
+
+		if ( count( $elements ) < 1 ) {
+			return null;
+		}
+
+		return array(
+			'@type'           => 'ItemList',
+			'@id'             => trailingslashit( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ) . '#course-list',
+			'name'            => __( 'Online Courses at Giga Class Market', 'giga-class-market' ),
+			'itemListElement' => $elements,
 		);
 	}
 
@@ -687,31 +793,67 @@ class GCM_SEO {
 		$settings = GCM_Settings_Service::get_settings();
 		$company  = $settings['company']['name'] ?? get_bloginfo( 'name' );
 		$price    = $course['discount_price'] > 0 ? $course['discount_price'] : $course['price'];
-		$desc     = (string) get_post_meta( $course_id, '_gcm_seo_description', true );
+		$is_free  = (float) $price <= 0;
+		$desc     = class_exists( 'GCM_Course_SEO' )
+			? GCM_Course_SEO::resolve_seo_description( $course_id )
+			: ( (string) get_post_meta( $course_id, '_gcm_seo_description', true ) );
 		if ( ! $desc ) {
 			$desc = $course['excerpt'] ? $course['excerpt'] : wp_trim_words( wp_strip_all_tags( $course['content'] ), 40 );
 		}
 
+		$provider = array(
+			'@type' => 'Organization',
+			'name'  => $company,
+			'url'   => home_url( '/' ),
+			'@id'   => home_url( '/#organization' ),
+		);
+		$same_as  = array_values(
+			array_filter(
+				array(
+					$settings['company']['facebook'] ?? '',
+					$settings['company']['instagram'] ?? '',
+					$settings['company']['linkedin'] ?? '',
+					$settings['company']['youtube'] ?? '',
+				)
+			)
+		);
+		if ( $same_as ) {
+			$provider['sameAs'] = $same_as;
+		}
+
 		$schema = array(
-			'@type'       => 'Course',
-			'@id'         => trailingslashit( $course['permalink'] ) . '#course',
-			'name'        => $course['title'],
-			'description' => wp_strip_all_tags( $desc ),
-			'url'         => $course['permalink'],
-			'provider'    => array(
-				'@type' => 'Organization',
-				'name'  => $company,
-				'url'   => home_url( '/' ),
-			),
-			'offers'      => array(
+			'@type'            => 'Course',
+			'@id'              => trailingslashit( $course['permalink'] ) . '#course',
+			'name'             => $course['title'],
+			'description'      => wp_strip_all_tags( $desc ),
+			'url'              => $course['permalink'],
+			'inLanguage'       => 'en',
+			'isAccessibleForFree' => $is_free,
+			'provider'         => $provider,
+			'offers'           => array(
 				'@type'         => 'Offer',
-				'category'      => 'Paid',
+				'category'      => $is_free ? 'Free' : 'Paid',
 				'price'         => (string) $price,
 				'priceCurrency' => 'PKR',
 				'availability'  => 'https://schema.org/InStock',
 				'url'           => $course['permalink'],
 			),
+			'hasCourseInstance'=> array(
+				'@type'      => 'CourseInstance',
+				'courseMode' => 'Online',
+				'location'   => array(
+					'@type' => 'VirtualLocation',
+					'url'   => $course['permalink'],
+				),
+			),
 		);
+
+		if ( class_exists( 'GCM_Course_SEO' ) ) {
+			$keyword = GCM_Course_SEO::resolve_focus_keyword( $course_id );
+			if ( $keyword ) {
+				$schema['keywords'] = $keyword;
+			}
+		}
 
 		if ( ! empty( $course['thumbnail'] ) ) {
 			$schema['image'] = $course['thumbnail'];
@@ -724,6 +866,44 @@ class GCM_SEO {
 		}
 		if ( ! empty( $course['duration'] ) ) {
 			$schema['timeRequired'] = $course['duration'];
+			$schema['hasCourseInstance']['courseWorkload'] = $course['duration'];
+		}
+		if ( ! empty( $course['categories'] ) && is_array( $course['categories'] ) ) {
+			$schema['about'] = array_values( $course['categories'] );
+		}
+		if ( ! empty( $course['what_you_learn'] ) ) {
+			$skills = array_values(
+				array_filter(
+					array_map(
+						'trim',
+						preg_split( '/\r\n|\r|\n/', (string) $course['what_you_learn'] )
+					)
+				)
+			);
+			if ( $skills ) {
+				$schema['teaches'] = $skills;
+			}
+		}
+
+		$rating_value = 0.0;
+		$rating_count = 0;
+		if ( class_exists( 'GCM_Review_Service' ) ) {
+			$rating_value = (float) GCM_Review_Service::get_average( $course_id );
+			$reviews      = GCM_Review_Service::get_for_course( $course_id, 'approved' );
+			$rating_count = is_array( $reviews ) ? count( $reviews ) : 0;
+		}
+		if ( $rating_count < 1 && ! empty( $course['rating'] ) ) {
+			$rating_value = (float) $course['rating'];
+			$rating_count = 1;
+		}
+		if ( $rating_value > 0 && $rating_count > 0 ) {
+			$schema['aggregateRating'] = array(
+				'@type'       => 'AggregateRating',
+				'ratingValue' => (string) $rating_value,
+				'bestRating'  => '5',
+				'worstRating' => '1',
+				'ratingCount' => (string) $rating_count,
+			);
 		}
 
 		return $schema;
@@ -737,6 +917,9 @@ class GCM_SEO {
 	 */
 	private function faq_schema( $course_id ) {
 		$raw = (string) get_post_meta( $course_id, '_gcm_faq', true );
+		if ( '' === trim( $raw ) && class_exists( 'GCM_Course_SEO' ) ) {
+			$raw = GCM_Course_SEO::build_default_faq( $course_id );
+		}
 		if ( '' === trim( $raw ) ) {
 			return null;
 		}
@@ -808,3 +991,4 @@ class GCM_SEO {
 		return rtrim( substr( $text, 0, 157 ) ) . '…';
 	}
 }
+

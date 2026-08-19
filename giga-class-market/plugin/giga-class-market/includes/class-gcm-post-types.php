@@ -485,12 +485,17 @@ class GCM_Post_Types {
 				<?php esc_html_e( 'Set a Course Thumbnail in the sidebar (Featured image panel). It is shown on the courses page, homepage, and course details.', 'giga-class-market' ); ?>
 			</p>
 			<p>
-				<label for="gcm_seo_title"><?php esc_html_e( 'SEO title (optional)', 'giga-class-market' ); ?></label>
-				<input type="text" id="gcm_seo_title" name="gcm_seo_title" value="<?php echo esc_attr( get_post_meta( $post->ID, '_gcm_seo_title', true ) ); ?>" class="widefat" placeholder="<?php esc_attr_e( 'Leave blank to use the course title', 'giga-class-market' ); ?>" />
+				<label for="gcm_seo_title"><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?></label>
+				<input type="text" id="gcm_seo_title" name="gcm_seo_title" value="<?php echo esc_attr( get_post_meta( $post->ID, '_gcm_seo_title', true ) ); ?>" class="widefat" placeholder="<?php esc_attr_e( 'Auto-built for Google if blank (recommended keywords included)', 'giga-class-market' ); ?>" />
 			</p>
 			<p>
-				<label for="gcm_seo_description"><?php esc_html_e( 'SEO meta description (optional)', 'giga-class-market' ); ?></label>
-				<textarea id="gcm_seo_description" name="gcm_seo_description" rows="3" class="widefat" placeholder="<?php esc_attr_e( 'Leave blank to use the course excerpt', 'giga-class-market' ); ?>"><?php echo esc_textarea( get_post_meta( $post->ID, '_gcm_seo_description', true ) ); ?></textarea>
+				<label for="gcm_seo_description"><?php esc_html_e( 'SEO meta description', 'giga-class-market' ); ?></label>
+				<textarea id="gcm_seo_description" name="gcm_seo_description" rows="3" class="widefat" placeholder="<?php esc_attr_e( 'Auto-built for Google if blank', 'giga-class-market' ); ?>"><?php echo esc_textarea( get_post_meta( $post->ID, '_gcm_seo_description', true ) ); ?></textarea>
+			</p>
+			<p>
+				<label for="gcm_seo_focus_keyword"><?php esc_html_e( 'Focus keyword (search phrase)', 'giga-class-market' ); ?></label>
+				<input type="text" id="gcm_seo_focus_keyword" name="gcm_seo_focus_keyword" value="<?php echo esc_attr( get_post_meta( $post->ID, '_gcm_seo_focus_keyword', true ) ); ?>" class="widefat" placeholder="<?php esc_attr_e( 'e.g. ccna course online', 'giga-class-market' ); ?>" />
+				<span class="description"><?php esc_html_e( 'Primary phrase people type in Google for this course.', 'giga-class-market' ); ?></span>
 			</p>
 			<p>
 				<label for="gcm_price"><?php esc_html_e( 'Price', 'giga-class-market' ); ?></label>
@@ -595,6 +600,7 @@ class GCM_Post_Types {
 		$featured          = isset( $_POST['gcm_featured'] ) ? 1 : 0;
 		$seo_title         = isset( $_POST['gcm_seo_title'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_seo_title'] ) ) : '';
 		$seo_description   = isset( $_POST['gcm_seo_description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_seo_description'] ) ) : '';
+		$seo_focus_keyword = isset( $_POST['gcm_seo_focus_keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_seo_focus_keyword'] ) ) : '';
 
 		$bundle_ids = implode(
 			',',
@@ -621,6 +627,7 @@ class GCM_Post_Types {
 		update_post_meta( $post_id, '_gcm_rating', min( 5, max( 0, $rating ) ) );
 		update_post_meta( $post_id, '_gcm_seo_title', $seo_title );
 		update_post_meta( $post_id, '_gcm_seo_description', $seo_description );
+		update_post_meta( $post_id, '_gcm_seo_focus_keyword', $seo_focus_keyword );
 
 		self::set_featured( $post_id, $featured );
 
