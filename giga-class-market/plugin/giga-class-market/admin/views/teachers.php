@@ -25,6 +25,8 @@ $all_courses = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::search
 			<label><?php esc_html_e( 'Username (optional)', 'giga-class-market' ); ?><input type="text" name="username" /></label>
 			<label><?php esc_html_e( 'Password (assigned by admin)', 'giga-class-market' ); ?><input type="text" name="password" required minlength="8" autocomplete="new-password" /></label>
 			<label><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?><input type="text" name="whatsapp" /></label>
+			<label><?php esc_html_e( 'Zoom host email (licensed Zoom user)', 'giga-class-market' ); ?><input type="email" name="zoom_host_email" placeholder="teacher1@yourzoom.com" /></label>
+			<p class="description"><?php esc_html_e( 'Each teacher should have their own Zoom user under your Zoom account so 2–3 teachers can host live classes at the same time. Leave blank to use the fallback host in Settings → Zoom.', 'giga-class-market' ); ?></p>
 			<label><?php esc_html_e( 'Assign courses', 'giga-class-market' ); ?>
 				<select name="course_ids[]" multiple size="6" style="min-width:280px;height:auto;">
 					<?php foreach ( $all_courses as $course ) : ?>
@@ -51,6 +53,7 @@ $all_courses = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::search
 			<tr>
 				<th><?php esc_html_e( 'Teacher', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'WhatsApp', 'giga-class-market' ); ?></th>
+				<th><?php esc_html_e( 'Zoom host', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Courses', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Registered', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Actions', 'giga-class-market' ); ?></th>
@@ -58,7 +61,7 @@ $all_courses = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::search
 		</thead>
 		<tbody>
 			<?php if ( empty( $teachers ) ) : ?>
-				<tr><td colspan="5"><?php esc_html_e( 'No teachers yet. Create one above.', 'giga-class-market' ); ?></td></tr>
+				<tr><td colspan="6"><?php esc_html_e( 'No teachers yet. Create one above.', 'giga-class-market' ); ?></td></tr>
 			<?php endif; ?>
 			<?php foreach ( $teachers as $teacher ) : ?>
 				<?php
@@ -74,6 +77,16 @@ $all_courses = class_exists( 'GCM_Course_Service' ) ? GCM_Course_Service::search
 						<a href="mailto:<?php echo esc_attr( $teacher->user_email ); ?>"><?php echo esc_html( $teacher->user_email ); ?></a>
 					</td>
 					<td><?php echo esc_html( $teacher->whatsapp ); ?></td>
+					<td>
+						<form class="gcm-ajax-form gcm-set-teacher-zoom-host">
+							<input type="hidden" name="action" value="gcm_set_teacher_zoom_host" />
+							<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+							<input type="hidden" name="teacher_id" value="<?php echo esc_attr( $teacher->ID ); ?>" />
+							<input type="email" name="zoom_host_email" value="<?php echo esc_attr( $teacher->zoom_host_email ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Zoom user email', 'giga-class-market' ); ?>" style="min-width:180px;" />
+							<button type="submit" class="button"><?php esc_html_e( 'Save', 'giga-class-market' ); ?></button>
+							<span class="gcm-form-message"></span>
+						</form>
+					</td>
 					<td>
 						<?php if ( empty( $teacher->courses ) ) : ?>
 							<em><?php esc_html_e( 'No courses assigned', 'giga-class-market' ); ?></em>

@@ -20,14 +20,18 @@ class GCM_Zoom_Service {
 	 * @param string $start_time MySQL datetime (site timezone).
 	 * @param int    $duration_minutes Duration.
 	 * @param int    $class_id Optional class ID for unique room naming.
+	 * @param string $host_email_override Prefer this Zoom licensed user (per-teacher). Falls back to Settings host email.
 	 * @return array{join_url:string,start_url:string,meeting_id:string,provider:string}|WP_Error
 	 */
-	public static function create_meeting( $topic, $start_time = '', $duration_minutes = 60, $class_id = 0 ) {
+	public static function create_meeting( $topic, $start_time = '', $duration_minutes = 60, $class_id = 0, $host_email_override = '' ) {
 		$settings      = gcm_get_setting( 'zoom', array() );
 		$account_id    = isset( $settings['account_id'] ) ? trim( (string) $settings['account_id'] ) : '';
 		$client_id     = isset( $settings['client_id'] ) ? trim( (string) $settings['client_id'] ) : '';
 		$client_secret = isset( $settings['client_secret'] ) ? trim( (string) $settings['client_secret'] ) : '';
-		$host_email    = isset( $settings['host_email'] ) ? sanitize_email( (string) $settings['host_email'] ) : '';
+		$host_email    = sanitize_email( (string) $host_email_override );
+		if ( ! is_email( $host_email ) ) {
+			$host_email = isset( $settings['host_email'] ) ? sanitize_email( (string) $settings['host_email'] ) : '';
+		}
 
 		if ( '' !== $account_id && '' !== $client_id && '' !== $client_secret ) {
 			$zoom = self::create_zoom_meeting( $topic, $start_time, $duration_minutes, $account_id, $client_id, $client_secret, $host_email );

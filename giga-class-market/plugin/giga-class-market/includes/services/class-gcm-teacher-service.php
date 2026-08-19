@@ -66,10 +66,80 @@ class GCM_Teacher_Service {
 		GCM_Roles::assign_teacher_identity( $user_id );
 		wp_set_password( $password, $user_id );
 		update_user_meta( $user_id, 'gcm_whatsapp', sanitize_text_field( $data['whatsapp'] ?? '' ) );
+		self::set_zoom_host_email( $user_id, $data['zoom_host_email'] ?? '' );
 		self::set_teacher_courses( $user_id, $courses );
 
 		GCM_Audit_Service::log( 'teacher_created', 'user', $user_id, array( 'courses' => $courses ) );
 		return (int) $user_id;
+	}
+
+	/**
+	 * Zoom licensed-user email for this teacher (must exist in the Zoom account).
+	 *
+	 * @param int $teacher_id Teacher user ID.
+	 * @return string
+	 */
+	public static function get_zoom_host_email( $teacher_id ) {
+		$email = sanitize_email( (string) get_user_meta( absint( $teacher_id ), 'gcm_zoom_host_email', true ) );
+		return is_email( $email ) ? $email : '';
+	}
+
+	/**
+	 * Save per-teacher Zoom host email.
+	 *
+	 * @param int    $teacher_id Teacher ID.
+	 * @param string $email Zoom user email.
+	 * @return true|WP_Error
+	 */
+	public static function set_zoom_host_email( $teacher_id, $email ) {
+		$teacher_id = absint( $teacher_id );
+		$user       = get_userdata( $teacher_id );
+		if ( ! $user || ( ! user_can( $teacher_id, 'manage_options' ) && ! GCM_Roles::is_gcm_teacher_only( $user ) ) ) {
+			return new WP_Error( 'gcm_invalid_teacher', __( 'Invalid teacher account.', 'giga-class-market' ) );
+		}
+
+		$email = sanitize_email( (string) $email );
+		if ( '' !== $email && ! is_email( $email ) ) {
+			return new WP_Error( 'gcm_invalid_email', __( 'Enter a valid Zoom host email.', 'giga-class-market' ) );
+		}
+
+		if ( '' === $email ) {
+			delete_user_meta( $teacher_id, 'gcm_zoom_host_email' );
+		} else {
+			update_user_meta( $teacher_id, 'gcm_zoom_host_email', $email );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Resolve which Zoom host should own a meeting for this course/teacher.
+	 * Priority: actor teacher meta → course teacher meta → global Settings host.
+	 *
+	 * @param int $course_id Course ID.
+	 * @param int $actor_id Teacher/admin starting the class.
+	 * @return string
+	 */
+	public static function resolve_zoom_host_email( $course_id, $actor_id = 0 ) {
+		$actor_id = absint( $actor_id );
+		if ( $actor_id && ! user_can( $actor_id, 'manage_options' ) ) {
+			$host = self::get_zoom_host_email( $actor_id );
+			if ( $host ) {
+				return $host;
+			}
+		}
+
+		$course_teacher = self::get_teacher_for_course( absint( $course_id ) );
+		if ( $course_teacher ) {
+			$host = self::get_zoom_host_email( (int) $course_teacher->ID );
+			if ( $host ) {
+				return $host;
+			}
+		}
+
+		$settings = gcm_get_setting( 'zoom', array() );
+		$fallback = isset( $settings['host_email'] ) ? sanitize_email( (string) $settings['host_email'] ) : '';
+		return is_email( $fallback ) ? $fallback : '';
 	}
 
 	/**
@@ -232,9 +302,10 @@ class GCM_Teacher_Service {
 				'user_login'   => $user->user_login,
 				'user_email'   => $user->user_email,
 				'display_name' => $user->display_name,
-				'whatsapp'     => get_user_meta( $user->ID, 'gcm_whatsapp', true ),
-				'courses'      => self::get_teacher_courses( $user->ID ),
-				'registered'   => $user->user_registered,
+				'whatsapp'         => get_user_meta( $user->ID, 'gcm_whatsapp', true ),
+				'zoom_host_email'  => self::get_zoom_host_email( $user->ID ),
+				'courses'          => self::get_teacher_courses( $user->ID ),
+				'registered'       => $user->user_registered,
 			);
 		}
 		return $list;

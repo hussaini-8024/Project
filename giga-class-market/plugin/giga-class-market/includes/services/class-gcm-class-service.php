@@ -123,8 +123,11 @@ class GCM_Class_Service {
 			return new WP_Error( 'gcm_forbidden', __( 'You cannot start this class.', 'giga-class-market' ) );
 		}
 
-		$duration = self::duration_minutes( $class );
-		$zoom     = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, $duration, (int) $class->id );
+		$duration   = self::duration_minutes( $class );
+		$host_email = class_exists( 'GCM_Teacher_Service' )
+			? GCM_Teacher_Service::resolve_zoom_host_email( (int) $class->course_id, $actor_id )
+			: '';
+		$zoom       = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, $duration, (int) $class->id, $host_email );
 
 		if ( is_wp_error( $zoom ) ) {
 			return $zoom;
@@ -176,11 +179,15 @@ class GCM_Class_Service {
 			return $class;
 		}
 
-		$meeting = GCM_Zoom_Service::create_meeting(
+		$host_email = class_exists( 'GCM_Teacher_Service' )
+			? GCM_Teacher_Service::resolve_zoom_host_email( (int) $class->course_id, 0 )
+			: '';
+		$meeting    = GCM_Zoom_Service::create_meeting(
 			$class->title,
 			$class->scheduled_at,
 			self::duration_minutes( $class ),
-			(int) $class->id
+			(int) $class->id,
+			$host_email
 		);
 		if ( is_wp_error( $meeting ) ) {
 			$meeting = GCM_Zoom_Service::create_jitsi_meeting( $class->title, (int) $class->id );

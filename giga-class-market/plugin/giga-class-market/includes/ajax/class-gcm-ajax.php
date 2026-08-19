@@ -77,6 +77,7 @@ class GCM_Ajax {
 			'create_teacher',
 			'set_teacher_password',
 			'assign_teacher_courses',
+			'set_teacher_zoom_host',
 			'generate_certificate',
 			'create_coupon',
 			'toggle_coupon',
@@ -481,15 +482,34 @@ class GCM_Ajax {
 
 		$result = GCM_Teacher_Service::create_teacher(
 			array(
-				'full_name'  => isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '',
-				'email'      => isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '',
-				'username'   => isset( $_POST['username'] ) ? sanitize_user( wp_unslash( $_POST['username'] ), true ) : '',
-				'password'   => isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '',
-				'whatsapp'   => isset( $_POST['whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp'] ) ) : '',
-				'course_ids' => isset( $_POST['course_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['course_ids'] ) ) : array(),
+				'full_name'       => isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '',
+				'email'           => isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '',
+				'username'        => isset( $_POST['username'] ) ? sanitize_user( wp_unslash( $_POST['username'] ), true ) : '',
+				'password'        => isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '',
+				'whatsapp'        => isset( $_POST['whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp'] ) ) : '',
+				'zoom_host_email' => isset( $_POST['zoom_host_email'] ) ? sanitize_email( wp_unslash( $_POST['zoom_host_email'] ) ) : '',
+				'course_ids'      => isset( $_POST['course_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['course_ids'] ) ) : array(),
 			)
 		);
 		$this->send_service_response( $result, __( 'Teacher account created.', 'giga-class-market' ) );
+	}
+
+	/**
+	 * Admin sets teacher Zoom host email.
+	 *
+	 * @return void
+	 */
+	public function set_teacher_zoom_host() {
+		GCM_Security::verify_ajax_nonce();
+		GCM_Security::require_capability( 'gcm_manage_teachers' );
+
+		$teacher_id = isset( $_POST['teacher_id'] ) ? absint( $_POST['teacher_id'] ) : 0;
+		$email      = isset( $_POST['zoom_host_email'] ) ? sanitize_email( wp_unslash( $_POST['zoom_host_email'] ) ) : '';
+		$result     = GCM_Teacher_Service::set_zoom_host_email( $teacher_id, $email );
+		if ( ! is_wp_error( $result ) ) {
+			GCM_Audit_Service::log( 'teacher_zoom_host_set', 'user', $teacher_id, array( 'zoom_host_email' => $email ) );
+		}
+		$this->send_service_response( $result, __( 'Teacher Zoom host email saved.', 'giga-class-market' ) );
 	}
 
 	/**
