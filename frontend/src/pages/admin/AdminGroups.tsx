@@ -93,7 +93,7 @@ export function AdminGroups() {
     <div className="space-y-6">
       <div>
         <div className="text-xs uppercase tracking-[0.2em] text-cyan-glow">Administrator</div>
-        <h1 className="text-3xl font-semibold">Groups &amp; policies</h1>
+        <h1 className="text-3xl font-semibold">Groups</h1>
         <p className="mt-1 text-sm text-slate-400">
           Organize students and instructors into groups, attach policies, and control machines group-wide.
         </p>

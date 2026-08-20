@@ -17,7 +17,7 @@ import { Resources } from "./pages/Resources";
 import { Activity } from "./pages/Activity";
 import { Settings } from "./pages/Settings";
 import { AdminHome } from "./pages/admin/AdminHome";
-import { AdminPeople } from "./pages/admin/AdminPeople";
+import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminGroups } from "./pages/admin/AdminGroups";
 import { AdminInfra } from "./pages/admin/AdminInfra";
 import { AdminOps } from "./pages/admin/AdminOps";
@@ -62,7 +62,8 @@ export default function App() {
         <Route path="activity" element={<Activity />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admin" element={<AdminHome />} />
-        <Route path="admin/people" element={<AdminPeople />} />
+        <Route path="admin/users" element={<AdminUsers />} />
+        <Route path="admin/people" element={<Navigate to="/admin/users" replace />} />
         <Route path="admin/groups" element={<AdminGroups />} />
         <Route path="admin/infra" element={<AdminInfra />} />
         <Route path="admin/ops" element={<AdminOps />} />

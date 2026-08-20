@@ -49,6 +49,8 @@ export type User = {
   quota: string | null;
   group_id?: string | null;
   group?: string | null;
+  groups?: { id: string; name: string; kind: string; public_id: string }[];
+  group_ids?: string[];
 };
 
 export type GroupMember = {

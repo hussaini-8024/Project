@@ -1,6 +1,6 @@
 import { Fragment, FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../api";
+import { api, type Group } from "../../api";
 
 function randomPassword() {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
@@ -9,14 +9,19 @@ function randomPassword() {
   return `${out}!9`;
 }
 
-export function AdminPeople() {
+export function AdminUsers() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const users = useQuery({
     queryKey: ["users", search],
     queryFn: () => api<any[]>(`/api/users${search ? `?q=${encodeURIComponent(search)}` : ""}`),
   });
+  const groups = useQuery({ queryKey: ["groups"], queryFn: () => api<Group[]>("/api/groups") });
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api<any[]>("/api/sessions") });
+
+  const studentGroups = (groups.data || []).filter((g) => g.kind === "student");
+  const instructorGroups = (groups.data || []).filter((g) => g.kind === "instructor");
+
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -26,15 +31,21 @@ export function AdminPeople() {
     quota_name: "Standard",
     course: "",
   });
+  const [formGroups, setFormGroups] = useState<string[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [pwdId, setPwdId] = useState<string | null>(null);
   const [pwd, setPwd] = useState("");
+  const [groupsId, setGroupsId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
 
   const create = useMutation({
-    mutationFn: () => api("/api/users", { method: "POST", body: JSON.stringify(form) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    mutationFn: () => api("/api/users", { method: "POST", body: JSON.stringify({ ...form, group_ids: formGroups }) }),
+    onSuccess: () => {
+      setFormGroups([]);
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["groups"] });
+    },
   });
   const disable = useMutation({
     mutationFn: (id: string) => api(`/api/users/${id}/disable`, { method: "POST" }),
@@ -65,6 +76,15 @@ export function AdminPeople() {
       setPwd("");
     },
   });
+  const setGroups = useMutation({
+    mutationFn: (payload: { id: string; group_ids: string[] }) =>
+      api(`/api/users/${payload.id}/groups`, { method: "PUT", body: JSON.stringify({ group_ids: payload.group_ids }) }),
+    onSuccess: () => {
+      setGroupsId(null);
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["groups"] });
+    },
+  });
 
   function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -73,6 +93,7 @@ export function AdminPeople() {
 
   function startEdit(u: any) {
     setPwdId(null);
+    setGroupsId(null);
     setEditId(u.id);
     setEditForm({
       username: u.username,
@@ -86,7 +107,11 @@ export function AdminPeople() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold">People &amp; sessions</h1>
+      <div>
+        <div className="text-xs uppercase tracking-[0.2em] text-cyan-glow">Administrator</div>
+        <h1 className="text-3xl font-semibold">Users</h1>
+        <p className="mt-1 text-sm text-slate-400">Create accounts, manage credentials, and assign groups.</p>
+      </div>
 
       {notice && (
         <div className="card flex items-center justify-between border border-cyan-glow/30 p-3 text-sm">
@@ -107,7 +132,7 @@ export function AdminPeople() {
             Generate
           </button>
         </div>
-        <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+        <select className="input" value={form.role} onChange={(e) => { setForm({ ...form, role: e.target.value }); setFormGroups([]); }}>
           <option value="student">Student</option>
           <option value="instructor">Instructor</option>
           <option value="lab_manager">Lab manager</option>
@@ -119,6 +144,40 @@ export function AdminPeople() {
           <option>Advanced</option>
         </select>
         <input className="input" placeholder="Course" value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} />
+        {form.role === "student" && (
+          <select
+            className="input md:col-span-3"
+            value={formGroups[0] || ""}
+            onChange={(e) => setFormGroups(e.target.value ? [e.target.value] : [])}
+          >
+            <option value="">No group</option>
+            {studentGroups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {form.role === "instructor" && (
+          <div className="md:col-span-3">
+            <div className="mb-1 text-xs text-slate-400">Assign to instructor groups (multiple allowed)</div>
+            <div className="flex flex-wrap gap-2">
+              {instructorGroups.map((g) => (
+                <label key={g.id} className="flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={formGroups.includes(g.id)}
+                    onChange={(e) =>
+                      setFormGroups((prev) => (e.target.checked ? [...prev, g.id] : prev.filter((x) => x !== g.id)))
+                    }
+                  />
+                  {g.name}
+                </label>
+              ))}
+              {!instructorGroups.length && <span className="text-xs text-slate-500">No instructor groups yet.</span>}
+            </div>
+          </div>
+        )}
         <button className="btn-primary md:col-span-3" type="submit">
           Create account
         </button>
@@ -147,7 +206,7 @@ export function AdminPeople() {
               <th className="px-4 py-3">Public ID</th>
               <th>User</th>
               <th>Role</th>
-              <th>Group</th>
+              <th>Groups</th>
               <th>Quota</th>
               <th>Status</th>
               <th />
@@ -165,17 +224,32 @@ export function AdminPeople() {
                     </div>
                   </td>
                   <td>{u.role}</td>
-                  <td className="text-xs">{u.group || "—"}</td>
+                  <td className="text-xs">
+                    {(u.groups || []).length ? u.groups.map((g: any) => g.name).join(", ") : "—"}
+                  </td>
                   <td>{u.quota}</td>
                   <td>{u.status}</td>
                   <td className="whitespace-nowrap">
                     <button className="btn-ghost" onClick={() => startEdit(u)}>
                       Edit
                     </button>
+                    {(u.role === "student" || u.role === "instructor") && (
+                      <button
+                        className="btn-ghost"
+                        onClick={() => {
+                          setEditId(null);
+                          setPwdId(null);
+                          setGroupsId(groupsId === u.id ? null : u.id);
+                        }}
+                      >
+                        Groups
+                      </button>
+                    )}
                     <button
                       className="btn-ghost"
                       onClick={() => {
                         setEditId(null);
+                        setGroupsId(null);
                         setPwdId(pwdId === u.id ? null : u.id);
                         setPwd("");
                       }}
@@ -219,26 +293,31 @@ export function AdminPeople() {
                     </td>
                   </tr>
                 )}
+                {groupsId === u.id && (
+                  <tr className="border-t border-white/5 bg-white/5">
+                    <td colSpan={7} className="px-4 py-3">
+                      <GroupAssign
+                        user={u}
+                        studentGroups={studentGroups}
+                        instructorGroups={instructorGroups}
+                        saving={setGroups.isPending}
+                        error={(setGroups.error as Error)?.message}
+                        onSave={(ids) => setGroups.mutate({ id: u.id, group_ids: ids })}
+                        onCancel={() => setGroupsId(null)}
+                      />
+                    </td>
+                  </tr>
+                )}
                 {pwdId === u.id && (
                   <tr className="border-t border-white/5 bg-white/5">
                     <td colSpan={7} className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm text-slate-400">Set a new password for {u.username}:</span>
-                        <input
-                          className="input w-64"
-                          type="text"
-                          placeholder="New password"
-                          value={pwd}
-                          onChange={(e) => setPwd(e.target.value)}
-                        />
+                        <input className="input w-64" type="text" placeholder="New password" value={pwd} onChange={(e) => setPwd(e.target.value)} />
                         <button type="button" className="btn-ghost" onClick={() => setPwd(randomPassword())}>
                           Generate
                         </button>
-                        <button
-                          className="btn-primary"
-                          disabled={pwd.length < 8}
-                          onClick={() => setPassword.mutate({ id: u.id, password: pwd })}
-                        >
+                        <button className="btn-primary" disabled={pwd.length < 8} onClick={() => setPassword.mutate({ id: u.id, password: pwd })}>
                           Set password
                         </button>
                         <button className="btn-ghost" onClick={() => setPwdId(null)}>
@@ -272,7 +351,80 @@ export function AdminPeople() {
               </button>
             </div>
           ))}
+          {!sessions.data?.length && <div className="text-slate-500">No active sessions.</div>}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GroupAssign({
+  user,
+  studentGroups,
+  instructorGroups,
+  saving,
+  error,
+  onSave,
+  onCancel,
+}: {
+  user: any;
+  studentGroups: Group[];
+  instructorGroups: Group[];
+  saving: boolean;
+  error?: string;
+  onSave: (ids: string[]) => void;
+  onCancel: () => void;
+}) {
+  const current: string[] = user.group_ids || [];
+  const [selected, setSelected] = useState<string[]>(current);
+  const isStudent = user.role === "student";
+  const options = isStudent ? studentGroups : instructorGroups;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-sm text-slate-400">
+        {isStudent
+          ? "Students may belong to at most one group — pick one."
+          : "Instructors may belong to multiple groups — select any."}
+      </div>
+      {isStudent ? (
+        <select
+          className="input max-w-sm"
+          value={selected[0] || ""}
+          onChange={(e) => setSelected(e.target.value ? [e.target.value] : [])}
+        >
+          <option value="">No group</option>
+          {options.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {options.map((g) => (
+            <label key={g.id} className="flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-sm">
+              <input
+                type="checkbox"
+                checked={selected.includes(g.id)}
+                onChange={(e) =>
+                  setSelected((prev) => (e.target.checked ? [...prev, g.id] : prev.filter((x) => x !== g.id)))
+                }
+              />
+              {g.name}
+            </label>
+          ))}
+          {!options.length && <span className="text-xs text-slate-500">No matching groups.</span>}
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <button className="btn-primary" disabled={saving} onClick={() => onSave(selected)}>
+          Save groups
+        </button>
+        <button className="btn-ghost" onClick={onCancel}>
+          Cancel
+        </button>
+        {error && <span className="text-sm text-rose-300">{error}</span>}
       </div>
     </div>
   );

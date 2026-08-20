@@ -39,8 +39,8 @@ const studentNav = [
 
 const staffExtra = [
   { to: "/admin", label: "Range Overview", icon: LayoutDashboard },
-  { to: "/admin/people", label: "People & Sessions", icon: Users },
-  { to: "/admin/groups", label: "Groups & Policies", icon: UsersRound },
+  { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/groups", label: "Groups", icon: UsersRound },
   { to: "/admin/infra", label: "Scheduler & Storage", icon: Server },
   { to: "/admin/ops", label: "Audit & Backups", icon: Shield },
 ];
