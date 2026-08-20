@@ -13,6 +13,9 @@ from app.models import (
     ComputeNode,
     ContainerImage,
     EnvironmentKind,
+    Group,
+    GroupKind,
+    InternetPolicy,
     IsoImage,
     IsoStatus,
     Machine,
@@ -334,6 +337,31 @@ def seed(db: Session) -> None:
         course="CYB-210 Intro",
     )
     db.add_all([admin, instructor, labman, student, student2])
+    db.flush()
+
+    student_group = Group(
+        public_id=public_id("GRP"),
+        name="CYB-301 Students",
+        kind=GroupKind.STUDENT.value,
+        description="Web Security cohort — demo student group",
+        internet_policy=InternetPolicy.DISABLED.value,
+        max_machines=3,
+        inactivity_alert_days=3,
+        created_by=admin.id,
+    )
+    instructor_group = Group(
+        public_id=public_id("GRP"),
+        name="Faculty",
+        kind=GroupKind.INSTRUCTOR.value,
+        description="Instructor group — machines are protected from group shutdown",
+        internet_policy=InternetPolicy.UNSET.value,
+        created_by=admin.id,
+    )
+    db.add_all([student_group, instructor_group])
+    db.flush()
+    student.group_id = student_group.id
+    student2.group_id = student_group.id
+    instructor.group_id = instructor_group.id
     db.flush()
 
     db.add(

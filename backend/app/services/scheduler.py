@@ -71,6 +71,15 @@ def quota_ok(
     ]
     containers = [m for m in others if m.kind == MachineKind.CONTAINER]
     vms = [m for m in others if m.kind == MachineKind.VM]
+    # A student group's machine cap tightens BOTH total and running machines.
+    from app.services.groups import group_machine_cap
+
+    cap = group_machine_cap(db, user)
+    if cap is not None:
+        if len(others) + 1 > cap:
+            return f"Group machine limit reached ({cap})"
+        if len(running) + 1 > cap:
+            return f"Group machine limit reached ({cap})"
     if kind == MachineKind.CONTAINER and len(containers) + 1 > q.max_containers:
         return f"Container quota reached ({q.max_containers})"
     if kind == MachineKind.VM and len(vms) + 1 > q.max_vms:

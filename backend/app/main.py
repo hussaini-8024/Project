@@ -8,11 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import __version__
-from app.api import assignments, auth, catalog, labs, resources, users, ws
+from app.api import assignments, auth, catalog, groups, labs, resources, users, ws
 from app.config import get_settings
 from app.database import Base, SessionLocal, engine
 from app.seed import seed
-from app.services.schema import migrate_network_schema, migrate_slash8_networks
+from app.services.schema import (
+    migrate_network_schema,
+    migrate_slash8_networks,
+    migrate_user_groups,
+)
 
 
 @asynccontextmanager
@@ -21,6 +25,7 @@ async def lifespan(_app: FastAPI):
     Path(settings.storage_root).mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
     migrate_network_schema(engine)
+    migrate_user_groups(engine)
     db = SessionLocal()
     try:
         seed(db)
@@ -70,6 +75,7 @@ async def value_error_handler(_request: Request, exc: ValueError):
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
+app.include_router(groups.router, prefix="/api")
 app.include_router(labs.router, prefix="/api")
 app.include_router(catalog.router, prefix="/api")
 app.include_router(assignments.router, prefix="/api")

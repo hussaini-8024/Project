@@ -68,6 +68,24 @@ def migrate_network_schema(engine: Engine) -> None:
         conn.execute(text("PRAGMA foreign_keys=ON"))
 
 
+def migrate_user_groups(engine: Engine) -> None:
+    """Add the nullable group_id column to the existing users table.
+
+    The `groups` table itself is created automatically by ``Base.metadata.create_all``;
+    only the pre-existing ``users`` table needs a manual ALTER. SQLite does not enforce
+    the ON DELETE SET NULL added here, so group deletion detaches members in code.
+    """
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        ).fetchone()
+        if not row:
+            return
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(users)"))]
+        if "group_id" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN group_id VARCHAR(36)"))
+
+
 def migrate_slash8_networks(db: Session) -> None:
     """Rewrite leftover student /24 labs onto 10.0.0.0/8. Admin-created CIDRs are left alone."""
     restart_ids: list[str] = []

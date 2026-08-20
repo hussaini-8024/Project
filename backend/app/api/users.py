@@ -4,6 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -28,6 +29,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    username: str | None = Field(default=None, min_length=3, max_length=64)
     email: EmailStr | None = None
     full_name: str | None = None
     role: Role | None = None
@@ -48,6 +50,8 @@ def _dump(u: User) -> dict:
         "status": u.status.value,
         "course": u.course,
         "quota": u.quota.name if u.quota else None,
+        "group_id": u.group_id,
+        "group": u.group.name if u.group else None,
         "lab_id": u.lab.public_id if u.lab else None,
         "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
         "expires_at": u.expires_at.isoformat() if u.expires_at else None,
@@ -56,11 +60,22 @@ def _dump(u: User) -> dict:
 
 
 @router.get("/users")
-def list_users(user: User = Depends(require_staff), db: Session = Depends(get_db)) -> list[dict]:
-    q = db.query(User)
+def list_users(
+    user: User = Depends(require_staff),
+    db: Session = Depends(get_db),
+    q: str | None = None,
+) -> list[dict]:
+    query = db.query(User)
     if user.role == Role.INSTRUCTOR:
-        q = q.filter(User.role == Role.STUDENT)
-    return [_dump(u) for u in q.order_by(User.created_at.desc()).all()]
+        query = query.filter(User.role == Role.STUDENT)
+    if q:
+        needle = f"%{q.strip().lower()}%"
+        query = query.filter(
+            func.lower(User.username).like(needle)
+            | func.lower(User.full_name).like(needle)
+            | func.lower(User.email).like(needle)
+        )
+    return [_dump(u) for u in query.order_by(User.created_at.desc()).all()]
 
 
 @router.get("/students")
@@ -109,6 +124,14 @@ def update_user(user_id: str, body: UserUpdate, request: Request, admin: User = 
     if "quota_name" in data:
         q = db.query(QuotaProfile).filter(QuotaProfile.name == data.pop("quota_name")).first()
         u.quota_id = q.id if q else u.quota_id
+    new_username = data.get("username")
+    if new_username and new_username != u.username:
+        if db.query(User).filter(User.username == new_username, User.id != u.id).first():
+            raise HTTPException(status.HTTP_409_CONFLICT, "Username already exists")
+    new_email = data.get("email")
+    if new_email and new_email != u.email:
+        if db.query(User).filter(User.email == new_email, User.id != u.id).first():
+            raise HTTPException(status.HTTP_409_CONFLICT, "Email already exists")
     for k, v in data.items():
         setattr(u, k, v)
     audit.record(db, user=admin, action="user.update", resource=u.public_id, ip=get_client_ip(request))

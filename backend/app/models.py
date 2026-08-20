@@ -81,6 +81,17 @@ class IsoStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
+class GroupKind(str, enum.Enum):
+    STUDENT = "student"
+    INSTRUCTOR = "instructor"
+
+
+class InternetPolicy(str, enum.Enum):
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+    UNSET = "unset"
+
+
 class QuotaProfile(Base):
     __tablename__ = "resource_quotas"
 
@@ -99,6 +110,26 @@ class QuotaProfile(Base):
     users: Mapped[list[User]] = relationship(back_populates="quota")
 
 
+class Group(Base):
+    __tablename__ = "groups"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    public_id: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(128), unique=True)
+    kind: Mapped[str] = mapped_column(String(32), default=GroupKind.STUDENT.value)
+    description: Mapped[str] = mapped_column(String(255), default="")
+    # Policies (see app/services/groups.py for enforcement)
+    internet_policy: Mapped[str] = mapped_column(String(16), default=InternetPolicy.DISABLED.value)
+    max_machines: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    inactivity_alert_days: Mapped[int] = mapped_column(Integer, default=3)
+    created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    members: Mapped[list[User]] = relationship(
+        back_populates="group", foreign_keys="User.group_id"
+    )
+
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (Index("ix_users_username", "username"),)
@@ -112,6 +143,9 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.STUDENT)
     status: Mapped[UserStatus] = mapped_column(Enum(UserStatus), default=UserStatus.ACTIVE)
     quota_id: Mapped[str | None] = mapped_column(ForeignKey("resource_quotas.id"))
+    group_id: Mapped[str | None] = mapped_column(
+        ForeignKey("groups.id", ondelete="SET NULL"), nullable=True
+    )
     course: Mapped[str] = mapped_column(String(128), default="")
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     mfa_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -122,6 +156,9 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     quota: Mapped[QuotaProfile | None] = relationship(back_populates="users")
+    group: Mapped[Group | None] = relationship(
+        back_populates="members", foreign_keys="User.group_id"
+    )
     lab: Mapped[StudentLab | None] = relationship(back_populates="student", uselist=False)
     sessions: Mapped[list[UserSession]] = relationship(back_populates="user")
 
