@@ -125,9 +125,25 @@ class Group(Base):
     created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
+    # Membership is a many-to-many join (see GroupMembership). Instructors may belong
+    # to many groups; students are constrained to at most one group in the API layer.
     members: Mapped[list[User]] = relationship(
-        back_populates="group", foreign_keys="User.group_id"
+        secondary="group_memberships", back_populates="groups"
     )
+
+
+class GroupMembership(Base):
+    __tablename__ = "group_memberships"
+    __table_args__ = (UniqueConstraint("user_id", "group_id", name="uq_group_membership"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    group_id: Mapped[str] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class User(Base):
@@ -143,6 +159,8 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.STUDENT)
     status: Mapped[UserStatus] = mapped_column(Enum(UserStatus), default=UserStatus.ACTIVE)
     quota_id: Mapped[str | None] = mapped_column(ForeignKey("resource_quotas.id"))
+    # Legacy single-group pointer kept for back-compat only; the group_memberships
+    # join table is the source of truth (migrated in schema.migrate_group_memberships).
     group_id: Mapped[str | None] = mapped_column(
         ForeignKey("groups.id", ondelete="SET NULL"), nullable=True
     )
@@ -156,8 +174,8 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     quota: Mapped[QuotaProfile | None] = relationship(back_populates="users")
-    group: Mapped[Group | None] = relationship(
-        back_populates="members", foreign_keys="User.group_id"
+    groups: Mapped[list[Group]] = relationship(
+        secondary="group_memberships", back_populates="members"
     )
     lab: Mapped[StudentLab | None] = relationship(back_populates="student", uselist=False)
     sessions: Mapped[list[UserSession]] = relationship(back_populates="user")

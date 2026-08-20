@@ -13,6 +13,7 @@ from app.config import get_settings
 from app.database import Base, SessionLocal, engine
 from app.seed import seed
 from app.services.schema import (
+    migrate_group_memberships,
     migrate_network_schema,
     migrate_slash8_networks,
     migrate_user_groups,
@@ -26,6 +27,7 @@ async def lifespan(_app: FastAPI):
     Base.metadata.create_all(bind=engine)
     migrate_network_schema(engine)
     migrate_user_groups(engine)
+    migrate_group_memberships(engine)
     db = SessionLocal()
     try:
         seed(db)

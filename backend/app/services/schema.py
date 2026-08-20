@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from ipaddress import IPv4Network
 
 from sqlalchemy import text
@@ -84,6 +85,60 @@ def migrate_user_groups(engine: Engine) -> None:
         cols = [r[1] for r in conn.execute(text("PRAGMA table_info(users)"))]
         if "group_id" not in cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN group_id VARCHAR(36)"))
+
+
+def migrate_group_memberships(engine: Engine) -> None:
+    """Create the group_memberships join table and move legacy users.group_id into it.
+
+    Idempotent: the table is created only if missing (``create_all`` normally makes it),
+    and each legacy ``users.group_id`` value is copied once, guarded by an existence check.
+    The join table is the source of truth going forward; the legacy column is left in place.
+    """
+    from uuid import uuid4
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS group_memberships (
+                    id VARCHAR(36) NOT NULL PRIMARY KEY,
+                    user_id VARCHAR(36) NOT NULL,
+                    group_id VARCHAR(36) NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    UNIQUE (user_id, group_id),
+                    FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE,
+                    FOREIGN KEY(group_id) REFERENCES groups (id) ON DELETE CASCADE
+                )
+                """
+            )
+        )
+        users_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(users)"))]
+        if "group_id" not in users_cols:
+            return
+        legacy = conn.execute(
+            text("SELECT id, group_id FROM users WHERE group_id IS NOT NULL AND group_id != ''")
+        ).fetchall()
+        for user_id, group_id in legacy:
+            exists = conn.execute(
+                text(
+                    "SELECT 1 FROM group_memberships WHERE user_id = :u AND group_id = :g"
+                ),
+                {"u": user_id, "g": group_id},
+            ).fetchone()
+            if exists:
+                continue
+            conn.execute(
+                text(
+                    "INSERT INTO group_memberships (id, user_id, group_id, created_at) "
+                    "VALUES (:id, :u, :g, :ts)"
+                ),
+                {
+                    "id": str(uuid4()),
+                    "u": user_id,
+                    "g": group_id,
+                    "ts": datetime.utcnow().isoformat(sep=" "),
+                },
+            )
 
 
 def migrate_slash8_networks(db: Session) -> None:

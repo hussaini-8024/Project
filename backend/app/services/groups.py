@@ -7,11 +7,11 @@ from sqlalchemy.orm import Session
 from app.models import (
     Group,
     GroupKind,
+    GroupMembership,
     InternetPolicy,
     Machine,
     MachineStatus,
     Role,
-    StudentLab,
     User,
 )
 from app.providers import get_provider
@@ -21,19 +21,70 @@ DEFAULT_INACTIVITY_DAYS = 3
 DEFAULT_MACHINE_CAP = 3
 
 
-def student_group(db: Session, user: User) -> Group | None:
-    """Return the student-kind group a user belongs to, if any."""
-    if not user.group_id:
-        return None
-    group = db.get(Group, user.group_id)
-    if group and group.kind == GroupKind.STUDENT.value:
-        return group
+def student_group_of(user: User) -> Group | None:
+    """The single student-kind group a user belongs to (students are capped at one)."""
+    for g in user.groups:
+        if g.kind == GroupKind.STUDENT.value:
+            return g
     return None
+
+
+def group_summaries(user: User) -> list[dict]:
+    """Compact list of the groups a user belongs to (for the user serializer)."""
+    return [{"id": g.id, "name": g.name, "kind": g.kind, "public_id": g.public_id} for g in user.groups]
+
+
+def is_member(db: Session, group: Group, user: User) -> bool:
+    return (
+        db.query(GroupMembership)
+        .filter(GroupMembership.group_id == group.id, GroupMembership.user_id == user.id)
+        .first()
+        is not None
+    )
+
+
+def add_member(db: Session, group: Group, user: User) -> str | None:
+    """Add ``user`` to ``group`` under the cardinality rules.
+
+    Returns ``None`` on success or an error string. Role must match the group kind.
+    Students may belong to at most one group; instructors may belong to many.
+    """
+    required_role = Role.STUDENT if group.kind == GroupKind.STUDENT.value else Role.INSTRUCTOR
+    if user.role != required_role:
+        return f"{user.username} is {user.role.value}, group requires {required_role.value}"
+    if is_member(db, group, user):
+        return None  # idempotent
+    if user.role == Role.STUDENT:
+        existing = student_group_of(user)
+        if existing is not None and existing.id != group.id:
+            return (
+                f"{user.username} is already in student group '{existing.name}'. "
+                "Students may belong to only one group; remove them first."
+            )
+    db.add(GroupMembership(user_id=user.id, group_id=group.id))
+    # Keep the legacy pointer in sync for students so back-compat reads stay correct.
+    if user.role == Role.STUDENT:
+        user.group_id = group.id
+    return None
+
+
+def remove_member(db: Session, group: Group, user: User) -> bool:
+    row = (
+        db.query(GroupMembership)
+        .filter(GroupMembership.group_id == group.id, GroupMembership.user_id == user.id)
+        .first()
+    )
+    if not row:
+        return False
+    db.delete(row)
+    if user.group_id == group.id:
+        user.group_id = None
+    return True
 
 
 def group_machine_cap(db: Session, user: User) -> int | None:
     """The per-student machine cap enforced by the user's student group, or None."""
-    group = student_group(db, user)
+    group = student_group_of(user)
     if group and group.max_machines is not None:
         return group.max_machines
     return None
@@ -93,7 +144,7 @@ def inactivity_alerts(db: Session, group: Group | None = None) -> list[dict]:
         members = db.query(User).filter(User.role == Role.STUDENT).all()
         threshold_for = {}
         for m in members:
-            g = db.get(Group, m.group_id) if m.group_id else None
+            g = student_group_of(m)
             days = (
                 g.inactivity_alert_days
                 if g and g.inactivity_alert_days
@@ -107,14 +158,14 @@ def inactivity_alerts(db: Session, group: Group | None = None) -> list[dict]:
         last = _last_activity(db, member)
         idle = now - last
         if idle >= timedelta(days=days):
-            g = db.get(Group, member.group_id) if member.group_id else None
+            g = group if group is not None else student_group_of(member)
             alerts.append(
                 {
                     "user_id": member.id,
                     "public_id": member.public_id,
                     "username": member.username,
                     "full_name": member.full_name,
-                    "group_id": member.group_id,
+                    "group_id": g.id if g else None,
                     "group": g.name if g else None,
                     "last_activity": last.isoformat(),
                     "idle_days": round(idle.total_seconds() / 86400, 1),
@@ -137,6 +188,7 @@ def running_activity(db: Session) -> dict:
         owner = db.get(User, m.owner_id)
         if not owner or owner.role != Role.STUDENT:
             continue
+        owner_group = student_group_of(owner)
         entry = students.setdefault(
             owner.id,
             {
@@ -144,7 +196,7 @@ def running_activity(db: Session) -> dict:
                 "public_id": owner.public_id,
                 "username": owner.username,
                 "full_name": owner.full_name,
-                "group_id": owner.group_id,
+                "group_id": owner_group.id if owner_group else None,
                 "running": 0,
                 "containers": 0,
                 "vms": 0,

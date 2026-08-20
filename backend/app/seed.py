@@ -15,6 +15,7 @@ from app.models import (
     EnvironmentKind,
     Group,
     GroupKind,
+    GroupMembership,
     InternetPolicy,
     IsoImage,
     IsoStatus,
@@ -359,9 +360,16 @@ def seed(db: Session) -> None:
     )
     db.add_all([student_group, instructor_group])
     db.flush()
+    db.add_all(
+        [
+            GroupMembership(user_id=student.id, group_id=student_group.id),
+            GroupMembership(user_id=student2.id, group_id=student_group.id),
+            GroupMembership(user_id=instructor.id, group_id=instructor_group.id),
+        ]
+    )
+    # Keep legacy pointer in sync for students (back-compat convenience).
     student.group_id = student_group.id
     student2.group_id = student_group.id
-    instructor.group_id = instructor_group.id
     db.flush()
 
     db.add(

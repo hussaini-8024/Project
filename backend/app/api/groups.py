@@ -9,6 +9,7 @@ from app.deps import get_client_ip, require_admin, require_staff
 from app.models import (
     Group,
     GroupKind,
+    GroupMembership,
     InternetPolicy,
     MachineKind,
     MachineStatus,
@@ -19,8 +20,10 @@ from app.models import (
 from app.security import public_id
 from app.services import audit
 from app.services.groups import (
+    add_member,
     apply_internet_policy,
     inactivity_alerts,
+    remove_member,
     running_activity,
     shutdown_group,
 )
@@ -176,18 +179,21 @@ def delete_group(
     detach: bool = False,
 ) -> dict:
     group = _resolve(db, group_id)
-    members = list(group.members)
-    if members and not detach:
+    memberships = db.query(GroupMembership).filter(GroupMembership.group_id == group.id).all()
+    if memberships and not detach:
         raise HTTPException(
             400,
-            f"Group has {len(members)} member(s). Detach members first or pass ?detach=true.",
+            f"Group has {len(memberships)} member(s). Detach members first or pass ?detach=true.",
         )
-    for m in members:
-        m.group_id = None
+    for row in memberships:
+        u = db.get(User, row.user_id)
+        if u and u.group_id == group.id:
+            u.group_id = None
+        db.delete(row)
     audit.record(db, user=admin, action="group.delete", resource=group.public_id, detail=group.name)
     db.delete(group)
     db.commit()
-    return {"ok": True, "detached": len(members)}
+    return {"ok": True, "detached": len(memberships)}
 
 
 @router.post("/groups/{group_id}/members")
@@ -198,7 +204,6 @@ def add_members(
     db: Session = Depends(get_db),
 ) -> dict:
     group = _resolve(db, group_id)
-    required_role = Role.STUDENT if group.kind == GroupKind.STUDENT.value else Role.INSTRUCTOR
     identifiers: list[str] = []
     if body.user_id:
         identifiers.append(body.user_id)
@@ -220,14 +225,13 @@ def add_members(
         if not u:
             errors.append({"identifier": ident, "error": "User not found"})
             continue
-        if u.role != required_role:
-            errors.append(
-                {"identifier": ident, "error": f"{u.username} is {u.role.value}, group requires {required_role.value}"}
-            )
+        err = add_member(db, group, u)
+        if err:
+            errors.append({"identifier": ident, "error": err})
             continue
-        u.group_id = group.id
         added.append(_member_summary(u))
     db.flush()
+    db.refresh(group)
     # Re-apply the group's internet policy so newly added members inherit it.
     applied = apply_internet_policy(db, group)
     audit.record(
@@ -255,9 +259,8 @@ def remove_member(
         .filter((User.id == user_id) | (User.username == user_id) | (User.public_id == user_id))
         .first()
     )
-    if not u or u.group_id != group.id:
+    if not u or not remove_member(db, group, u):
         raise HTTPException(404, "User is not a member of this group")
-    u.group_id = None
     audit.record(db, user=admin, action="group.members.remove", resource=group.public_id, detail=u.username)
     db.commit()
     db.refresh(group)
