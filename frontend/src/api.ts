@@ -47,6 +47,43 @@ export type User = {
   mfa_enabled: boolean;
   lab_id: string | null;
   quota: string | null;
+  group_id?: string | null;
+  group?: string | null;
+};
+
+export type GroupMember = {
+  id: string;
+  public_id: string;
+  username: string;
+  full_name: string;
+  role: string;
+  status: string;
+  lab_id: string | null;
+};
+
+export type Group = {
+  id: string;
+  public_id: string;
+  name: string;
+  kind: "student" | "instructor";
+  description: string;
+  internet_policy: "enabled" | "disabled" | "unset";
+  max_machines: number | null;
+  inactivity_alert_days: number;
+  member_count: number;
+  members: GroupMember[];
+  created_at: string;
+};
+
+export type InactivityAlert = {
+  user_id: string;
+  public_id: string;
+  username: string;
+  full_name: string;
+  group: string | null;
+  last_activity: string;
+  idle_days: number;
+  threshold_days: number;
 };
 
 export type Machine = {

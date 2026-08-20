@@ -18,6 +18,7 @@ import { Activity } from "./pages/Activity";
 import { Settings } from "./pages/Settings";
 import { AdminHome } from "./pages/admin/AdminHome";
 import { AdminPeople } from "./pages/admin/AdminPeople";
+import { AdminGroups } from "./pages/admin/AdminGroups";
 import { AdminInfra } from "./pages/admin/AdminInfra";
 import { AdminOps } from "./pages/admin/AdminOps";
 
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="admin" element={<AdminHome />} />
         <Route path="admin/people" element={<AdminPeople />} />
+        <Route path="admin/groups" element={<AdminGroups />} />
         <Route path="admin/infra" element={<AdminInfra />} />
         <Route path="admin/ops" element={<AdminOps />} />
       </Route>
