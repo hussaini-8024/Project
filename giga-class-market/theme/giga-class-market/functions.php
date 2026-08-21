@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.9.6' );
+define( 'GCM_THEME_VERSION', '1.9.7' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -698,7 +698,7 @@ function gcm_get_featured_courses_query( $limit = 3 ) {
 }
 
 /**
- * Course purchase URL.
+ * Course purchase URL (WhatsApp gate — bank details page is not shown).
  *
  * @param int $course_id Course ID.
  * @return string
@@ -711,9 +711,37 @@ function gcm_course_purchase_url( $course_id ) {
 		}
 	}
 
-	$url = gcm_setting( 'payment_page_url', home_url( '/payment/' ) );
+	$url = gcm_setting( 'payment_page_url', home_url( '/get-account-details/' ) );
 	return add_query_arg( 'course_id', absint( $course_id ), $url );
 }
+
+/**
+ * Redirect the old bank-details payment page to the WhatsApp gate (do not delete the template).
+ *
+ * @return void
+ */
+function gcm_redirect_bank_payment_page() {
+	if ( is_admin() || wp_doing_ajax() ) {
+		return;
+	}
+
+	$is_bank_page = is_page( 'payment' )
+		|| is_page_template( 'page-templates/template-payment.php' );
+
+	if ( ! $is_bank_page ) {
+		return;
+	}
+
+	$course_id = isset( $_GET['course_id'] ) ? absint( $_GET['course_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$target    = home_url( '/get-account-details/' );
+	if ( $course_id ) {
+		$target = add_query_arg( 'course_id', $course_id, $target );
+	}
+
+	wp_safe_redirect( $target, 302 );
+	exit;
+}
+add_action( 'template_redirect', 'gcm_redirect_bank_payment_page', 5 );
 
 /**
  * Student login URL.
@@ -763,10 +791,11 @@ function gcm_is_noindex_template() {
 			'page-templates/template-teacher-dashboard.php',
 			'page-templates/template-course-learn.php',
 			'page-templates/template-payment.php',
+			'page-templates/template-payment-whatsapp.php',
 			'page-templates/template-payment-verify.php',
 			'page-templates/template-login.php',
 		)
-	) || is_page( array( 'login', 'student-dashboard', 'teacher-dashboard', 'course-learn', 'payment', 'payment-verify', 'live-class' ) );
+	) || is_page( array( 'login', 'student-dashboard', 'teacher-dashboard', 'course-learn', 'payment', 'get-account-details', 'payment-verify', 'payment-verification', 'live-class' ) );
 }
 
 /**

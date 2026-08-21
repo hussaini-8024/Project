@@ -180,7 +180,9 @@ class GCM_SEO {
 			'teacher-dashboard',
 			'course-learn',
 			'payment',
+			'get-account-details',
 			'payment-verify',
+			'payment-verification',
 			'login',
 			'live-class',
 		);
@@ -199,6 +201,7 @@ class GCM_SEO {
 				'page-templates/template-teacher-dashboard.php',
 				'page-templates/template-course-learn.php',
 				'page-templates/template-payment.php',
+				'page-templates/template-payment-whatsapp.php',
 				'page-templates/template-payment-verify.php',
 				'page-templates/template-login.php',
 			)
@@ -489,7 +492,9 @@ class GCM_SEO {
 		$extra .= "Disallow: /teacher-dashboard/\n";
 		$extra .= "Disallow: /course-learn/\n";
 		$extra .= "Disallow: /payment/\n";
+		$extra .= "Disallow: /get-account-details/\n";
 		$extra .= "Disallow: /payment-verify/\n";
+		$extra .= "Disallow: /payment-verification/\n";
 		$extra .= "Disallow: /login/\n";
 		$extra .= 'Sitemap: ' . esc_url( home_url( '/wp-sitemap.xml' ) ) . "\n";
 
@@ -509,7 +514,7 @@ class GCM_SEO {
 		}
 
 		$exclude = array();
-		foreach ( array( 'student-dashboard', 'teacher-dashboard', 'course-learn', 'payment', 'payment-verify', 'login', 'live-class' ) as $slug ) {
+		foreach ( array( 'student-dashboard', 'teacher-dashboard', 'course-learn', 'payment', 'get-account-details', 'payment-verify', 'payment-verification', 'login', 'live-class' ) as $slug ) {
 			$page = get_page_by_path( $slug );
 			if ( $page ) {
 				$exclude[] = (int) $page->ID;

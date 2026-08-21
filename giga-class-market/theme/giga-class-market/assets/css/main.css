@@ -1772,6 +1772,59 @@ textarea {
 	background: color-mix(in srgb, var(--gcm-gold) 10%, transparent);
 }
 
+.gcm-payment-gate-banner {
+	margin: 0 0 1.25rem;
+	padding: 0.95rem 1.25rem;
+	border-radius: var(--gcm-radius);
+	background: linear-gradient(135deg, color-mix(in srgb, var(--gcm-navy) 92%, #000), var(--gcm-navy));
+	color: #fff;
+	font-weight: 600;
+	line-height: 1.45;
+	text-align: center;
+	box-shadow: 0 10px 28px color-mix(in srgb, var(--gcm-navy) 28%, transparent);
+}
+
+.gcm-payment-whatsapp-gate .gcm-payment-card {
+	max-width: 720px;
+	margin-inline: auto;
+}
+
+.gcm-payment-gate-whatsapp {
+	margin: 1.75rem 0 1.5rem;
+	padding: 1.5rem;
+	border: 1px solid var(--gcm-border);
+	border-radius: var(--gcm-radius);
+	background: color-mix(in srgb, var(--gcm-surface) 88%, var(--gcm-gold));
+	text-align: center;
+}
+
+.gcm-payment-gate-whatsapp__btn {
+	min-width: min(100%, 220px);
+}
+
+.gcm-payment-gate-whatsapp__hint {
+	margin: 0.9rem 0 0;
+	color: var(--gcm-muted);
+}
+
+.gcm-payment-gate-whatsapp__hint a {
+	color: var(--gcm-navy);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.gcm-payment-gate-actions {
+	flex-wrap: wrap;
+	align-items: stretch;
+}
+
+.gcm-payment-gate-actions .gcm-button--gold {
+	white-space: normal;
+	line-height: 1.35;
+	text-align: center;
+	max-width: 100%;
+}
+
 .gcm-learn {
 	background: var(--gcm-bg);
 }

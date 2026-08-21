@@ -92,7 +92,7 @@ class GCM_Frontend {
 			array(
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'gcm_ajax_nonce' ),
-				'paymentUrl' => home_url( '/payment/' ),
+				'paymentUrl' => home_url( '/get-account-details/' ),
 			)
 		);
 	}
@@ -619,7 +619,7 @@ class GCM_Frontend {
 				<?php else : ?>
 					<p class="gcm-price"><?php echo esc_html( number_format_i18n( $show_price, 2 ) ); ?></p>
 				<?php endif; ?>
-				<a class="gcm-button" href="<?php echo esc_url( add_query_arg( 'course_id', $course['id'], home_url( '/payment/' ) ) ); ?>"><?php esc_html_e( 'Enroll now', 'giga-class-market' ); ?></a>
+				<a class="gcm-button" href="<?php echo esc_url( add_query_arg( 'course_id', $course['id'], home_url( '/get-account-details/' ) ) ); ?>"><?php esc_html_e( 'Enroll now', 'giga-class-market' ); ?></a>
 			</article>
 			<?php
 		endforeach;

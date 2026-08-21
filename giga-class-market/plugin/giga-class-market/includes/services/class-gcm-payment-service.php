@@ -395,7 +395,7 @@ class GCM_Payment_Service {
 			return array(
 				'state'    => 'rejected',
 				'label'    => __( 'Payment rejected — buy again', 'giga-class-market' ),
-				'url'      => add_query_arg( 'course_id', $course_id, home_url( '/payment/' ) ),
+				'url'      => add_query_arg( 'course_id', $course_id, home_url( '/get-account-details/' ) ),
 				'progress' => 0,
 			);
 		}
@@ -403,7 +403,7 @@ class GCM_Payment_Service {
 		return array(
 			'state'    => 'buy',
 			'label'    => __( 'Buy Course', 'giga-class-market' ),
-			'url'      => add_query_arg( 'course_id', $course_id, home_url( '/payment/' ) ),
+			'url'      => add_query_arg( 'course_id', $course_id, home_url( '/get-account-details/' ) ),
 			'progress' => 0,
 		);
 	}

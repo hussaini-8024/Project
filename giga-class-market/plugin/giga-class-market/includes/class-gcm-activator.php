@@ -96,6 +96,11 @@ class GCM_Activator {
 				'content'  => '',
 				'template' => 'page-templates/template-payment.php',
 			),
+			'get-account-details'  => array(
+				'title'    => __( 'Get Account Details', 'giga-class-market' ),
+				'content'  => '',
+				'template' => 'page-templates/template-payment-whatsapp.php',
+			),
 			'payment-verification' => array(
 				'title'    => __( 'Payment Verification', 'giga-class-market' ),
 				'content'  => '',
