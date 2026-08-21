@@ -141,8 +141,8 @@ class GCM_SEO {
 			'services_description'    => 'Hire Giga Class Market for web development, digital marketing, SEO, social media, branding, and LMS setup. Contact us to start your project.',
 			'contact_title'           => 'Contact Us | ' . $brand,
 			'contact_description'     => 'Contact Giga Class Market for course support, enrollment help, professional services, and partnership questions. Reach us by phone, WhatsApp, or email.',
-			'courses_title'           => 'Online Courses | CCNA, Ethical Hacking & AI Coding | ' . $brand,
-			'courses_description'     => 'Enroll in premium online courses at Giga Class Market — CCNA networking, ethical hacking, AI coding, and more. Practical lessons, expert instructors, and verified certificates.',
+			'courses_title'           => 'Online Courses | FPSC, CCNA, Ethical Hacking & AI Coding | ' . $brand,
+			'courses_description'     => 'Enroll in premium online courses at Giga Class Market — FPSC preparation (Pakistan), CCNA networking, ethical hacking, AI coding, and more. Practical lessons, expert instructors, and verified certificates.',
 			'default_og_image_id'     => 0,
 			'organization_description'=> 'Giga Class Market is a premium online learning marketplace offering structured digital courses, secure enrollment, student dashboards, and verified certificates.',
 			'google_site_verification'=> '',
@@ -279,7 +279,7 @@ class GCM_SEO {
 		}
 
 		if ( is_singular( 'gcm_course' ) && class_exists( 'GCM_Course_SEO' ) ) {
-			$keyword = GCM_Course_SEO::resolve_focus_keyword( get_the_ID() );
+			$keyword = GCM_Course_SEO::resolve_keywords_csv( get_the_ID() );
 			if ( $keyword ) {
 				echo '<meta name="keywords" content="' . esc_attr( $keyword ) . '" />' . "\n";
 			}
@@ -700,6 +700,11 @@ class GCM_SEO {
 			$org['sameAs'] = $same_as;
 		}
 
+		$org['areaServed'] = array(
+			'@type' => 'Country',
+			'name'  => 'Pakistan',
+		);
+
 		return $org;
 	}
 
@@ -849,9 +854,21 @@ class GCM_SEO {
 		);
 
 		if ( class_exists( 'GCM_Course_SEO' ) ) {
-			$keyword = GCM_Course_SEO::resolve_focus_keyword( $course_id );
+			$keyword = GCM_Course_SEO::resolve_keywords_csv( $course_id );
 			if ( $keyword ) {
 				$schema['keywords'] = $keyword;
+			}
+			$extras = GCM_Course_SEO::schema_extras( $course_id );
+			foreach ( $extras as $key => $value ) {
+				if ( '' === $key || null === $value || '' === $value ) {
+					continue;
+				}
+				// Merge "about" with category names when both exist.
+				if ( 'about' === $key && ! empty( $schema['about'] ) && is_array( $value ) ) {
+					$schema['about'] = array_values( array_unique( array_merge( (array) $schema['about'], $value ) ) );
+					continue;
+				}
+				$schema[ $key ] = $value;
 			}
 		}
 

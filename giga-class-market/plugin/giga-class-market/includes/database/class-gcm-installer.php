@@ -588,6 +588,8 @@ class GCM_Installer {
 		// Deep course SEO: keyword titles/descriptions/FAQs for every published course.
 		if ( class_exists( 'GCM_Course_SEO' ) ) {
 			GCM_Course_SEO::ensure_all_published();
+			// Force flagship packs (incl. FPSC Pakistan) onto live meta for stronger ranking.
+			GCM_Course_SEO::apply_known_presets();
 		}
 
 		// Keep marketplace SEO strings search-focused.
@@ -600,16 +602,24 @@ class GCM_Installer {
 				$settings['seo'][ $seo_key ] = $seo_defaults[ $seo_key ];
 			}
 		}
-		// Refresh courses archive SEO copy to the stronger defaults when still generic.
+		// Refresh courses archive SEO copy to the stronger defaults when still generic or missing FPSC.
 		if ( ! empty( $seo_defaults['courses_title'] ) ) {
 			$current_courses_title = (string) ( $settings['seo']['courses_title'] ?? '' );
-			if ( '' === $current_courses_title || false !== stripos( $current_courses_title, 'Explore Premium Courses' ) ) {
+			if (
+				'' === $current_courses_title
+				|| false !== stripos( $current_courses_title, 'Explore Premium Courses' )
+				|| false === stripos( $current_courses_title, 'FPSC' )
+			) {
 				$settings['seo']['courses_title'] = $seo_defaults['courses_title'];
 			}
 		}
 		if ( ! empty( $seo_defaults['courses_description'] ) ) {
 			$current_courses_desc = (string) ( $settings['seo']['courses_description'] ?? '' );
-			if ( '' === $current_courses_desc || false !== stripos( $current_courses_desc, 'Browse premium digital courses' ) ) {
+			if (
+				'' === $current_courses_desc
+				|| false !== stripos( $current_courses_desc, 'Browse premium digital courses' )
+				|| false === stripos( $current_courses_desc, 'FPSC' )
+			) {
 				$settings['seo']['courses_description'] = $seo_defaults['courses_description'];
 			}
 		}
