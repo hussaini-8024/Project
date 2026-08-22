@@ -582,10 +582,13 @@ class GCM_SEO {
 		}
 
 		$extra  = "\n# Giga Class Market SEO\n";
+		$extra .= "Allow: /\n";
 		$extra .= "Allow: /courses/\n";
+		$extra .= "Allow: /blogs/\n";
 		$extra .= "Allow: /about/\n";
 		$extra .= "Allow: /services/\n";
 		$extra .= "Allow: /contact/\n";
+		$extra .= "Allow: /portfolio/\n";
 		$extra .= "Disallow: /student-dashboard/\n";
 		$extra .= "Disallow: /teacher-dashboard/\n";
 		$extra .= "Disallow: /course-learn/\n";
@@ -594,6 +597,7 @@ class GCM_SEO {
 		$extra .= "Disallow: /payment-verify/\n";
 		$extra .= "Disallow: /payment-verification/\n";
 		$extra .= "Disallow: /login/\n";
+		$extra .= "Disallow: /live-class/\n";
 		$extra .= 'Sitemap: ' . esc_url( home_url( '/wp-sitemap.xml' ) ) . "\n";
 
 		return $output . $extra;
