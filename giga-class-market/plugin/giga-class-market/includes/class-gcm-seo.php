@@ -29,6 +29,11 @@ class GCM_SEO {
 		add_filter( 'wp_sitemaps_posts_query_args', array( $this, 'filter_sitemap_posts_query' ), 10, 2 );
 		add_filter( 'wp_sitemaps_add_provider', array( $this, 'filter_sitemap_providers' ), 10, 2 );
 		add_action( 'init', array( $this, 'ensure_google_verification_file' ), 5 );
+		add_action( 'init', array( $this, 'register_sitemap_aliases' ), 20 );
+		add_filter( 'pre_handle_404', array( $this, 'preempt_sitemap_404' ), 10, 2 );
+		add_action( 'wp', array( $this, 'force_sitemap_status_ok' ), 0 );
+		add_action( 'template_redirect', array( $this, 'force_sitemap_status_ok' ), 0 );
+		add_filter( 'status_header', array( $this, 'filter_sitemap_status_header' ), 100, 4 );
 		add_action( 'template_redirect', array( $this, 'serve_google_verification_file' ), 0 );
 		add_action( 'save_post_gcm_course', array( $this, 'on_course_saved' ), 40, 2 );
 		add_action( 'save_post_gcm_blog', array( $this, 'on_blog_saved' ), 40, 2 );
@@ -118,6 +123,74 @@ class GCM_SEO {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			@file_put_contents( $target, $body );
 		}
+	}
+
+	/**
+	 * Friendly sitemap URLs Google Search Console often expects.
+	 *
+	 * @return void
+	 */
+	public function register_sitemap_aliases() {
+		add_rewrite_rule( '^sitemap\.xml$', 'index.php?sitemap=index', 'top' );
+		add_rewrite_rule( '^sitemap_index\.xml$', 'index.php?sitemap=index', 'top' );
+	}
+
+	/**
+	 * Hosts often return HTTP 404 for /wp-sitemap.xml while still outputting XML
+	 * (Apache ErrorDocument → WordPress). Google then reports "Couldn't fetch".
+	 *
+	 * @return void
+	 */
+	public function force_sitemap_status_ok() {
+		if ( ! $this->is_sitemap_request() ) {
+			return;
+		}
+
+		global $wp_query;
+		if ( $wp_query instanceof WP_Query ) {
+			$wp_query->is_404 = false;
+			$wp_query->query_vars['error'] = '';
+		}
+
+		status_header( 200 );
+		if ( ! headers_sent() ) {
+			header( 'X-Robots-Tag: noindex, follow', true );
+		}
+	}
+
+	/**
+	 * Keep sitemap responses on HTTP 200 even if something else tried to 404.
+	 *
+	 * @param string $status_header Full status header line.
+	 * @param int    $code HTTP code.
+	 * @param string $description Description.
+	 * @param string $protocol Protocol.
+	 * @return string
+	 */
+	public function filter_sitemap_status_header( $status_header, $code, $description, $protocol ) {
+		if ( 200 === (int) $code || ! $this->is_sitemap_request() ) {
+			return $status_header;
+		}
+
+		return $protocol . ' 200 OK';
+	}
+
+	/**
+	 * Whether the current request is a core WP sitemap (or alias).
+	 *
+	 * @return bool
+	 */
+	private function is_sitemap_request() {
+		if ( get_query_var( 'sitemap' ) || get_query_var( 'sitemap-stylesheet' ) ) {
+			return true;
+		}
+
+		$request = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		$path    = wp_parse_url( $request, PHP_URL_PATH );
+		$path    = is_string( $path ) ? untrailingslashit( strtolower( $path ) ) : '';
+
+		return (bool) preg_match( '#/(wp-sitemap|sitemap|sitemap_index)(\.xml)?$#', $path )
+			|| (bool) preg_match( '#/wp-sitemap[^/]*\.xml$#', $path );
 	}
 
 	/**
