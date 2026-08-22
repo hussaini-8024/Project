@@ -1,0 +1,277 @@
+/* =========================================================
+   AVIRO — SAVOR THEME CUSTOM CSS
+   Paste in: Online Store → Themes → Customize → Theme settings → Custom CSS
+   (or Edit code → assets → paste into custom.css / theme CSS area)
+   ========================================================= */
+
+:root {
+  --pet-primary: #173F35;
+  --pet-primary-dark: #0F3028;
+  --pet-sage: #DCE8DF;
+  --pet-cream: #FAF8F2;
+  --pet-text: #1F2925;
+  --pet-muted: #66736D;
+  --pet-accent: #D96B4C;
+  --pet-accent-hover: #B9573D;
+  --pet-white: #FFFFFF;
+  --pet-border: #E4E8E4;
+}
+
+body {
+  background: var(--pet-cream);
+  color: var(--pet-text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--pet-primary);
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: var(--pet-text);
+  line-height: 1.65;
+}
+
+a {
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:hover {
+  color: var(--pet-accent);
+}
+
+.header,
+.header-wrapper,
+.shopify-section-header {
+  background: var(--pet-cream);
+}
+
+.header__menu-item,
+.header a {
+  color: var(--pet-primary);
+  font-weight: 600;
+}
+
+.header__menu-item:hover {
+  color: var(--pet-accent);
+}
+
+.button,
+button,
+.shopify-payment-button__button,
+.product-form__submit {
+  background: var(--pet-accent) !important;
+  color: var(--pet-white) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  font-weight: 700;
+  transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.button:hover,
+button:hover,
+.product-form__submit:hover {
+  background: var(--pet-accent-hover) !important;
+  color: var(--pet-white) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 63, 53, 0.15);
+}
+
+.card,
+.product-card,
+.card-wrapper {
+  border-radius: 18px;
+}
+
+.card__inner,
+.card__media {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  transition: transform 0.25s ease;
+}
+
+.card__heading a,
+.card__information a {
+  color: var(--pet-primary);
+  font-weight: 700;
+}
+
+.card__heading a:hover {
+  color: var(--pet-accent);
+}
+
+.price {
+  color: var(--pet-primary);
+  font-weight: 800;
+}
+
+.price--on-sale .price-item--sale {
+  color: var(--pet-accent);
+}
+
+.product__title {
+  color: var(--pet-primary);
+  font-weight: 800;
+}
+
+.product__text,
+.product__description {
+  color: var(--pet-text);
+}
+
+.product-form__input input[type="radio"] + label {
+  border-color: var(--pet-border);
+  border-radius: 999px;
+}
+
+.product-form__input input[type="radio"]:checked + label {
+  background: var(--pet-primary);
+  color: var(--pet-white);
+  border-color: var(--pet-primary);
+}
+
+.badge {
+  background: var(--pet-primary);
+  color: var(--pet-white);
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
+.price__badge-sale,
+.badge--sale {
+  background: var(--pet-accent);
+  color: var(--pet-white);
+}
+
+.announcement-bar {
+  background: var(--pet-primary) !important;
+  color: var(--pet-white) !important;
+}
+
+.announcement-bar a {
+  color: var(--pet-white);
+  font-weight: 700;
+}
+
+.collection-hero,
+.banner,
+.image-banner {
+  border-radius: 0;
+}
+
+.banner img,
+.image-with-text img,
+.multicolumn img {
+  border-radius: 20px;
+}
+
+.cart__items,
+.cart-drawer {
+  color: var(--pet-text);
+}
+
+.cart__checkout-button {
+  background: var(--pet-accent) !important;
+  color: var(--pet-white) !important;
+  border-radius: 999px !important;
+  font-weight: 800;
+}
+
+.cart__checkout-button:hover {
+  background: var(--pet-accent-hover) !important;
+}
+
+input,
+textarea,
+select {
+  border: 1px solid var(--pet-border);
+  border-radius: 12px;
+  background: var(--pet-white);
+  color: var(--pet-text);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--pet-primary);
+  box-shadow: 0 0 0 2px rgba(23, 63, 53, 0.08);
+}
+
+.multicolumn,
+.rich-text,
+.image-with-text {
+  color: var(--pet-text);
+}
+
+.multicolumn .title,
+.rich-text__heading,
+.image-with-text__heading {
+  color: var(--pet-primary);
+}
+
+.footer {
+  background: var(--pet-primary) !important;
+  color: var(--pet-white) !important;
+}
+
+.footer h2,
+.footer h3,
+.footer a,
+.footer p {
+  color: var(--pet-white) !important;
+}
+
+.footer a:hover {
+  color: var(--pet-sage) !important;
+}
+
+@media screen and (max-width: 749px) {
+  h1 {
+    font-size: 2.2rem;
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: 1.7rem;
+    line-height: 1.2;
+  }
+
+  .button,
+  .product-form__submit {
+    min-height: 48px;
+    padding: 12px 24px;
+  }
+
+  .card {
+    border-radius: 14px;
+  }
+
+  .card__inner,
+  .card__media {
+    border-radius: 14px;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--pet-accent);
+  outline-offset: 3px;
+}
+
+.button,
+.card,
+a,
+input,
+textarea,
+select {
+  transition: all 0.2s ease;
+}
