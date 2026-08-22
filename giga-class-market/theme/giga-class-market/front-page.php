@@ -106,6 +106,46 @@ get_template_part( 'template-parts/home/hero-slider' );
 	</div>
 </section>
 
+<section class="gcm-section gcm-section--surface gcm-home-seo">
+	<div class="gcm-container">
+		<div class="gcm-section__heading gcm-animate">
+			<p class="gcm-eyebrow"><?php esc_html_e( 'Why Giga Class Market', 'giga-class-market' ); ?></p>
+			<h2><?php esc_html_e( 'Online courses built for real careers in Pakistan and beyond', 'giga-class-market' ); ?></h2>
+			<p><?php esc_html_e( 'Giga Class Market is a premium digital learning marketplace for students who want practical skills, clear structure, and verified progress — not random video dumps.', 'giga-class-market' ); ?></p>
+		</div>
+		<div class="gcm-benefit-grid gcm-home-seo__grid">
+			<article class="gcm-benefit-card gcm-animate">
+				<h3><?php esc_html_e( 'FPSC preparation online', 'giga-class-market' ); ?></h3>
+				<p><?php esc_html_e( 'Prepare for FPSC exams in Pakistan with a focused study path: MCQs, past-paper strategy, English, Pakistan Affairs, and current affairs — designed for busy learners.', 'giga-class-market' ); ?></p>
+				<p><a href="<?php echo esc_url( home_url( '/courses/fpsc-success-mastery/' ) ); ?>"><?php esc_html_e( 'Explore FPSC Success Mastery', 'giga-class-market' ); ?></a></p>
+			</article>
+			<article class="gcm-benefit-card gcm-animate">
+				<h3><?php esc_html_e( 'CCNA networking skills', 'giga-class-market' ); ?></h3>
+				<p><?php esc_html_e( 'Build job-ready networking foundations from beginner to professional — routing, switching, labs mindset, and a clear CCNA-oriented learning path.', 'giga-class-market' ); ?></p>
+				<p><a href="<?php echo esc_url( home_url( '/courses/ccna-level-from-beginner-to-professional/' ) ); ?>"><?php esc_html_e( 'Explore the CCNA course', 'giga-class-market' ); ?></a></p>
+			</article>
+			<article class="gcm-benefit-card gcm-animate">
+				<h3><?php esc_html_e( 'Ethical hacking foundations', 'giga-class-market' ); ?></h3>
+				<p><?php esc_html_e( 'Start cybersecurity the right way: legal practice habits, networking + Linux basics, and a structured ethical hacking path from entry level toward stronger skills.', 'giga-class-market' ); ?></p>
+				<p><a href="<?php echo esc_url( home_url( '/courses/ethical-hacking-entry-level-to-pro/' ) ); ?>"><?php esc_html_e( 'Explore Ethical Hacking', 'giga-class-market' ); ?></a></p>
+			</article>
+		</div>
+		<p class="gcm-home-seo__more gcm-animate">
+			<?php
+			echo wp_kses(
+				sprintf(
+					/* translators: 1: courses URL, 2: blogs URL */
+					__( 'Browse all <a href="%1$s">online courses</a> or read our <a href="%2$s">FPSC, CCNA, and ethical hacking guides</a> to choose the right next step.', 'giga-class-market' ),
+					esc_url( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) ),
+					esc_url( get_post_type_archive_link( 'gcm_blog' ) ?: home_url( '/blogs/' ) )
+				),
+				array( 'a' => array( 'href' => array() ) )
+			);
+			?>
+		</p>
+	</div>
+</section>
+
 <section class="gcm-contact-cta">
 	<div class="gcm-container gcm-contact-cta__inner gcm-animate">
 		<div>

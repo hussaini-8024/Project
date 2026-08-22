@@ -815,6 +815,18 @@ function gcm_robots_meta( $robots ) {
 add_filter( 'wp_robots', 'gcm_robots_meta' );
 
 /**
+ * Hide X-Powered-By from public responses (minor SEO/security hygiene).
+ *
+ * @return void
+ */
+function gcm_remove_powered_by_header() {
+	if ( function_exists( 'header_remove' ) ) {
+		header_remove( 'X-Powered-By' );
+	}
+}
+add_action( 'send_headers', 'gcm_remove_powered_by_header' );
+
+/**
  * Basic Open Graph output for public pages.
  * Skipped when the plugin SEO module is active (avoids duplicate tags).
  */

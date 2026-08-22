@@ -528,6 +528,36 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	font-size: clamp(3.1rem, 6.6vw, 5.8rem);
 }
 
+.gcm-hero__slide-title {
+	margin: 0.65rem 0 0;
+	max-width: 720px;
+	color: rgba(255, 255, 255, 0.88);
+	font-family: var(--gcm-font-display);
+	font-size: clamp(1.15rem, 2vw, 1.55rem);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	line-height: 1.3;
+}
+
+.gcm-home-seo__grid {
+	margin-top: 1.5rem;
+}
+
+.gcm-home-seo__more {
+	margin: 1.75rem 0 0;
+	max-width: 720px;
+	color: var(--gcm-ink-muted, rgba(13, 59, 69, 0.78));
+	font-size: 1.02rem;
+	line-height: 1.65;
+}
+
+.gcm-home-seo__more a {
+	color: inherit;
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 0.18em;
+}
+
 .gcm-hero__lead {
 	max-width: 640px;
 	color: rgba(255,255,255,0.78);

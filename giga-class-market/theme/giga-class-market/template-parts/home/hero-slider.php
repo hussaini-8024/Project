@@ -67,7 +67,11 @@ if ( empty( $slides ) ) {
 					<div class="gcm-hero__copy gcm-animate">
 						<p class="gcm-eyebrow"><?php echo esc_html( $slide['eyebrow'] ?? __( 'Giga Class Market', 'giga-class-market' ) ); ?></p>
 						<?php if ( 0 === $index ) : ?>
-							<h1><?php echo esc_html( $slide['title'] ?? __( 'Giga Class Market', 'giga-class-market' ) ); ?></h1>
+							<?php /* One brand H1 for the homepage — matches SEO title/keywords. */ ?>
+							<h1><?php esc_html_e( 'Premium Online Courses & Digital Learning', 'giga-class-market' ); ?></h1>
+							<?php if ( ! empty( $slide['title'] ) ) : ?>
+								<p class="gcm-hero__slide-title"><?php echo esc_html( $slide['title'] ); ?></p>
+							<?php endif; ?>
 						<?php else : ?>
 							<h2 class="gcm-hero__title"><?php echo esc_html( $slide['title'] ?? __( 'Giga Class Market', 'giga-class-market' ) ); ?></h2>
 						<?php endif; ?>
