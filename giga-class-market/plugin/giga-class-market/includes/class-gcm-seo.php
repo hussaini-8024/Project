@@ -277,7 +277,7 @@ class GCM_SEO {
 		}
 
 		if ( is_post_type_archive( 'gcm_blog' ) ) {
-			return array( 'title' => __( 'Blog | Learning Guides & Career Tips | Giga Class Market', 'giga-class-market' ) );
+			return array( 'title' => __( 'Blog | FPSC, CCNA & Ethical Hacking Guides | Giga Class Market', 'giga-class-market' ) );
 		}
 
 		if ( is_tax( 'gcm_blog_category' ) ) {
@@ -686,7 +686,7 @@ class GCM_SEO {
 
 		if ( is_post_type_archive( 'gcm_blog' ) ) {
 			return $this->trim_description(
-				__( 'Read practical learning guides on FPSC, networking, cyber security, AI coding, and careers — then enroll in premium online courses at Giga Class Market.', 'giga-class-market' )
+				__( 'Top reading guides for FPSC preparation Pakistan, CCNA networking, and ethical hacking — practical SEO blogs that help you choose and succeed in Giga Class Market courses.', 'giga-class-market' )
 			);
 		}
 

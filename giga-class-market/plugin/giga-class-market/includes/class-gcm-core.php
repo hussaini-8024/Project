@@ -33,6 +33,7 @@ class GCM_Core {
 		add_action( 'init', array( $frontend, 'register_rewrites' ) );
 		add_action( 'init', array( $frontend, 'register_shortcodes' ) );
 		add_action( 'admin_init', array( 'GCM_Portfolio_Service', 'maybe_seed_projects' ) );
+		add_action( 'init', array( 'GCM_Blog_Seeder', 'maybe_seed' ), 25 );
 		add_action( 'init', array( 'GCM_Portfolio_Service', 'maybe_flush_rewrites' ), 99 );
 		add_filter( 'post_type_link', array( 'GCM_Portfolio_Service', 'filter_portfolio_link' ), 10, 2 );
 		add_filter( 'request', array( 'GCM_Portfolio_Service', 'map_portfolio_request' ) );

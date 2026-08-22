@@ -218,6 +218,8 @@ class GCM_Post_Types {
 			'Networking',
 			'Cyber Security',
 			'FPSC Preparation',
+			'CCNA & Networking',
+			'Ethical Hacking',
 			'Career Tips',
 			'AI & Coding',
 			'Exam Guides',
