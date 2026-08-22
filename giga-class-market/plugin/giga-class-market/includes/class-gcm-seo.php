@@ -154,8 +154,24 @@ class GCM_SEO {
 
 		status_header( 200 );
 		if ( ! headers_sent() ) {
+			nocache_headers();
+			header( 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0', true );
 			header( 'X-Robots-Tag: noindex, follow', true );
 		}
+	}
+
+	/**
+	 * Stop WordPress from marking sitemap routes as 404 before headers are sent.
+	 *
+	 * @param bool     $preempt Whether to short-circuit.
+	 * @param WP_Query $query Query.
+	 * @return bool
+	 */
+	public function preempt_sitemap_404( $preempt, $query ) {
+		if ( $this->is_sitemap_request() ) {
+			return true;
+		}
+		return $preempt;
 	}
 
 	/**
