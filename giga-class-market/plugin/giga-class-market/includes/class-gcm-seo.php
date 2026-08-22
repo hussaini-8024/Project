@@ -31,6 +31,7 @@ class GCM_SEO {
 		add_action( 'init', array( $this, 'ensure_google_verification_file' ), 5 );
 		add_action( 'template_redirect', array( $this, 'serve_google_verification_file' ), 0 );
 		add_action( 'save_post_gcm_course', array( $this, 'on_course_saved' ), 40, 2 );
+		add_action( 'save_post_gcm_blog', array( $this, 'on_blog_saved' ), 40, 2 );
 	}
 
 	/**
@@ -49,6 +50,25 @@ class GCM_SEO {
 		}
 		if ( class_exists( 'GCM_Course_SEO' ) ) {
 			GCM_Course_SEO::ensure_course( (int) $post_id );
+		}
+	}
+
+	/**
+	 * Keep blog SEO meta filled on publish.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function on_blog_saved( $post_id, $post ) {
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+			return;
+		}
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return;
+		}
+		if ( class_exists( 'GCM_Blog_SEO' ) ) {
+			GCM_Blog_SEO::ensure_blog( (int) $post_id );
 		}
 	}
 
@@ -256,6 +276,30 @@ class GCM_SEO {
 			return array( 'title' => $title );
 		}
 
+		if ( is_post_type_archive( 'gcm_blog' ) ) {
+			return array( 'title' => __( 'Blog | Learning Guides & Career Tips | Giga Class Market', 'giga-class-market' ) );
+		}
+
+		if ( is_tax( 'gcm_blog_category' ) ) {
+			$term = get_queried_object();
+			$name = ( $term && ! empty( $term->name ) ) ? $term->name : __( 'Blog', 'giga-class-market' );
+			return array(
+				'title' => sprintf(
+					/* translators: %s: category name */
+					__( '%s Articles | Giga Class Market Blog', 'giga-class-market' ),
+					$name
+				),
+			);
+		}
+
+		if ( is_singular( 'gcm_blog' ) ) {
+			$blog_id = get_the_ID();
+			$title   = class_exists( 'GCM_Blog_SEO' )
+				? GCM_Blog_SEO::resolve_seo_title( $blog_id )
+				: get_the_title( $blog_id );
+			return array( 'title' => $title );
+		}
+
 		if ( is_singular() && ! empty( $parts['title'] ) && empty( $parts['site'] ) ) {
 			$parts['site'] = $site;
 		}
@@ -288,6 +332,13 @@ class GCM_SEO {
 			}
 		}
 
+		if ( is_singular( 'gcm_blog' ) && class_exists( 'GCM_Blog_SEO' ) ) {
+			$keyword = GCM_Blog_SEO::resolve_focus_keyword( get_the_ID() );
+			if ( $keyword ) {
+				echo '<meta name="keywords" content="' . esc_attr( $keyword ) . '" />' . "\n";
+			}
+		}
+
 		if ( ! empty( $seo['google_site_verification'] ) ) {
 			echo '<meta name="google-site-verification" content="' . esc_attr( $seo['google_site_verification'] ) . '" />' . "\n";
 		}
@@ -297,7 +348,7 @@ class GCM_SEO {
 		}
 
 		$canonical = $this->get_canonical_url();
-		if ( $canonical && ( ! is_singular() || is_post_type_archive( 'gcm_course' ) ) ) {
+		if ( $canonical && ( ! is_singular() || is_post_type_archive( 'gcm_course' ) || is_post_type_archive( 'gcm_blog' ) ) ) {
 			// Core prints singular canonicals; force clean archive canonicals too.
 			echo '<link rel="canonical" href="' . esc_url( $canonical ) . '" />' . "\n";
 		}
@@ -423,6 +474,53 @@ class GCM_SEO {
 					array(
 						'name' => __( 'Courses', 'giga-class-market' ),
 						'url'  => get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ),
+					),
+					array(
+						'name' => get_the_title(),
+						'url'  => get_permalink(),
+					),
+				)
+			);
+		}
+
+		if ( is_post_type_archive( 'gcm_blog' ) || is_tax( 'gcm_blog_category' ) ) {
+			$graphs[] = $this->organization_schema();
+			$crumbs   = array(
+				array(
+					'name' => __( 'Home', 'giga-class-market' ),
+					'url'  => home_url( '/' ),
+				),
+				array(
+					'name' => __( 'Blog', 'giga-class-market' ),
+					'url'  => get_post_type_archive_link( 'gcm_blog' ) ?: home_url( '/blogs/' ),
+				),
+			);
+			if ( is_tax( 'gcm_blog_category' ) ) {
+				$term = get_queried_object();
+				if ( $term && ! empty( $term->name ) ) {
+					$crumbs[] = array(
+						'name' => $term->name,
+						'url'  => get_term_link( $term ),
+					);
+				}
+			}
+			$graphs[] = $this->breadcrumb_schema( $crumbs );
+		}
+
+		if ( is_singular( 'gcm_blog' ) ) {
+			$blog_graph = $this->blog_post_schema( get_the_ID() );
+			if ( $blog_graph ) {
+				$graphs[] = $blog_graph;
+			}
+			$graphs[] = $this->breadcrumb_schema(
+				array(
+					array(
+						'name' => __( 'Home', 'giga-class-market' ),
+						'url'  => home_url( '/' ),
+					),
+					array(
+						'name' => __( 'Blog', 'giga-class-market' ),
+						'url'  => get_post_type_archive_link( 'gcm_blog' ) ?: home_url( '/blogs/' ),
 					),
 					array(
 						'name' => get_the_title(),
@@ -586,6 +684,34 @@ class GCM_SEO {
 			}
 		}
 
+		if ( is_post_type_archive( 'gcm_blog' ) ) {
+			return $this->trim_description(
+				__( 'Read practical learning guides on FPSC, networking, cyber security, AI coding, and careers — then enroll in premium online courses at Giga Class Market.', 'giga-class-market' )
+			);
+		}
+
+		if ( is_tax( 'gcm_blog_category' ) ) {
+			$term = get_queried_object();
+			if ( $term && ! empty( $term->description ) ) {
+				return $this->trim_description( $term->description );
+			}
+			$name = ( $term && ! empty( $term->name ) ) ? $term->name : __( 'this topic', 'giga-class-market' );
+			return $this->trim_description(
+				sprintf(
+					/* translators: %s: category name */
+					__( 'Browse %s articles on Giga Class Market — practical tips that connect learning with the right online course.', 'giga-class-market' ),
+					$name
+				)
+			);
+		}
+
+		if ( is_singular( 'gcm_blog' ) ) {
+			$blog_id = get_the_ID();
+			if ( class_exists( 'GCM_Blog_SEO' ) ) {
+				return $this->trim_description( GCM_Blog_SEO::resolve_seo_description( $blog_id ) );
+			}
+		}
+
 		if ( is_singular() ) {
 			if ( has_excerpt() ) {
 				return $this->trim_description( get_the_excerpt() );
@@ -611,6 +737,13 @@ class GCM_SEO {
 		}
 		if ( is_post_type_archive( 'gcm_course' ) ) {
 			return (string) ( get_post_type_archive_link( 'gcm_course' ) ?: home_url( '/courses/' ) );
+		}
+		if ( is_post_type_archive( 'gcm_blog' ) ) {
+			return (string) ( get_post_type_archive_link( 'gcm_blog' ) ?: home_url( '/blogs/' ) );
+		}
+		if ( is_tax( 'gcm_blog_category' ) ) {
+			$link = get_term_link( get_queried_object() );
+			return is_wp_error( $link ) ? home_url( '/blogs/' ) : (string) $link;
 		}
 		if ( is_home() ) {
 			$page_for_posts = (int) get_option( 'page_for_posts' );
@@ -786,6 +919,71 @@ class GCM_SEO {
 			'name'            => __( 'Online Courses at Giga Class Market', 'giga-class-market' ),
 			'itemListElement' => $elements,
 		);
+	}
+
+	/**
+	 * BlogPosting schema for a single blog.
+	 *
+	 * @param int $blog_id Blog ID.
+	 * @return array|null
+	 */
+	private function blog_post_schema( $blog_id ) {
+		$blog_id = absint( $blog_id );
+		$post    = get_post( $blog_id );
+		if ( ! $post || 'gcm_blog' !== $post->post_type ) {
+			return null;
+		}
+
+		$desc = class_exists( 'GCM_Blog_SEO' )
+			? GCM_Blog_SEO::resolve_seo_description( $blog_id )
+			: wp_trim_words( wp_strip_all_tags( $post->post_content ), 40 );
+		$keyword = class_exists( 'GCM_Blog_SEO' ) ? GCM_Blog_SEO::resolve_focus_keyword( $blog_id ) : '';
+		$image   = get_the_post_thumbnail_url( $blog_id, 'full' );
+		$author  = get_the_author_meta( 'display_name', (int) $post->post_author );
+
+		$schema = array(
+			'@type'            => 'BlogPosting',
+			'@id'              => trailingslashit( get_permalink( $blog_id ) ) . '#blogposting',
+			'headline'         => get_the_title( $blog_id ),
+			'description'      => wp_strip_all_tags( $desc ),
+			'datePublished'    => get_the_date( 'c', $blog_id ),
+			'dateModified'     => get_the_modified_date( 'c', $blog_id ),
+			'mainEntityOfPage' => get_permalink( $blog_id ),
+			'inLanguage'       => 'en',
+			'isPartOf'         => array(
+				'@type' => 'Blog',
+				'name'  => __( 'Giga Class Market Blog', 'giga-class-market' ),
+				'url'   => get_post_type_archive_link( 'gcm_blog' ) ?: home_url( '/blogs/' ),
+			),
+			'publisher'        => array(
+				'@type' => 'Organization',
+				'name'  => get_bloginfo( 'name' ),
+				'url'   => home_url( '/' ),
+				'@id'   => home_url( '/#organization' ),
+			),
+			'author'           => array(
+				'@type' => 'Person',
+				'name'  => $author ? $author : get_bloginfo( 'name' ),
+			),
+		);
+
+		if ( $keyword ) {
+			$schema['keywords'] = $keyword;
+		}
+		if ( $image ) {
+			$schema['image'] = $image;
+		}
+
+		$course_id = class_exists( 'GCM_Blog_Service' ) ? GCM_Blog_Service::get_related_course_id( $blog_id ) : 0;
+		if ( $course_id && get_post( $course_id ) ) {
+			$schema['about'] = array(
+				'@type' => 'Course',
+				'name'  => get_the_title( $course_id ),
+				'url'   => get_permalink( $course_id ),
+			);
+		}
+
+		return $schema;
 	}
 
 	/**

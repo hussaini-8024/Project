@@ -57,6 +57,7 @@ class GCM_Core {
 		add_action( 'add_meta_boxes', array( $post_types, 'register_meta_boxes' ) );
 		add_action( 'add_meta_boxes', array( $post_types, 'promote_course_thumbnail_box' ), 20 );
 		add_action( 'save_post_gcm_course', array( $post_types, 'save_course_meta' ), 10, 2 );
+		add_action( 'save_post_gcm_blog', array( $post_types, 'save_blog_meta' ), 10, 2 );
 		add_action( 'save_post_gcm_portfolio', array( $post_types, 'save_portfolio_profile_meta' ), 10, 2 );
 		add_action( 'save_post_gcm_portfolio_item', array( $post_types, 'save_portfolio_meta' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( $post_types, 'require_course_thumbnail_on_publish' ), 20, 2 );

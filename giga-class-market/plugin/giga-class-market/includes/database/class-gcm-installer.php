@@ -626,5 +626,6 @@ class GCM_Installer {
 		update_option( 'gcm_settings', $settings, false );
 
 		update_option( 'gcm_plugin_version', GCM_VERSION, false );
+		update_option( 'gcm_flush_rewrite_rules', 1, false );
 	}
 }

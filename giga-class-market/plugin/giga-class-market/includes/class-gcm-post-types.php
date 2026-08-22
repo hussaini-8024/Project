@@ -140,8 +140,94 @@ class GCM_Post_Types {
 			)
 		);
 
+		register_post_type(
+			'gcm_blog',
+			array(
+				'labels'              => array(
+					'name'               => __( 'Blogs', 'giga-class-market' ),
+					'singular_name'      => __( 'Blog', 'giga-class-market' ),
+					'add_new'            => __( 'Add Blog', 'giga-class-market' ),
+					'add_new_item'       => __( 'Add New Blog', 'giga-class-market' ),
+					'edit_item'          => __( 'Edit Blog', 'giga-class-market' ),
+					'new_item'           => __( 'New Blog', 'giga-class-market' ),
+					'view_item'          => __( 'View Blog', 'giga-class-market' ),
+					'search_items'       => __( 'Search Blogs', 'giga-class-market' ),
+					'not_found'          => __( 'No blogs found.', 'giga-class-market' ),
+					'not_found_in_trash' => __( 'No blogs found in Trash.', 'giga-class-market' ),
+					'menu_name'          => __( 'Blogs', 'giga-class-market' ),
+				),
+				'public'              => true,
+				'publicly_queryable'  => true,
+				'exclude_from_search' => false,
+				'show_ui'             => true,
+				'show_in_menu'        => false,
+				'show_in_nav_menus'   => false,
+				'has_archive'         => true,
+				'rewrite'             => array(
+					'slug'       => 'blogs',
+					'with_front' => false,
+				),
+				'menu_icon'           => 'dashicons-edit-large',
+				'supports'            => array( 'title', 'editor', 'thumbnail', 'excerpt', 'author', 'revisions' ),
+				'show_in_rest'        => true,
+				'capability_type'     => 'post',
+			)
+		);
+
+		register_taxonomy(
+			'gcm_blog_category',
+			array( 'gcm_blog' ),
+			array(
+				'labels'            => array(
+					'name'          => __( 'Blog Categories', 'giga-class-market' ),
+					'singular_name' => __( 'Blog Category', 'giga-class-market' ),
+					'search_items'  => __( 'Search Blog Categories', 'giga-class-market' ),
+					'all_items'     => __( 'All Blog Categories', 'giga-class-market' ),
+					'edit_item'     => __( 'Edit Blog Category', 'giga-class-market' ),
+					'update_item'   => __( 'Update Blog Category', 'giga-class-market' ),
+					'add_new_item'  => __( 'Add New Blog Category', 'giga-class-market' ),
+					'new_item_name' => __( 'New Blog Category Name', 'giga-class-market' ),
+					'menu_name'     => __( 'Blog Categories', 'giga-class-market' ),
+				),
+				'public'            => true,
+				'hierarchical'      => true,
+				'show_ui'           => true,
+				'show_admin_column' => true,
+				'show_in_nav_menus' => false,
+				'show_in_rest'      => true,
+				'rewrite'           => array(
+					'slug'         => 'blogs/category',
+					'with_front'   => false,
+					'hierarchical' => true,
+				),
+			)
+		);
+
 		$this->seed_terms();
+		$this->seed_blog_terms();
 		$this->register_meta();
+	}
+
+	/**
+	 * Seed starter blog categories (safe if already present).
+	 *
+	 * @return void
+	 */
+	private function seed_blog_terms() {
+		$terms = array(
+			'Networking',
+			'Cyber Security',
+			'FPSC Preparation',
+			'Career Tips',
+			'AI & Coding',
+			'Exam Guides',
+		);
+
+		foreach ( $terms as $term ) {
+			if ( ! term_exists( $term, 'gcm_blog_category' ) ) {
+				wp_insert_term( $term, 'gcm_blog_category' );
+			}
+		}
 	}
 
 	/**
@@ -279,6 +365,83 @@ class GCM_Post_Types {
 			'normal',
 			'high'
 		);
+
+		add_meta_box(
+			'gcm_blog_details',
+			__( 'Blog display & SEO', 'giga-class-market' ),
+			array( $this, 'render_blog_meta_box' ),
+			'gcm_blog',
+			'normal',
+			'high'
+		);
+	}
+
+	/**
+	 * Blog featured / top-read / related course / SEO meta box.
+	 *
+	 * @param WP_Post $post Post.
+	 * @return void
+	 */
+	public function render_blog_meta_box( $post ) {
+		wp_nonce_field( 'gcm_save_blog_meta', 'gcm_blog_meta_nonce' );
+		$featured      = (int) get_post_meta( $post->ID, '_gcm_blog_featured', true );
+		$top_read      = (int) get_post_meta( $post->ID, '_gcm_blog_top_read', true );
+		$related       = (int) get_post_meta( $post->ID, '_gcm_related_course_id', true );
+		$cta_label     = (string) get_post_meta( $post->ID, '_gcm_blog_cta_label', true );
+		$views         = (int) get_post_meta( $post->ID, '_gcm_blog_views', true );
+		$courses       = get_posts(
+			array(
+				'post_type'      => 'gcm_course',
+				'post_status'    => 'publish',
+				'posts_per_page' => 200,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		?>
+		<p class="description"><?php esc_html_e( 'Public URL: /blogs/ — not shown on student/teacher dashboards. Control homepage sections with the checkboxes below.', 'giga-class-market' ); ?></p>
+		<div class="gcm-meta-grid">
+			<p>
+				<label>
+					<input type="checkbox" name="gcm_blog_featured" value="1" <?php checked( $featured, 1 ); ?> />
+					<?php esc_html_e( 'Featured on /blogs/ hero', 'giga-class-market' ); ?>
+				</label>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="gcm_blog_top_read" value="1" <?php checked( $top_read, 1 ); ?> />
+					<?php esc_html_e( 'Show in Top Reading section', 'giga-class-market' ); ?>
+				</label>
+			</p>
+			<p>
+				<label for="gcm_related_course_id"><strong><?php esc_html_e( 'Related course (SEO funnel CTA)', 'giga-class-market' ); ?></strong></label>
+				<select class="widefat" id="gcm_related_course_id" name="gcm_related_course_id">
+					<option value="0"><?php esc_html_e( '— None —', 'giga-class-market' ); ?></option>
+					<?php foreach ( $courses as $course ) : ?>
+						<option value="<?php echo esc_attr( (string) $course->ID ); ?>" <?php selected( $related, (int) $course->ID ); ?>><?php echo esc_html( $course->post_title ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</p>
+			<p>
+				<label for="gcm_blog_cta_label"><strong><?php esc_html_e( 'Course CTA button label', 'giga-class-market' ); ?></strong></label>
+				<input type="text" class="widefat" id="gcm_blog_cta_label" name="gcm_blog_cta_label" value="<?php echo esc_attr( $cta_label ); ?>" placeholder="<?php esc_attr_e( 'Explore this course', 'giga-class-market' ); ?>" />
+			</p>
+			<p class="description"><?php echo esc_html( sprintf( /* translators: %d: view count */ __( 'Views tracked: %d', 'giga-class-market' ), $views ) ); ?></p>
+			<hr />
+			<p>
+				<label for="gcm_seo_title"><strong><?php esc_html_e( 'SEO title', 'giga-class-market' ); ?></strong></label>
+				<input type="text" class="widefat" id="gcm_seo_title" name="gcm_seo_title" value="<?php echo esc_attr( (string) get_post_meta( $post->ID, '_gcm_seo_title', true ) ); ?>" />
+			</p>
+			<p>
+				<label for="gcm_seo_description"><strong><?php esc_html_e( 'SEO description', 'giga-class-market' ); ?></strong></label>
+				<textarea class="widefat" rows="3" id="gcm_seo_description" name="gcm_seo_description"><?php echo esc_textarea( (string) get_post_meta( $post->ID, '_gcm_seo_description', true ) ); ?></textarea>
+			</p>
+			<p>
+				<label for="gcm_seo_focus_keyword"><strong><?php esc_html_e( 'Focus keyword', 'giga-class-market' ); ?></strong></label>
+				<input type="text" class="widefat" id="gcm_seo_focus_keyword" name="gcm_seo_focus_keyword" value="<?php echo esc_attr( (string) get_post_meta( $post->ID, '_gcm_seo_focus_keyword', true ) ); ?>" placeholder="<?php esc_attr_e( 'e.g. fpsc preparation tips pakistan', 'giga-class-market' ); ?>" />
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
@@ -645,6 +808,53 @@ class GCM_Post_Types {
 		}
 		do_action( 'stackcache_purge_all' );
 		do_action( 'gcm_purge_front_caches' );
+	}
+
+	/**
+	 * Save blog display + SEO meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post object.
+	 * @return void
+	 */
+	public function save_blog_meta( $post_id, $post ) {
+		if ( ! isset( $_POST['gcm_blog_meta_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcm_blog_meta_nonce'] ) ), 'gcm_save_blog_meta' ) ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! $post || 'gcm_blog' !== $post->post_type || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		update_post_meta( $post_id, '_gcm_blog_featured', isset( $_POST['gcm_blog_featured'] ) ? 1 : 0 );
+		update_post_meta( $post_id, '_gcm_blog_top_read', isset( $_POST['gcm_blog_top_read'] ) ? 1 : 0 );
+		update_post_meta( $post_id, '_gcm_related_course_id', isset( $_POST['gcm_related_course_id'] ) ? absint( $_POST['gcm_related_course_id'] ) : 0 );
+		update_post_meta(
+			$post_id,
+			'_gcm_blog_cta_label',
+			isset( $_POST['gcm_blog_cta_label'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_blog_cta_label'] ) ) : ''
+		);
+		update_post_meta(
+			$post_id,
+			'_gcm_seo_title',
+			isset( $_POST['gcm_seo_title'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_seo_title'] ) ) : ''
+		);
+		update_post_meta(
+			$post_id,
+			'_gcm_seo_description',
+			isset( $_POST['gcm_seo_description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['gcm_seo_description'] ) ) : ''
+		);
+		update_post_meta(
+			$post_id,
+			'_gcm_seo_focus_keyword',
+			isset( $_POST['gcm_seo_focus_keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['gcm_seo_focus_keyword'] ) ) : ''
+		);
+
+		if ( class_exists( 'GCM_Blog_SEO' ) && 'publish' === $post->post_status ) {
+			GCM_Blog_SEO::ensure_blog( (int) $post_id );
+		}
 	}
 
 	/**

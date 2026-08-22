@@ -32,6 +32,8 @@ class GCM_Admin {
 
 		add_submenu_page( 'gcm-dashboard', __( 'Dashboard', 'giga-class-market' ), __( 'Dashboard', 'giga-class-market' ), 'gcm_view_dashboard', 'gcm-dashboard', array( $this, 'render_dashboard' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Courses', 'giga-class-market' ), __( 'Courses', 'giga-class-market' ), 'gcm_manage_courses', 'edit.php?post_type=gcm_course' );
+		add_submenu_page( 'gcm-dashboard', __( 'Blogs', 'giga-class-market' ), __( 'Blogs', 'giga-class-market' ), 'edit_posts', 'edit.php?post_type=gcm_blog' );
+		add_submenu_page( 'gcm-dashboard', __( 'Blog Categories', 'giga-class-market' ), __( 'Blog Categories', 'giga-class-market' ), 'edit_posts', 'edit-tags.php?taxonomy=gcm_blog_category&post_type=gcm_blog' );
 		add_submenu_page( 'gcm-dashboard', __( 'Payments', 'giga-class-market' ), __( 'Payments', 'giga-class-market' ), 'gcm_manage_payments', 'gcm-payments', array( $this, 'render_payments' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Coupons', 'giga-class-market' ), __( 'Coupons', 'giga-class-market' ), 'gcm_manage_payments', 'gcm-coupons', array( $this, 'render_coupons' ) );
 		add_submenu_page( 'gcm-dashboard', __( 'Students', 'giga-class-market' ), __( 'Students', 'giga-class-market' ), 'gcm_manage_students', 'gcm-students', array( $this, 'render_students' ) );
@@ -55,7 +57,7 @@ class GCM_Admin {
 	 */
 	public function enqueue_assets( $hook ) {
 		$screen = get_current_screen();
-		$is_gcm = false !== strpos( $hook, 'gcm' ) || ( $screen && in_array( $screen->post_type, array( 'gcm_course', 'gcm_testimonial', 'gcm_slide', 'gcm_portfolio', 'gcm_portfolio_item' ), true ) );
+		$is_gcm = false !== strpos( $hook, 'gcm' ) || ( $screen && in_array( $screen->post_type, array( 'gcm_course', 'gcm_blog', 'gcm_testimonial', 'gcm_slide', 'gcm_portfolio', 'gcm_portfolio_item' ), true ) );
 		if ( ! $is_gcm ) {
 			return;
 		}
