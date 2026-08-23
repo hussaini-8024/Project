@@ -46,6 +46,22 @@ Change these immediately on a production host.
 
 ---
 
+## Collaboration & study features
+
+- **Announcements & notification bell** — a top-bar bell (all users) polls `GET /api/notifications`
+  every ~20s and shows an unread badge. Instructors/admins compose announcements from the bell:
+  instructors target a student group, admins can also target *all students*. New assignments also
+  notify students. See `docs/API.md`.
+- **Command Search** (`/commands`) — an offline catalogue of ~60 common cybersecurity tool commands
+  (nmap, hydra, sqlmap, gobuster, john, hashcat, netcat, tcpdump, metasploit, openssl, dig, curl, …)
+  with case-insensitive search and copyable commands. Works fully offline.
+- **AUKC AI Search** (`/aukc`) — the branded **AU Kamra AI Agent** study assistant. Proxies to the
+  OpenAI Chat Completions API when `OPENAI_API_KEY` (or `AUKC_AI_API_KEY`) is set, and degrades
+  gracefully to offline guidance otherwise. Configure the key and `AUKC_AI_MODEL` in `.env`
+  (see `.env.example`).
+
+---
+
 ## Quick start (development)
 
 Requires Python 3.12+ and Node 20+.
