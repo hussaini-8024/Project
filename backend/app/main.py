@@ -8,13 +8,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import __version__
-from app.api import assignments, auth, catalog, groups, labs, resources, users, ws
+from app.api import (
+    announcements,
+    assignments,
+    aukc,
+    auth,
+    catalog,
+    commands,
+    groups,
+    labs,
+    resources,
+    users,
+    ws,
+)
 from app.config import get_settings
 from app.database import Base, SessionLocal, engine
 from app.seed import seed
 from app.services.schema import (
     migrate_group_memberships,
     migrate_network_schema,
+    migrate_notifications,
     migrate_slash8_networks,
     migrate_user_groups,
 )
@@ -28,6 +41,7 @@ async def lifespan(_app: FastAPI):
     migrate_network_schema(engine)
     migrate_user_groups(engine)
     migrate_group_memberships(engine)
+    migrate_notifications(engine)
     db = SessionLocal()
     try:
         seed(db)
@@ -82,6 +96,9 @@ app.include_router(labs.router, prefix="/api")
 app.include_router(catalog.router, prefix="/api")
 app.include_router(assignments.router, prefix="/api")
 app.include_router(resources.router, prefix="/api")
+app.include_router(announcements.router, prefix="/api")
+app.include_router(commands.router, prefix="/api")
+app.include_router(aukc.router, prefix="/api")
 app.include_router(ws.router)
 
 

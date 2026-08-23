@@ -20,6 +20,7 @@ from app.models import (
 )
 from app.services import audit
 from app.services.labs import create_machine
+from app.services.notifications import notify_assignment
 
 router = APIRouter(tags=["assignments"])
 
@@ -78,6 +79,14 @@ def create_assignment(body: AssignmentIn, user: User = Depends(require_staff), d
         targets = [u.id for u in db.query(User).filter(User.role == Role.STUDENT).all()]
     for sid in targets:
         db.add(AssignmentSubmission(assignment_id=a.id, student_id=sid))
+    # Notify the relevant students that a new assignment is available.
+    notify_assignment(
+        db,
+        assignment_id=a.id,
+        title=a.title,
+        description=a.objective or a.description,
+        student_ids=list(targets),
+    )
     audit.record(db, user=user, action="assignment.create", resource=a.title)
     db.commit()
     return {"id": a.id, "title": a.title}

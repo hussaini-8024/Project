@@ -141,6 +141,29 @@ def migrate_group_memberships(engine: Engine) -> None:
             )
 
 
+def migrate_notifications(engine: Engine) -> None:
+    """Add link/ref/kind columns to the pre-existing notifications table.
+
+    The `announcements` table is created automatically by ``create_all``; only the
+    older ``notifications`` table needs these additive, idempotent ALTERs.
+    """
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'")
+        ).fetchone()
+        if not row:
+            return
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(notifications)"))]
+        if "kind" not in cols:
+            conn.execute(
+                text("ALTER TABLE notifications ADD COLUMN kind VARCHAR(32) DEFAULT 'announcement'")
+            )
+        if "link" not in cols:
+            conn.execute(text("ALTER TABLE notifications ADD COLUMN link VARCHAR(255) DEFAULT ''"))
+        if "ref_id" not in cols:
+            conn.execute(text("ALTER TABLE notifications ADD COLUMN ref_id VARCHAR(36) DEFAULT ''"))
+
+
 def migrate_slash8_networks(db: Session) -> None:
     """Rewrite leftover student /24 labs onto 10.0.0.0/8. Admin-created CIDRs are left alone."""
     restart_ids: list[str] = []

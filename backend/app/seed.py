@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app.models import (
+    Announcement,
+    AnnouncementKind,
+    AnnouncementScope,
     Assignment,
     AssignmentStatus,
     AssignmentSubmission,
@@ -32,6 +35,7 @@ from app.models import (
 )
 from app.security import hash_password, public_id
 from app.services.labs import create_machine, ensure_lab
+from app.services.notifications import notify_announcement
 
 
 TEMPLATES = [
@@ -489,6 +493,24 @@ def seed(db: Session) -> None:
             detail="Initial catalog, quotas, and demo accounts created",
         )
     )
+
+    # Demo announcement to the student cohort — fans out per-student notifications.
+    welcome = Announcement(
+        public_id=public_id("ANN"),
+        author_id=instructor.id,
+        title="Welcome to CYB-301 Web Security",
+        body=(
+            "Your isolated lab is ready. Start with the Web Application Security "
+            "assignment and use the Command Search and AUKC AI Search menus for help. "
+            "Remember: all tools operate only inside your authorized lab."
+        ),
+        kind=AnnouncementKind.ANNOUNCEMENT.value,
+        scope=AnnouncementScope.GROUP.value,
+        group_id=student_group.id,
+    )
+    db.add(welcome)
+    db.flush()
+    notify_announcement(db, welcome)
     db.commit()
 
     # Provision the demo student lab so the dashboard is immediately useful

@@ -466,6 +466,32 @@ class Backup(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class AnnouncementKind(str, enum.Enum):
+    ANNOUNCEMENT = "announcement"
+    ASSIGNMENT = "assignment"
+
+
+class AnnouncementScope(str, enum.Enum):
+    GROUP = "group"
+    ALL = "all"
+
+
+class Announcement(Base):
+    __tablename__ = "announcements"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    public_id: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    author_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    title: Mapped[str] = mapped_column(String(255))
+    body: Mapped[str] = mapped_column(Text, default="")
+    kind: Mapped[str] = mapped_column(String(32), default=AnnouncementKind.ANNOUNCEMENT.value)
+    scope: Mapped[str] = mapped_column(String(16), default=AnnouncementScope.GROUP.value)
+    group_id: Mapped[str | None] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
 
@@ -473,6 +499,10 @@ class Notification(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(128))
     body: Mapped[str] = mapped_column(Text, default="")
+    # Optional metadata linking a notification back to what created it.
+    kind: Mapped[str] = mapped_column(String(32), default="announcement")
+    link: Mapped[str] = mapped_column(String(255), default="")
+    ref_id: Mapped[str] = mapped_column(String(36), default="")
     read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
