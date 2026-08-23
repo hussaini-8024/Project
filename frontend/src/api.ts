@@ -115,6 +115,60 @@ export type Machine = {
   created_at: string;
 };
 
+export type Notification = {
+  id: string;
+  title: string;
+  body: string;
+  kind: string;
+  link: string;
+  ref_id: string;
+  read: boolean;
+  created_at: string;
+};
+
+export type NotificationFeed = {
+  unread: number;
+  items: Notification[];
+};
+
+export type Announcement = {
+  id: string;
+  public_id: string;
+  title: string;
+  body: string;
+  kind: "announcement" | "assignment";
+  scope: "group" | "all";
+  group_id: string | null;
+  group: string | null;
+  author_id: string | null;
+  author: string;
+  created_at: string;
+  delivered?: number;
+};
+
+export type CommandEntry = {
+  tool: string;
+  command: string;
+  description: string;
+  category: string;
+  tags: string[];
+};
+
+export type CommandSearchResult = {
+  query: string;
+  count: number;
+  total: number;
+  categories: string[];
+  results: CommandEntry[];
+};
+
+export type AukcResponse = {
+  configured: boolean;
+  model: string;
+  answer: string;
+  error?: string;
+};
+
 export type Template = {
   slug: string;
   name: string;

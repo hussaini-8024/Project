@@ -13,6 +13,8 @@ import { Topology } from "./pages/Topology";
 import { Terminal } from "./pages/Terminal";
 import { Console } from "./pages/Console";
 import { Exercises } from "./pages/Exercises";
+import { Commands } from "./pages/Commands";
+import { Aukc } from "./pages/Aukc";
 import { Resources } from "./pages/Resources";
 import { Activity } from "./pages/Activity";
 import { Settings } from "./pages/Settings";
@@ -58,6 +60,8 @@ export default function App() {
         <Route path="terminal/:id" element={<Terminal />} />
         <Route path="console/:id" element={<Console />} />
         <Route path="exercises" element={<Exercises />} />
+        <Route path="commands" element={<Commands />} />
+        <Route path="aukc" element={<Aukc />} />
         <Route path="resources" element={<Resources />} />
         <Route path="activity" element={<Activity />} />
         <Route path="settings" element={<Settings />} />

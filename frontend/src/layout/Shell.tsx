@@ -14,13 +14,16 @@ import {
   Server,
   Settings,
   Shield,
+  Sparkles,
   Sun,
   TerminalSquare,
+  Terminal,
   Users,
   UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth";
+import { NotificationBell } from "../components/NotificationBell";
 
 const studentNav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -32,6 +35,8 @@ const studentNav = [
   { to: "/networks", label: "Networks", icon: Globe },
   { to: "/topology", label: "Topology", icon: Network },
   { to: "/exercises", label: "Exercises", icon: Fingerprint },
+  { to: "/commands", label: "Command Search", icon: Terminal },
+  { to: "/aukc", label: "AUKC AI Search", icon: Sparkles },
   { to: "/resources", label: "Resource Usage", icon: Cpu },
   { to: "/activity", label: "Activity", icon: Activity },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -103,6 +108,7 @@ export function Shell() {
             Container-first · Isolated student labs · Authorized training only
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <button className="btn-ghost" onClick={() => setLight((v) => !v)} type="button">
               {light ? <Moon size={16} /> : <Sun size={16} />}
               {light ? "Dark" : "Light"}
