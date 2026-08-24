@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # Allow login/API from other PCs on the same LAN (private RFC1918 / localhost).
+    cors_allow_lan: bool = True
 
     # Host reserve — never allocate 100% of RAM to student labs
     host_total_ram_mb: int = 131072  # 128 GB
@@ -57,6 +59,23 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cors_origin_regex(self) -> str | None:
+        if not self.cors_allow_lan:
+            return None
+        # http(s)://localhost | 127.0.0.1 | 10/8 | 172.16/12 | 192.168/16 | *.local, optional port
+        return (
+            r"https?://("
+            r"localhost|"
+            r"127\.0\.0\.1|"
+            r"\[::1\]|"
+            r"10(?:\.\d{1,3}){3}|"
+            r"192\.168(?:\.\d{1,3}){2}|"
+            r"172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2}|"
+            r"[a-zA-Z0-9.-]+\.local"
+            r")(?::\d+)?"
+        )
 
     @property
     def lab_pool_ram_mb(self) -> int:

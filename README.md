@@ -86,6 +86,18 @@ npm run dev
 
 Open http://localhost:5173 and sign in as `student`.
 
+### Same-network remote PCs (LAN)
+
+The UI and API bind `0.0.0.0`, so another PC on the same network can open the login page:
+
+```text
+http://<this-machine-ip>:5173/login
+```
+
+Find the IP with `ip -4 addr` or `hostname -I`. Vite is configured to accept LAN hostnames (`allowedHosts: true`), and CORS allows RFC1918 origins when `CORS_ALLOW_LAN=true` (default). Keep `COOKIE_SECURE=false` for plain HTTP on the LAN. WebSockets use the same host the browser opened, so terminals work over the LAN as well.
+
+Do not expose this development preview to the public internet.
+
 - API docs: http://localhost:8000/docs
 - Health: http://localhost:8000/api/health
 

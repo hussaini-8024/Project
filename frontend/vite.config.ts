@@ -13,11 +13,14 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    // Vite 6 blocks unknown Host headers by default; allow LAN IPs and hostnames.
+    allowedHosts: true,
     proxy,
   },
   preview: {
     host: "0.0.0.0",
     port: 5173,
+    allowedHosts: true,
     proxy,
   },
 });
