@@ -97,9 +97,10 @@ def loadtest_summary(_: User = Depends(require_staff), db: Session = Depends(get
 
 @router.get("/audit")
 def audit_logs(user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[dict]:
-    q = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(200)
+    q = db.query(AuditLog)
     if user.role == Role.STUDENT:
         q = q.filter(AuditLog.user_id == user.id)
+    q = q.order_by(AuditLog.created_at.desc()).limit(200)
     return [
         {
             "id": a.id,
