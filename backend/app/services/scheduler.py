@@ -248,6 +248,7 @@ def start_machine(db: Session, machine: Machine, user: User, *, ignore_quota: bo
     machine.last_started_at = datetime.utcnow()
     machine.queue_position = None
     machine.queue_reason = ""
+    machine.error_message = ""
     db.commit()
     return decision
 

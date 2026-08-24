@@ -128,10 +128,12 @@ def test_staff_start_bypasses_student_quota(db):
     assert machine.status == MachineStatus.RUNNING, machine.error_message
 
     machine.status = MachineStatus.STOPPED
+    machine.error_message = "stale error from a previous failed attempt"
     db.commit()
 
     resp = start_endpoint(machine.public_id, user=admin, db=db)
     assert resp["machine"]["status"] == "running", resp["machine"]
+    # A successful start clears any stale error so the UI shows a clean machine.
     assert not resp["machine"]["error"]
 
 
