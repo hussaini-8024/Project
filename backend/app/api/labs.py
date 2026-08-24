@@ -256,7 +256,9 @@ def _owned(db: Session, user: User, machine_id: str) -> Machine:
 @router.post("/machines/{machine_id}/start")
 def start(machine_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
     m = _owned(db, user, machine_id)
-    d = start_machine(db, m, user)
+    # Staff-initiated starts are not bound by student quota profiles (consistent
+    # with create/deploy/group-start). Students remain bound by their own quota.
+    d = start_machine(db, m, user, ignore_quota=user.role != Role.STUDENT)
     audit.record(db, user=user, action="machine.start", resource=m.public_id, machine=m.name, result="queued" if d.queued else "success")
     db.commit()
     return {"machine": _machine(m), "decision": d.__dict__}
