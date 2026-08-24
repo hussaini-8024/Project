@@ -16,7 +16,9 @@ OpenAPI is generated at runtime: `/docs` and `/openapi.json`.
 | `/api/announcements` | Post/list announcements (staff post; students read their group + global) |
 | `/api/notifications` `/api/notifications/{id}/read` `/api/notifications/read-all` | Per-user notification feed + unread count |
 | `/api/commands?q=` | Offline cybersecurity command reference search (all authenticated users) |
-| `/api/aukc/search` | AU Kamra AI Agent — OpenAI-compatible chat proxy with graceful offline fallback |
+| `/api/aukc/search` | AU Kamra AI Agent — offline BM25 search over uploaded PDF books (all users) |
+| `/api/aukc/books` | List the PDF book library (all users); upload a PDF (admin only) |
+| `/api/aukc/books/{id}` | Delete a book, its chunks and stored file (admin only) |
 | `/api/snapshots` | Checkpoints (quota-limited) |
 | `/api/resources` `/api/resources/scheduler` `/api/resources/loadtest` | Capacity |
 | `/api/audit` `/api/backups` `/api/settings` `/api/activity` | Operations |
@@ -32,11 +34,25 @@ OpenAPI is generated at runtime: `/docs` and `/openapi.json`.
 
 ### AUKC AI Search (AU Kamra AI Agent)
 
-- `POST /api/aukc/search` body `{ "prompt": "…" }` → always HTTP 200.
-- Configure a real ChatGPT key via **`OPENAI_API_KEY`** (or `AUKC_AI_API_KEY`) and, optionally,
-  `AUKC_AI_MODEL` (default `gpt-4o-mini`). With a key + working egress: `{ "configured": true, "answer": … }`.
-- With no key or blocked egress it degrades gracefully to `{ "configured": false, "answer": <offline guidance>, "error": … }`.
-- No API key is ever committed; the key is read from the server environment only.
+Offline PDF book-library search. **No external AI, no API keys, no outbound calls.**
+
+- `POST /api/aukc/books` — **admin only**, multipart form (`file` = PDF, `title` optional). Text is
+  extracted per page with `pypdf` and stored as searchable `BookChunk` rows; the original PDF is
+  saved under `<storage_root>/books/`. Rejects non-PDF / unreadable / oversized files with `400`.
+  Returns the created book summary.
+- `GET /api/aukc/books` — list the library (`id, title, filename, page_count, size_bytes,
+  uploaded_at`). Readable by all authenticated users.
+- `DELETE /api/aukc/books/{id}` — **admin only**; removes the book, its chunks (CASCADE) and the
+  stored file.
+- `POST /api/aukc/search` body `{ "query": "…", "limit"?: 10 }` → always HTTP 200. Runs a local
+  **BM25** relevance ranking over every book's chunks and returns
+  `{ "results": [{ book_id, book_title, page_number, snippet, score }], "message": "" }`. The
+  `snippet` is HTML-safe with matched terms wrapped in `<mark>` for highlighting, ranked so that the
+  most relevant book/page appears first (results may span multiple books).
+- Graceful states (still HTTP 200): empty library → `{ "results": [], "message": "No books in the
+  library yet. An administrator can upload PDFs." }`; no matches →
+  `{ "results": [], "message": "No relevant passages found." }`.
+- Max PDF size is controlled by `AUKC_BOOK_MAX_MB` (default 50).
 
 ## WebSockets
 

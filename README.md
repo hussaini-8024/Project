@@ -55,10 +55,13 @@ Change these immediately on a production host.
 - **Command Search** (`/commands`) — an offline catalogue of ~60 common cybersecurity tool commands
   (nmap, hydra, sqlmap, gobuster, john, hashcat, netcat, tcpdump, metasploit, openssl, dig, curl, …)
   with case-insensitive search and copyable commands. Works fully offline.
-- **AUKC AI Search** (`/aukc`) — the branded **AU Kamra AI Agent** study assistant. Proxies to the
-  OpenAI Chat Completions API when `OPENAI_API_KEY` (or `AUKC_AI_API_KEY`) is set, and degrades
-  gracefully to offline guidance otherwise. Configure the key and `AUKC_AI_MODEL` in `.env`
-  (see `.env.example`).
+- **AUKC AI Search** (`/aukc`) — the branded **AU Kamra AI Agent**, an offline book-search engine.
+  Administrators upload PDF books; their text is extracted with `pypdf`, stored as searchable
+  chunks in the database, and ranked with a local BM25 relevance algorithm. All authenticated
+  users search the shared library and get passages cited by book title and page number, with the
+  matched terms highlighted. Fully self-contained — **no external AI, no API keys, no outbound
+  calls**. Accessible from the **AUKC AI Search** entry in the top menu bar. Max PDF size is set by
+  `AUKC_BOOK_MAX_MB` (see `.env.example`).
 
 ---
 
