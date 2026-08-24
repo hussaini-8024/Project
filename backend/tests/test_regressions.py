@@ -152,3 +152,30 @@ def test_student_start_still_enforces_quota(db):
     resp = start_endpoint(machine.public_id, user=student, db=db)
     assert resp["machine"]["status"] != "running"
     assert "quota" in (resp["machine"]["error"] or "").lower()
+
+
+def test_delete_student_with_lab_and_machines(db):
+    """Deleting a student cascades their lab, networks and machines cleanly.
+
+    Regression: the ORM used to null out ``student_labs.student_id`` (NOT NULL)
+    when a student user was deleted, raising an IntegrityError (HTTP 500).
+    """
+    from app.models import LabNetwork, Machine, StudentLab
+    from app.services.labs import purge_user
+
+    _node(db)
+    admin = _admin(db)
+    student = _student(db, "victor", max_storage_gb=50)
+    lab_id = student.lab.id
+
+    machine = _make(db, admin, student, disk_gb=2)
+    assert machine.status == MachineStatus.RUNNING
+    machine_id = machine.id
+
+    purge_user(db, student)
+    db.commit()
+
+    assert db.get(User, student.id) is None
+    assert db.get(StudentLab, lab_id) is None
+    assert db.get(Machine, machine_id) is None
+    assert db.query(LabNetwork).filter(LabNetwork.lab_id == lab_id).count() == 0

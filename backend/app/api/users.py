@@ -13,7 +13,7 @@ from app.models import Group, QuotaProfile, Role, User, UserSession, UserStatus
 from app.security import hash_password, public_id
 from app.services import audit
 from app.services.groups import add_member, group_summaries, remove_member, student_group_of
-from app.services.labs import ensure_lab
+from app.services.labs import ensure_lab, purge_user
 
 router = APIRouter(tags=["users"])
 
@@ -240,8 +240,10 @@ def delete_user(user_id: str, admin: User = Depends(require_admin), db: Session 
         raise HTTPException(404, "User not found")
     if u.role == Role.SUPER_ADMIN:
         raise HTTPException(400, "Cannot delete super administrator")
+    if u.id == admin.id:
+        raise HTTPException(400, "You cannot delete your own account")
     audit.record(db, user=admin, action="user.delete", resource=u.public_id)
-    db.delete(u)
+    purge_user(db, u)
     db.commit()
     return {"ok": True}
 

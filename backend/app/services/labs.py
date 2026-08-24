@@ -236,6 +236,62 @@ def create_machine(
     return machine, {"decision": decision.__dict__}
 
 
+def purge_machine(db: Session, machine: Machine) -> None:
+    """Tear down a machine's runtime guest and delete all of its dependent rows.
+
+    Shared by the machine-delete endpoint and cascade paths (e.g. deleting a
+    student takes their machines with them). Provider teardown is best-effort so
+    a stale/absent guest never blocks the database cleanup.
+    """
+    from app.models import ConsoleSession, MachineEvent, TerminalSession
+
+    provider = get_provider()
+    try:
+        provider.delete(machine.provider_ref or machine.public_id, machine.kind.value)
+    except Exception:  # noqa: BLE001 - guest may already be gone; keep purging rows
+        pass
+    for iface in list(machine.interfaces):
+        db.delete(iface)
+    for snap in list(machine.snapshots):
+        db.delete(snap)
+    db.query(StorageVolume).filter(StorageVolume.machine_id == machine.id).delete()
+    db.query(MachineEvent).filter(MachineEvent.machine_id == machine.id).delete()
+    db.query(TerminalSession).filter(TerminalSession.machine_id == machine.id).delete()
+    db.query(ConsoleSession).filter(ConsoleSession.machine_id == machine.id).delete()
+    db.delete(machine)
+
+
+def purge_user(db: Session, user: User) -> None:
+    """Delete a user together with everything they own.
+
+    A student's ``StudentLab`` has a NOT NULL ``student_id``, so the ORM cannot
+    simply null it out on delete — the lab, its networks/machines/volumes, and
+    the user's own sessions/snapshots/notifications must be removed explicitly.
+    """
+    from app.models import AssignmentSubmission, Notification
+
+    lab = user.lab
+    if lab:
+        for machine in list(lab.machines):
+            purge_machine(db, machine)
+        db.flush()
+        for net in list(lab.networks):
+            for iface in list(net.interfaces):
+                db.delete(iface)
+            db.delete(net)
+        db.query(StorageVolume).filter(StorageVolume.lab_id == lab.id).delete()
+        db.delete(lab)
+        db.flush()
+    db.query(StorageVolume).filter(StorageVolume.owner_id == user.id).delete()
+    db.query(Snapshot).filter(Snapshot.owner_id == user.id).delete()
+    db.query(Notification).filter(Notification.user_id == user.id).delete()
+    db.query(AssignmentSubmission).filter(AssignmentSubmission.student_id == user.id).delete()
+    for session in list(user.sessions):
+        db.delete(session)
+    db.flush()
+    db.delete(user)
+
+
 def snapshot_machine(db: Session, user: User, machine: Machine, name: str) -> Snapshot:
     qmax = user.quota.max_snapshots if user.quota else 2
     count = db.query(Snapshot).filter(Snapshot.owner_id == user.id).count()

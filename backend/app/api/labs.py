@@ -7,22 +7,17 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import current_user, require_staff
 from app.models import (
-    ConsoleSession,
-    EnvironmentKind,
     LabNetwork,
     Machine,
-    MachineEvent,
     MachineKind,
     MachineStatus,
     MachineTemplate,
     Role,
-    StorageVolume,
     StudentLab,
-    TerminalSession,
     User,
 )
 from app.services import audit
-from app.services.labs import create_machine, ensure_lab, restore_lab
+from app.services.labs import create_machine, ensure_lab, purge_machine, restore_lab
 from app.services.scheduler import start_machine
 from app.providers import get_provider
 
@@ -295,17 +290,8 @@ def pause(machine_id: str, user: User = Depends(current_user), db: Session = Dep
 @router.delete("/machines/{machine_id}")
 def delete_machine(machine_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
     m = _owned(db, user, machine_id)
-    get_provider().delete(m.provider_ref or m.public_id, m.kind.value)
     audit.record(db, user=user, action="machine.delete", resource=m.public_id, machine=m.name)
-    for iface in list(m.interfaces):
-        db.delete(iface)
-    for snap in list(m.snapshots):
-        db.delete(snap)
-    db.query(StorageVolume).filter(StorageVolume.machine_id == m.id).delete()
-    db.query(MachineEvent).filter(MachineEvent.machine_id == m.id).delete()
-    db.query(TerminalSession).filter(TerminalSession.machine_id == m.id).delete()
-    db.query(ConsoleSession).filter(ConsoleSession.machine_id == m.id).delete()
-    db.delete(m)
+    purge_machine(db, m)
     db.commit()
     return {"ok": True}
 
