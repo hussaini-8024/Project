@@ -507,6 +507,43 @@ class Notification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class BookDocument(Base):
+    """An admin-uploaded PDF book whose text is searchable by the AU Kamra AI Agent."""
+
+    __tablename__ = "book_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    public_id: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    filename: Mapped[str] = mapped_column(String(255))
+    uploaded_by: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    page_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    chunks: Mapped[list[BookChunk]] = relationship(
+        back_populates="book", cascade="all, delete-orphan"
+    )
+
+
+class BookChunk(Base):
+    """A searchable passage extracted from a :class:`BookDocument` page."""
+
+    __tablename__ = "book_chunks"
+    __table_args__ = (Index("ix_book_chunks_book", "book_id"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("book_documents.id", ondelete="CASCADE"), index=True
+    )
+    page_number: Mapped[int] = mapped_column(Integer, default=1)
+    content: Mapped[str] = mapped_column(Text, default="")
+
+    book: Mapped[BookDocument] = relationship(back_populates="chunks")
+
+
 class ResourceSample(Base):
     __tablename__ = "resource_usage"
 

@@ -44,24 +44,15 @@ class Settings(BaseSettings):
     backup_retention_days: int = 14
     ephemeral_ttl_hours: int = 8
 
+    # AUKC "AU Kamra AI Agent" — offline PDF book library search.
+    # Max size (MB) for an admin-uploaded PDF book. Fully self-contained, no external AI.
+    aukc_book_max_mb: int = 50
+
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
 
     rate_limit_login: int = 8
     lockout_minutes: int = 15
-
-    # AUKC "AU Kamra AI Agent" — OpenAI-compatible chat proxy.
-    # Leave the key blank for graceful offline behaviour (no outbound calls).
-    openai_api_key: str = ""
-    aukc_ai_api_key: str = ""
-    aukc_ai_model: str = "gpt-4o-mini"
-    aukc_ai_base_url: str = "https://api.openai.com/v1"
-    aukc_ai_timeout_seconds: float = 20.0
-
-    @property
-    def aukc_key(self) -> str:
-        """Effective AI key: OPENAI_API_KEY takes precedence, then AUKC_AI_API_KEY."""
-        return (self.openai_api_key or self.aukc_ai_api_key or "").strip()
 
     @property
     def cors_origin_list(self) -> list[str]:

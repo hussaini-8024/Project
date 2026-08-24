@@ -38,5 +38,6 @@ storage/uploads/
 storage/backups/
 storage/isos/
 storage/volumes/
+storage/books/
 logs/
 *.log
