@@ -36,7 +36,6 @@ const studentNav = [
   { to: "/topology", label: "Topology", icon: Network },
   { to: "/exercises", label: "Exercises", icon: Fingerprint },
   { to: "/commands", label: "Command Search", icon: Terminal },
-  { to: "/aukc", label: "AUKC AI Search", icon: Sparkles },
   { to: "/resources", label: "Resource Usage", icon: Cpu },
   { to: "/activity", label: "Activity", icon: Activity },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -104,8 +103,23 @@ export function Shell() {
       </aside>
       <div className="ml-64">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-ink-950/70 px-6 py-3 backdrop-blur">
-          <div className="text-sm text-slate-400">
-            Container-first · Isolated student labs · Authorized training only
+          <div className="flex items-center gap-4">
+            <NavLink
+              to="/aukc"
+              className={({ isActive }) =>
+                `group relative inline-flex items-center gap-2 overflow-hidden rounded-lg border px-3.5 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? "border-cyan-glow/60 bg-cyan-glow/15 text-cyan-glow"
+                    : "border-cyan-glow/30 bg-cyan-glow/5 text-cyan-glow/90 hover:bg-cyan-glow/10"
+                }`
+              }
+            >
+              <Sparkles size={15} className="aukc-flicker" />
+              AUKC AI Search
+            </NavLink>
+            <div className="hidden text-sm text-slate-400 lg:block">
+              Container-first · Isolated student labs · Authorized training only
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />

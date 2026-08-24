@@ -162,11 +162,27 @@ export type CommandSearchResult = {
   results: CommandEntry[];
 };
 
-export type AukcResponse = {
-  configured: boolean;
-  model: string;
-  answer: string;
-  error?: string;
+export type BookDocument = {
+  id: string;
+  public_id: string;
+  title: string;
+  filename: string;
+  page_count: number;
+  size_bytes: number;
+  uploaded_at: string;
+};
+
+export type AukcSearchHit = {
+  book_id: string;
+  book_title: string;
+  page_number: number;
+  snippet: string;
+  score: number;
+};
+
+export type AukcSearchResponse = {
+  results: AukcSearchHit[];
+  message: string;
 };
 
 export type Template = {

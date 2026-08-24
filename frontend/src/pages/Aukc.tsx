@@ -1,60 +1,61 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, Bot, Radar, Send, Sparkles } from "lucide-react";
-import { api, type AukcResponse } from "../api";
+import { FormEvent, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  BookOpen,
+  FileText,
+  Library,
+  Radar,
+  Search,
+  Send,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import {
+  api,
+  getToken,
+  type AukcSearchResponse,
+  type BookDocument,
+} from "../api";
+import { useAuth } from "../auth";
 
 const SUGGESTIONS = [
-  "How do I scan a subnet with nmap?",
-  "Explain SQL injection and how sqlmap helps",
-  "Brute force an SSH login with hydra",
-  "Capture HTTP traffic with tcpdump",
-  "Crack an NTLM hash with hashcat",
+  "nmap port scanning",
+  "sql injection",
+  "hydra brute force ssh",
+  "tcpdump packet capture",
+  "hashcat ntlm",
 ];
 
-export function Aukc() {
-  const [prompt, setPrompt] = useState("");
-  const [typed, setTyped] = useState("");
-  const answerRef = useRef<HTMLDivElement>(null);
+const ADMIN_ROLES = ["administrator", "super_admin"];
 
-  const ask = useMutation({
-    mutationFn: (p: string) =>
-      api<AukcResponse>("/api/aukc/search", {
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function Aukc() {
+  const { user } = useAuth();
+  const isAdmin = !!user && ADMIN_ROLES.includes(user.role);
+  const [query, setQuery] = useState("");
+
+  const search = useMutation({
+    mutationFn: (q: string) =>
+      api<AukcSearchResponse>("/api/aukc/search", {
         method: "POST",
-        body: JSON.stringify({ prompt: p }),
+        body: JSON.stringify({ query: q, limit: 20 }),
       }),
   });
 
-  const result = ask.data;
-
-  // Typewriter reveal of the answer.
-  useEffect(() => {
-    if (!result?.answer) {
-      setTyped("");
-      return;
-    }
-    const full = result.answer;
-    setTyped("");
-    let i = 0;
-    const step = Math.max(1, Math.round(full.length / 400));
-    const timer = setInterval(() => {
-      i += step;
-      setTyped(full.slice(0, i));
-      if (i >= full.length) clearInterval(timer);
-    }, 12);
-    return () => clearInterval(timer);
-  }, [result?.answer]);
-
-  useEffect(() => {
-    answerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [typed]);
+  const result = search.data;
+  const loading = search.isPending;
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
-    const p = prompt.trim();
-    if (p.length) ask.mutate(p);
+    const q = query.trim();
+    if (q.length) search.mutate(q);
   }
-
-  const loading = ask.isPending;
 
   return (
     <div className="space-y-6">
@@ -66,19 +67,17 @@ export function Aukc() {
         </div>
         <div className="relative flex items-center gap-4">
           <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-cyan-glow/10 text-cyan-glow aukc-flicker">
-            <Bot size={30} />
+            <BookOpen size={30} />
             <Radar size={62} className="absolute text-cyan-glow/20 aukc-orbit" />
           </div>
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-cyan-glow/80">
               <Sparkles size={13} /> AUKC AI Search
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              AU Kamra AI Agent
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">AU Kamra AI Agent</h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-400">
-              Your cyber-range study assistant. Ask about security tools, commands, and techniques —
-              scoped to authorized lab work.
+              Offline book intelligence. Search the cyber-range library of
+              admin-curated PDF books — fully self-contained, no external AI.
             </p>
           </div>
         </div>
@@ -90,12 +89,12 @@ export function Aukc() {
           <Radar size={18} className={`text-cyan-glow ${loading ? "aukc-orbit" : ""}`} />
           <input
             className="w-full bg-transparent text-sm outline-none"
-            placeholder="Ask the AU Kamra AI Agent about cyber tools and study help…"
-            value={prompt}
+            placeholder="Search the book library for a topic, tool, or technique…"
+            value={query}
             autoFocus
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
           />
-          <button type="submit" className="btn-primary" disabled={loading || !prompt.trim()}>
+          <button type="submit" className="btn-primary" disabled={loading || !query.trim()}>
             <Send size={15} />
             {loading ? "Scanning…" : "Search"}
           </button>
@@ -106,8 +105,8 @@ export function Aukc() {
               key={s}
               type="button"
               onClick={() => {
-                setPrompt(s);
-                ask.mutate(s);
+                setQuery(s);
+                search.mutate(s);
               }}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 hover:bg-white/10"
             >
@@ -117,6 +116,8 @@ export function Aukc() {
         </div>
       </form>
 
+      {isAdmin && <AdminLibraryPanel />}
+
       {/* Loading shimmer */}
       {loading && (
         <div className="card relative overflow-hidden p-6">
@@ -125,49 +126,170 @@ export function Aukc() {
           </div>
           <div className="flex items-center gap-3 text-cyan-glow">
             <Radar size={18} className="aukc-orbit" />
-            <span className="aukc-caret">Scanning the knowledge base</span>
+            <span className="aukc-caret">Scanning the book library</span>
           </div>
         </div>
       )}
 
-      {/* Result */}
+      {/* Results */}
       {result && !loading && (
         <div className="space-y-3">
-          {!result.configured && (
-            <div className="flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm">
-              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-300" />
-              <div>
-                <div className="font-medium text-amber-200">
-                  AI key not configured — showing offline guidance
-                </div>
-                <div className="text-xs text-amber-200/70">
-                  {result.error || "Set OPENAI_API_KEY on the server for live AI answers."}
-                </div>
+          {result.message ? (
+            <div className="card flex items-center gap-3 border-cyan-glow/20 p-6 text-sm text-slate-300">
+              <Library size={18} className="shrink-0 text-cyan-glow/80" />
+              {result.message}
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-cyan-glow/80">
+                <Search size={14} /> {result.results.length} passage
+                {result.results.length === 1 ? "" : "s"} found
               </div>
-            </div>
+              {result.results.map((hit, i) => (
+                <div
+                  key={`${hit.book_id}-${hit.page_number}-${i}`}
+                  className="card relative overflow-hidden border-cyan-glow/20 p-5"
+                >
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                    <BookOpen size={14} className="text-cyan-glow" />
+                    <span className="font-semibold text-slate-100">{hit.book_title}</span>
+                    <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[10px] text-slate-400">
+                      page {hit.page_number}
+                    </span>
+                    <span className="ml-auto rounded bg-cyan-glow/10 px-2 py-0.5 font-mono text-[10px] text-cyan-glow/80">
+                      score {hit.score.toFixed(2)}
+                    </span>
+                  </div>
+                  <p
+                    className="aukc-snippet whitespace-pre-wrap font-mono text-sm leading-relaxed text-slate-200"
+                    dangerouslySetInnerHTML={{ __html: hit.snippet }}
+                  />
+                </div>
+              ))}
+            </>
           )}
-          <div
-            ref={answerRef}
-            className="card relative overflow-hidden border-cyan-glow/20 p-6"
-          >
-            <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-cyan-glow/80">
-              <Bot size={14} /> AU Kamra AI Agent
-              <span className="ml-auto rounded bg-white/5 px-2 py-0.5 font-mono text-[10px] normal-case text-slate-400">
-                {result.configured ? `live · ${result.model}` : "offline"}
-              </span>
-            </div>
-            <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-slate-200 aukc-caret">
-              {typed}
-            </div>
-          </div>
         </div>
       )}
 
-      {ask.error && !loading && (
+      {search.error && !loading && (
         <div className="card border-rose-400/30 p-4 text-sm text-rose-300">
-          {(ask.error as Error).message}
+          {(search.error as Error).message}
         </div>
       )}
+    </div>
+  );
+}
+
+function AdminLibraryPanel() {
+  const qc = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
+
+  const books = useQuery({
+    queryKey: ["aukc-books"],
+    queryFn: () => api<BookDocument[]>("/api/aukc/books"),
+  });
+
+  const upload = useMutation({
+    mutationFn: async () => {
+      if (!file) throw new Error("Choose a PDF file first.");
+      const form = new FormData();
+      form.append("file", file);
+      form.append("title", title);
+      const res = await fetch("/api/aukc/books", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+        body: form,
+      });
+      if (!res.ok) {
+        let detail = res.statusText;
+        try {
+          detail = (await res.json()).detail || detail;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(typeof detail === "string" ? detail : "Upload failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setTitle("");
+      setFile(null);
+      setError("");
+      qc.invalidateQueries({ queryKey: ["aukc-books"] });
+    },
+    onError: (e) => setError((e as Error).message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api(`/api/aukc/books/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["aukc-books"] }),
+  });
+
+  return (
+    <div className="card space-y-4 border-cyan-glow/20 p-5">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-cyan-glow/80">
+        <Library size={14} /> Book Library · Admin
+      </div>
+
+      <form
+        className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-center"
+        onSubmit={(e) => {
+          e.preventDefault();
+          upload.mutate();
+        }}
+      >
+        <input
+          className="input"
+          placeholder="Book title (optional — defaults to filename)"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <label className="btn-ghost cursor-pointer">
+          <Upload size={15} />
+          {file ? file.name.slice(0, 24) : "Choose PDF"}
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <button type="submit" className="btn-primary" disabled={upload.isPending || !file}>
+          <Upload size={15} />
+          {upload.isPending ? "Uploading…" : "Upload"}
+        </button>
+      </form>
+      {error && <div className="text-xs text-rose-300">{error}</div>}
+
+      <div className="divide-y divide-white/5">
+        {books.data && books.data.length === 0 && (
+          <div className="py-3 text-sm text-slate-400">
+            No books uploaded yet. Add a PDF to build the searchable library.
+          </div>
+        )}
+        {books.data?.map((b) => (
+          <div key={b.id} className="flex items-center gap-3 py-2.5 text-sm">
+            <FileText size={16} className="shrink-0 text-cyan-glow/70" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium text-slate-100">{b.title}</div>
+              <div className="truncate font-mono text-[11px] text-slate-500">
+                {b.filename} · {b.page_count} pages · {formatBytes(b.size_bytes)}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn-ghost text-rose-300 hover:bg-rose-500/10"
+              onClick={() => remove.mutate(b.id)}
+              disabled={remove.isPending}
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
