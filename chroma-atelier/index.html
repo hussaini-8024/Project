@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chroma Atelier — living sculpture of light</title>
+    <meta
+      name="description"
+      content="An interactive 3D color studio. Six cinematic palettes, a glass core, and gems you can absorb."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@300;400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="stage"></canvas>
+
+      <div id="grain" aria-hidden="true"></div>
+      <div id="vignette" aria-hidden="true"></div>
+
+      <div id="loader">
+        <div class="loader-orbit" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p class="loader-kicker">mixing pigments</p>
+        <h1 class="loader-title">Chroma Atelier</h1>
+      </div>
+
+      <header class="hud hud-top">
+        <p class="kicker">interactive 3d color studio</p>
+        <h1>Chroma<br />Atelier</h1>
+        <p class="lede">
+          A glass knot holds a trapped star. Orbit it. Click a gem to absorb its
+          pigment. The world regrades around that hue.
+        </p>
+      </header>
+
+      <aside class="hud hud-meta">
+        <p class="meta-label">active world</p>
+        <p id="palette-name">Solar Flare</p>
+        <p id="palette-theory">
+          Analogous heat — coral through gold. Warm dominance, high chroma.
+        </p>
+        <p id="absorbed" class="absorbed is-idle">click a gem to absorb color</p>
+      </aside>
+
+      <nav class="hud hud-palettes" aria-label="Color worlds">
+        <div id="palette-row" class="palette-row"></div>
+        <div class="palette-tools">
+          <button id="btn-auto" type="button" class="tool is-on" aria-pressed="true">
+            Autoplay
+          </button>
+          <button id="btn-reset" type="button" class="tool">Reset view</button>
+        </div>
+      </nav>
+
+      <p class="hud hud-hint">
+        drag to orbit · scroll to zoom · 1–6 palettes · click a gem
+      </p>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

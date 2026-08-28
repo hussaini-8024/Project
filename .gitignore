@@ -8,6 +8,12 @@ inventory/hosts.yml
 .vault_pass
 .env
 
+# Node
+node_modules/
+dist/
+chroma-atelier/node_modules/
+chroma-atelier/dist/
+
 # OS / editor
 .DS_Store
 Thumbs.db
