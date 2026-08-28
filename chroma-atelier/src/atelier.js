@@ -45,15 +45,18 @@ function detectQuality(renderer) {
   const software = /swiftshader|llvmpipe|software|mesa offscreen|microsoft basic/i.test(
     String(gpu),
   );
+  const maxTex = renderer.capabilities.maxTextureSize || 4096;
   return {
     software,
     gpu: String(gpu),
-    dpr: software ? 1 : Math.min(window.devicePixelRatio || 1, 1.75),
+    dpr: software ? 1 : Math.min(window.devicePixelRatio || 1, 1.5),
     particles: software ? 900 : 2600,
     knot: software ? [110, 18] : [200, 32],
     ribbons: software ? 3 : 5,
-    bloom: software ? [0.55, 0.28, 0.0] : [0.82, 0.36, 0.15],
+    bloom: software ? [0.42, 0.32, 0.18] : [0.58, 0.38, 0.22],
     transmission: !software,
+    maxTex,
+    maxDim: software ? 1440 : Math.min(2560, maxTex),
   };
 }
 
@@ -103,24 +106,17 @@ export function createAtelier(canvas) {
   renderer.setClearColor(0x070309, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = palettes[0].exposure;
   renderer.shadowMap.enabled = false;
 
   const quality = detectQuality(renderer);
-  renderer.setPixelRatio(quality.dpr);
-  renderer.setSize(window.innerWidth, window.innerHeight);
 
   const scene = new THREE.Scene();
   scene.background = hexColor(palettes[0].bg);
-  scene.fog = new THREE.FogExp2(palettes[0].fog, 0.038);
+  scene.fog = new THREE.FogExp2(palettes[0].fog, 0.026);
   scene.environment = makeEnvMap(renderer);
 
-  const camera = new THREE.PerspectiveCamera(
-    42,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    80,
-  );
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
   camera.position.set(0, 3.6, 12.5);
 
   const controls = new OrbitControls(camera, canvas);
@@ -148,7 +144,7 @@ export function createAtelier(canvas) {
   rimLight.position.set(0.2, 3.4, -4.6);
   scene.add(rimLight);
 
-  const coreLight = new THREE.PointLight(0xffe9a0, 28, 10, 2);
+  const coreLight = new THREE.PointLight(0xffe9a0, 16, 10, 2);
   scene.add(coreLight);
 
   const floor = new THREE.Mesh(
@@ -178,27 +174,43 @@ export function createAtelier(canvas) {
   const knotGeo = new THREE.TorusKnotGeometry(1.18, 0.36, quality.knot[0], quality.knot[1]);
   const knotMat = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
-    metalness: quality.transmission ? 0.08 : 0.78,
-    roughness: 0.08,
-    transmission: quality.transmission ? 1 : 0,
-    thickness: 1.6,
-    ior: 1.48,
+    metalness: quality.transmission ? 0.18 : 0.72,
+    roughness: 0.1,
+    transmission: quality.transmission ? 0.62 : 0,
+    thickness: 1.35,
+    ior: 1.45,
     iridescence: 1,
     iridescenceIOR: 1.22,
     iridescenceThicknessRange: [120, 420],
     clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    envMapIntensity: 1.4,
+    clearcoatRoughness: 0.1,
+    envMapIntensity: 1.25,
     attenuationColor: hexColor(palettes[0].core),
     attenuationDistance: 2.4,
+    emissive: hexColor(palettes[0].core),
+    emissiveIntensity: quality.transmission ? 0.22 : 0.4,
     transparent: quality.transmission,
   });
   const knot = new THREE.Mesh(knotGeo, knotMat);
   coreGroup.add(knot);
 
+  const aura = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1.18, 0.36, 80, 12),
+    new THREE.MeshBasicMaterial({
+      color: palettes[0].core,
+      transparent: true,
+      opacity: 0.16,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  aura.scale.setScalar(1.06);
+  coreGroup.add(aura);
+
   const star = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.28, 1),
-    new THREE.MeshBasicMaterial({ color: palettes[0].core }),
+    new THREE.IcosahedronGeometry(0.42, 1),
+    new THREE.MeshBasicMaterial({ color: palettes[0].core, toneMapped: false }),
   );
   coreGroup.add(star);
 
@@ -210,6 +222,9 @@ export function createAtelier(canvas) {
     new THREE.SphereGeometry(0.24, 24, 16),
     new THREE.TorusGeometry(0.2, 0.07, 12, 28),
   ];
+  const gemHits = [];
+  const hitGeo = new THREE.SphereGeometry(0.7, 8, 8);
+  const hitMat = new THREE.MeshBasicMaterial({ visible: false });
   const gemRoots = fibonacciSphere(9, 3.15);
   const gems = gemRoots.map((origin, i) => {
     const color = hexColor(palettes[0].accents[i % 5]);
@@ -235,6 +250,10 @@ export function createAtelier(canvas) {
       paletteIndex: i % 5,
       pulse: 0,
     };
+    const hit = new THREE.Mesh(hitGeo, hitMat);
+    hit.userData.gem = mesh;
+    mesh.add(hit);
+    gemHits.push(hit);
     scene.add(mesh);
     return mesh;
   });
@@ -301,16 +320,53 @@ export function createAtelier(canvas) {
   const particles = new THREE.Points(particleGeo, particleMat);
   scene.add(particles);
 
-  const composer = new EffectComposer(renderer);
+  function drawingSize() {
+    const cssW = Math.max(1, canvas.clientWidth || window.innerWidth);
+    const cssH = Math.max(1, canvas.clientHeight || window.innerHeight);
+    const dpr = Math.min(quality.dpr, quality.maxDim / Math.max(cssW, cssH));
+    return { cssW, cssH, dpr };
+  }
+
+  let lastW = 0;
+  let lastH = 0;
+  let lastDpr = 0;
+
+  function syncSize() {
+    const { cssW, cssH, dpr } = drawingSize();
+    if (cssW === lastW && cssH === lastH && dpr === lastDpr) return;
+    lastW = cssW;
+    lastH = cssH;
+    lastDpr = dpr;
+    camera.aspect = cssW / cssH;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(cssW, cssH, false);
+    composer.setPixelRatio(dpr);
+    composer.setSize(cssW, cssH);
+    particleMat.uniforms.uPixelRatio.value = dpr;
+  }
+
+  const first = drawingSize();
+  renderer.setPixelRatio(first.dpr);
+  renderer.setSize(first.cssW, first.cssH, false);
+
+  const composerTarget = new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.UnsignedByteType,
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    depthBuffer: true,
+  });
+  const composer = new EffectComposer(renderer, composerTarget);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    quality.bloom[0],
+    new THREE.Vector2(1, 1),
+    palettes[0].bloom,
     quality.bloom[1],
     quality.bloom[2],
   );
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  syncSize();
 
   const current = {
     bg: hexColor(palettes[0].bg),
@@ -318,6 +374,8 @@ export function createAtelier(canvas) {
     floor: hexColor(palettes[0].floor),
     core: hexColor(palettes[0].core),
     accents: palettes[0].accents.map(hexColor),
+    bloom: palettes[0].bloom,
+    exposure: palettes[0].exposure,
   };
   const target = {
     bg: current.bg.clone(),
@@ -325,6 +383,8 @@ export function createAtelier(canvas) {
     floor: current.floor.clone(),
     core: current.core.clone(),
     accents: current.accents.map((c) => c.clone()),
+    bloom: palettes[0].bloom,
+    exposure: palettes[0].exposure,
   };
 
   let paletteIndex = 0;
@@ -358,6 +418,8 @@ export function createAtelier(canvas) {
     target.floor.set(next.floor);
     target.core.set(next.core);
     next.accents.forEach((hex, i) => target.accents[i].set(hex));
+    target.bloom = next.bloom;
+    target.exposure = next.exposure;
     absorbed = absorb;
     bloomPulse = 1;
     const root = document.documentElement.style;
@@ -378,8 +440,11 @@ export function createAtelier(canvas) {
     floor.material.color.copy(current.floor);
     ring.material.color.copy(current.accents[2]);
     star.material.color.copy(current.core);
+    aura.material.color.copy(current.core);
     knotMat.attenuationColor.copy(current.core);
-    knotMat.color.copy(current.core).lerp(white, 0.55);
+    knotMat.emissive.copy(current.core);
+    knotMat.color.copy(current.core).lerp(white, 0.45);
+    renderer.toneMappingExposure = current.exposure;
     coreLight.color.copy(current.core);
     keyLight.color.copy(current.accents[1]);
     fillLight.color.copy(current.accents[2]);
@@ -406,8 +471,8 @@ export function createAtelier(canvas) {
     pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObjects(gems, false);
-    return hits[0]?.object ?? null;
+    const hits = raycaster.intersectObjects(gemHits, false);
+    return hits[0]?.object.userData.gem ?? null;
   }
 
   function absorbGem(gem) {
@@ -455,19 +520,15 @@ export function createAtelier(canvas) {
   }
 
   function onResize() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-    composer.setSize(w, h);
-    bloom.setSize(w, h);
+    syncSize();
   }
 
   canvas.addEventListener("pointermove", onPointerMove);
   canvas.addEventListener("pointerdown", onPointerDown);
   canvas.addEventListener("pointerup", onPointerUp);
   window.addEventListener("resize", onResize);
+  const resizeObserver = new ResizeObserver(onResize);
+  resizeObserver.observe(canvas);
 
   const spinAxis = new THREE.Vector3(0, 1, 0);
 
@@ -482,6 +543,8 @@ export function createAtelier(canvas) {
     current.floor.lerp(target.floor, k);
     current.core.lerp(target.core, k);
     current.accents.forEach((c, i) => c.lerp(target.accents[i], k));
+    current.bloom += (target.bloom - current.bloom) * k;
+    current.exposure += (target.exposure - current.exposure) * k;
     applyColors();
 
     if (intro < 1) {
@@ -494,7 +557,7 @@ export function createAtelier(canvas) {
     coreGroup.rotation.x = Math.sin(t * 0.35) * 0.12;
     star.rotation.y -= dt * 0.8;
     star.scale.setScalar(0.92 + Math.sin(t * 2.2) * 0.1);
-    coreLight.intensity = 22 + Math.sin(t * 2.2) * 8;
+    coreLight.intensity = 14 + Math.sin(t * 2.2) * 4;
     particles.rotation.y = t * 0.03;
 
     gems.forEach((gem) => {
@@ -516,7 +579,7 @@ export function createAtelier(canvas) {
     particleMat.uniforms.uTime.value = t;
 
     bloomPulse = Math.max(0, bloomPulse - dt * 1.3);
-    bloom.strength = quality.bloom[0] + bloomPulse * 0.45;
+    bloom.strength = current.bloom + bloomPulse * 0.28;
 
     controls.update();
     composer.render();
@@ -554,6 +617,7 @@ export function createAtelier(canvas) {
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       controls.dispose();
       composer.dispose();
       renderer.dispose();
