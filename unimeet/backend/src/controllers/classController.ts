@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { createClass, getClassById, listClasses, updateClassStatus } from "../models/classModel.js";
+import { createClass, getClassById, listClasses, listLiveClasses, mergeClasses, updateClassStatus } from "../models/classModel.js";
 import { getStudentByUserId, getTeacherByUserId } from "../models/userModel.js";
 import { HttpError } from "../utils/httpError.js";
 
@@ -9,7 +9,9 @@ export async function listClassesHandler(req: Request, res: Response) {
   const courseId = req.query.courseId ? Number(req.query.courseId) : undefined;
   if (user.role === "student") {
     const student = await getStudentByUserId(user.id);
-    res.json({ classes: await listClasses({ courseId, studentId: student?.id }) });
+    const mine = await listClasses({ courseId, studentId: student?.id });
+    const live = courseId ? [] : await listLiveClasses();
+    res.json({ classes: mergeClasses(mine, live) });
     return;
   }
   if (user.role === "teacher") {

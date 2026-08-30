@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { query } from "../db/pool.js";
 import { listAttendance } from "../models/attendanceModel.js";
-import { listClasses } from "../models/classModel.js";
+import { listClasses, listLiveClasses, mergeClasses } from "../models/classModel.js";
 import { listCourses } from "../models/courseModel.js";
 import { getStudentByUserId, getTeacherByUserId, updatePassword, updateProfile } from "../models/userModel.js";
 import { publicProfile } from "../services/authService.js";
@@ -16,10 +16,13 @@ export async function dashboardHandler(req: Request, res: Response) {
     studentId: student?.id,
     teacherId: teacher?.id,
   });
-  const classes = await listClasses({
+  const scoped = await listClasses({
     studentId: student?.id,
     teacherId: teacher?.id,
   });
+  const classes = user.role === "student"
+    ? mergeClasses(scoped, await listLiveClasses())
+    : scoped;
   const attendance = student
     ? await listAttendance({ studentId: student.id })
     : user.role === "admin" || user.role === "teacher"

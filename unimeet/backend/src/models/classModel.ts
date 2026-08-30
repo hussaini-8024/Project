@@ -68,6 +68,29 @@ export async function getClassById(id: number) {
   return result.rows[0] ?? null;
 }
 
+export async function listLiveClasses() {
+  const result = await query(
+    `SELECT cl.*, c.course_code, c.course_name, c.teacher_id, tu.name AS teacher_name
+     FROM classes cl
+     JOIN courses c ON c.id = cl.course_id
+     LEFT JOIN teachers t ON t.id = c.teacher_id
+     LEFT JOIN users tu ON tu.id = t.user_id
+     WHERE cl.status = 'live' OR cl.is_open_lab = true
+     ORDER BY cl.start_time DESC`,
+  );
+  return result.rows;
+}
+
+export function mergeClasses(...lists: Record<string, unknown>[][]) {
+  const map = new Map<number, Record<string, unknown>>();
+  for (const list of lists) {
+    for (const row of list) {
+      map.set(row.id as number, row);
+    }
+  }
+  return [...map.values()];
+}
+
 export async function createClass(input: {
   courseId: number;
   title?: string;

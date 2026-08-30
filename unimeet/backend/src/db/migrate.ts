@@ -153,7 +153,7 @@ async function main() {
     const ali = await insertStudent(aliUser, "STU-1001", "A");
     const ahmed = await insertStudent(ahmedUser, "STU-1002", "A");
     const sara = await insertStudent(saraUser, "STU-1003", "A");
-    await insertStudent(johnUser, "STU-1004", "B");
+    const john = await insertStudent(johnUser, "STU-1004", "B");
 
     const dbCourse = await client.query<{ id: number }>(
       `INSERT INTO courses
@@ -187,7 +187,8 @@ async function main() {
     await enroll(ali, osCourse.rows[0].id);
     await enroll(ahmed, osCourse.rows[0].id);
     await enroll(sara, osCourse.rows[0].id);
-    // John is intentionally not enrolled in Database Systems.
+    await enroll(john, osCourse.rows[0].id);
+    // John is enrolled in Operating Systems only — not Database Systems.
 
     const liveClass = await client.query<{ id: number }>(
       `INSERT INTO classes

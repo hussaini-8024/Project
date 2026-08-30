@@ -56,6 +56,7 @@ export function DashboardPage() {
       <div className="grid two" style={{ marginTop: 18 }}>
         <section className="panel" style={{ padding: 18 }}>
           <h2 className="serif">Join a class</h2>
+          <p className="muted">Campus live rooms are listed here. Enrollment is checked on the server when you join.</p>
           {live.length === 0 ? (
             <p className="empty">No live class right now.</p>
           ) : (
