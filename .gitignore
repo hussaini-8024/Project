@@ -12,3 +12,10 @@ inventory/hosts.yml
 .DS_Store
 Thumbs.db
 *.swp
+
+# UniMeet
+unimeet/node_modules/
+unimeet/frontend/node_modules/
+unimeet/backend/node_modules/
+unimeet/frontend/dist/
+unimeet/backend/dist/

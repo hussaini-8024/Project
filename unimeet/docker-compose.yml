@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: unimeet
+      POSTGRES_PASSWORD: unimeet_dev_password
+      POSTGRES_DB: unimeet
+    ports:
+      - "5432:5432"
+    volumes:
+      - unimeet_pg:/var/lib/postgresql/data
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+
+volumes:
+  unimeet_pg:
