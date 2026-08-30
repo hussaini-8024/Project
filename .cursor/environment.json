@@ -1,0 +1,4 @@
+{
+  "name": "MS Office 2016 LAN Install (Ansible/AWX)",
+  "install": "ansible-galaxy collection install -r requirements.yml && python3 -m pip install --break-system-packages pywinrm ansible-lint yamllint && { command -v shellcheck >/dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y shellcheck) || echo 'shellcheck optional: skipped'; }"
+}
