@@ -86,15 +86,31 @@ npm run dev
 
 Open http://localhost:5173 and sign in as `student`.
 
-### Same-network remote PCs (LAN)
+### Ubuntu on the LAN — access by IP `172.26.1.3`
 
-The UI and API bind `0.0.0.0`, so another PC on the same network can open the login page:
+This range is meant to run **on your Ubuntu host** (IP `172.26.1.3`), not only inside Cursor. On that machine:
 
-```text
-http://<this-machine-ip>:5173/login
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip iproute2 busybox bridge-utils iptables
+# Node 20+ required (nodejs from nodesource or snap)
+
+git clone https://github.com/hussaini-8024/Project.git
+cd Project
+git checkout cursor/university-cyber-range-a428
+chmod +x scripts/run-ubuntu-lan.sh
+./scripts/run-ubuntu-lan.sh
 ```
 
-Find the IP with `ip -4 addr` or `hostname -I`. Vite is configured to accept LAN hostnames (`allowedHosts: true`), and CORS allows RFC1918 origins when `CORS_ALLOW_LAN=true` (default). Keep `COOKIE_SECURE=false` for plain HTTP on the LAN. WebSockets use the same host the browser opened, so terminals work over the LAN as well.
+Then, **on this Ubuntu or any other PC on the same network**, open:
+
+```text
+http://172.26.1.3:5173/login
+```
+
+Allow the UI port if `ufw` is enabled: `sudo ufw allow 5173/tcp && sudo ufw allow 8000/tcp`.
+
+The UI and API bind `0.0.0.0`. Vite accepts LAN hostnames (`allowedHosts: true`). CORS includes `http://172.26.1.3:5173` and other RFC1918 origins (`CORS_ALLOW_LAN=true`). Keep `COOKIE_SECURE=false` for plain HTTP. Change `PUBLIC_HOST` in `.env` if your IP is different (`hostname -I`).
 
 Do not expose this development preview to the public internet.
 

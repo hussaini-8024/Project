@@ -18,9 +18,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/cyberrange.db"
     redis_url: str = "redis://localhost:6379/0"
 
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://172.26.1.3:5173"
     # Allow login/API from other PCs on the same LAN (private RFC1918 / localhost).
     cors_allow_lan: bool = True
+    # Extra address to advertise on the login page (your Ubuntu LAN IP).
+    public_host: str = "172.26.1.3"
+    public_ui_port: int = 5173
 
     # Host reserve — never allocate 100% of RAM to student labs
     host_total_ram_mb: int = 131072  # 128 GB

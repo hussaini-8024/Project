@@ -106,6 +106,9 @@ app.include_router(ws.router)
 
 def lan_ipv4s() -> list[str]:
     found: set[str] = set()
+    public = (settings.public_host or "").strip()
+    if public:
+        found.add(public)
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.connect(("8.8.8.8", 80))
@@ -123,12 +126,13 @@ def lan_ipv4s() -> list[str]:
 @app.get("/api/health")
 def health() -> dict:
     ips = lan_ipv4s()
+    port = settings.public_ui_port
     return {
         "status": "ok",
         "version": __version__,
         "provider": settings.compute_provider,
         "lan_ips": ips,
-        "login_urls": [f"http://{ip}:5173/login" for ip in ips],
+        "login_urls": [f"http://{ip}:{port}/login" for ip in ips],
     }
 
 
