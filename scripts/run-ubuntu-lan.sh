@@ -1,25 +1,28 @@
 #!/usr/bin/env bash
-# Start the Cyber Range on this Ubuntu host, bound to all interfaces.
-# Other PCs on the LAN open: http://172.26.1.3:5173/login
+# Start the Cyber Range so typing the Ubuntu IP in a browser works (port 80).
+# Ping uses ICMP. The web page is HTTP on TCP 80 — that is why ping can work
+# while http://172.26.1.3 does not, until nginx is listening on 80.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOST_IP="${PUBLIC_HOST:-172.26.1.3}"
 export PUBLIC_HOST="$HOST_IP"
+export PUBLIC_UI_PORT="${PUBLIC_UI_PORT:-80}"
 export CORS_ALLOW_LAN=true
 export COOKIE_SECURE=false
 
-echo "University Cyber Range — LAN bind 0.0.0.0, advertised IP ${HOST_IP}"
+echo "University Cyber Range — bind 0.0.0.0, login http://${HOST_IP}/login"
 
-if ! command -v python3 >/dev/null; then
-  echo "Install Python 3.12+: sudo apt install -y python3 python3-venv python3-pip" >&2
-  exit 1
+sudo apt-get update -qq
+sudo apt-get install -y python3 python3-venv python3-pip nginx iproute2 busybox bridge-utils iptables
+if command -v ufw >/dev/null && sudo ufw status 2>/dev/null | grep -qi active; then
+  sudo ufw allow 80/tcp || true
+  sudo ufw allow 5173/tcp || true
+  sudo ufw allow 8000/tcp || true
 fi
+
 if ! command -v node >/dev/null; then
-  echo "Install Node 20+: see https://nodejs.org" >&2
+  echo "Install Node 20+ then re-run. Example: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs" >&2
   exit 1
-fi
-if ! command -v ip >/dev/null; then
-  sudo apt-get install -y iproute2 busybox bridge-utils iptables python3-venv || true
 fi
 
 cd "$ROOT/backend"
@@ -38,9 +41,21 @@ if [ ! -d dist ]; then
   npm run build
 fi
 
+sudo cp "$ROOT/scripts/nginx-lan.conf" /etc/nginx/sites-available/cyberrange
+sudo ln -sfn /etc/nginx/sites-available/cyberrange /etc/nginx/sites-enabled/cyberrange
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+if command -v systemctl >/dev/null && systemctl is-system-running >/dev/null 2>&1; then
+  sudo systemctl enable --now nginx
+  sudo systemctl reload nginx
+else
+  sudo nginx -s reload 2>/dev/null || sudo nginx
+fi
+
 echo
-echo "Open on this Ubuntu or any PC on the same network:"
-echo "  http://${HOST_IP}:5173/login"
+echo "Open in a browser (no port number needed):"
+echo "  http://${HOST_IP}/login"
+echo "  http://${HOST_IP}"
 echo
 
 cd "$ROOT/backend"

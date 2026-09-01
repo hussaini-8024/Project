@@ -127,12 +127,15 @@ def lan_ipv4s() -> list[str]:
 def health() -> dict:
     ips = lan_ipv4s()
     port = settings.public_ui_port
+    login_urls = [
+        f"http://{ip}/login" if port == 80 else f"http://{ip}:{port}/login" for ip in ips
+    ]
     return {
         "status": "ok",
         "version": __version__,
         "provider": settings.compute_provider,
         "lan_ips": ips,
-        "login_urls": [f"http://{ip}:{port}/login" for ip in ips],
+        "login_urls": login_urls,
     }
 
 

@@ -102,13 +102,13 @@ chmod +x scripts/run-ubuntu-lan.sh
 ./scripts/run-ubuntu-lan.sh
 ```
 
-Then, **on this Ubuntu or any other PC on the same network**, open:
+Then, **on this Ubuntu or any other PC on the same network**, open (no extra port):
 
 ```text
-http://172.26.1.3:5173/login
+http://172.26.1.3/login
 ```
 
-Allow the UI port if `ufw` is enabled: `sudo ufw allow 5173/tcp && sudo ufw allow 8000/tcp`.
+Ping can succeed while the page does not: ping is ICMP; the browser uses **TCP port 80**. The start script installs nginx on port 80 in front of the UI. If `ufw` is enabled it opens ports 80, 5173, and 8000.
 
 The UI and API bind `0.0.0.0`. Vite accepts LAN hostnames (`allowedHosts: true`). CORS includes `http://172.26.1.3:5173` and other RFC1918 origins (`CORS_ALLOW_LAN=true`). Keep `COOKIE_SECURE=false` for plain HTTP. Change `PUBLIC_HOST` in `.env` if your IP is different (`hostname -I`).
 
