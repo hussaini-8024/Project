@@ -1,7 +1,8 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Shield, TerminalSquare } from "lucide-react";
 import { useAuth } from "../auth";
+import { api } from "../api";
 
 const demos = [
   { role: "Administrator", user: "admin", pass: "CyberRange!Admin2026" },
@@ -86,6 +87,7 @@ export function Login() {
           </label>
           <input className="input mt-1" value={totp} onChange={(e) => setTotp(e.target.value)} placeholder="Optional" />
           {error && <div className="mt-4 rounded-lg bg-rose-500/15 px-3 py-2 text-sm text-rose-300">{error}</div>}
+          <LanHint />
           <button className="btn-primary mt-6 w-full" disabled={busy} type="submit">
             {busy ? "Authenticating…" : "Enter laboratory"}
           </button>
@@ -108,6 +110,29 @@ export function Login() {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function LanHint() {
+  const [urls, setUrls] = useState<string[]>([]);
+  useEffect(() => {
+    api<{ login_urls?: string[] }>("/api/health")
+      .then((h) => setUrls(h.login_urls ?? []))
+      .catch(() => setUrls([]));
+  }, []);
+  const here = typeof window !== "undefined" ? window.location.origin : "";
+  return (
+    <div className="mt-4 rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-slate-300">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500">Open from this PC or another on the LAN</div>
+      <div className="mt-1 break-all">{here}/login</div>
+      {urls
+        .filter((u) => !here || !u.startsWith(here))
+        .map((u) => (
+          <div key={u} className="mt-1 break-all text-cyan-glow">
+            {u}
+          </div>
+        ))}
     </div>
   );
 }

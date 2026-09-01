@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -103,9 +104,32 @@ app.include_router(aukc.router, prefix="/api")
 app.include_router(ws.router)
 
 
+def lan_ipv4s() -> list[str]:
+    found: set[str] = set()
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            found.add(sock.getsockname()[0])
+    except OSError:
+        pass
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            found.add(info[4][0])
+    except OSError:
+        pass
+    return sorted(ip for ip in found if not ip.startswith("127."))
+
+
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "version": __version__, "provider": settings.compute_provider}
+    ips = lan_ipv4s()
+    return {
+        "status": "ok",
+        "version": __version__,
+        "provider": settings.compute_provider,
+        "lan_ips": ips,
+        "login_urls": [f"http://{ip}:5173/login" for ip in ips],
+    }
 
 
 @app.get("/api")
