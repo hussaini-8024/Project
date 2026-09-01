@@ -37,7 +37,7 @@ sudo apt-get install -y \
   nginx \
   iproute2 busybox bridge-utils iptables nftables kmod procps \
   iputils-ping uidmap \
-  sudo ufw
+  sudo ufw cron
 # Ubuntu's nodejs/npm may be missing or too old; ignore failure and use NodeSource next.
 sudo apt-get install -y nodejs npm || true
 

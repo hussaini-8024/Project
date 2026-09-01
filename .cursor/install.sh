@@ -4,6 +4,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-chmod +x "$REPO_ROOT/scripts/install-ubuntu-deps.sh"
+chmod +x "$REPO_ROOT/scripts/install-ubuntu-deps.sh" "$REPO_ROOT/scripts/install-boot-services.sh"
 "$REPO_ROOT/scripts/install-ubuntu-deps.sh"
+"$REPO_ROOT/scripts/install-boot-services.sh"
 echo "Cyber Range environment bootstrap complete."

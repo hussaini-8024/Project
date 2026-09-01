@@ -2,20 +2,17 @@
   "name": "University Cyber Range",
   "user": "ubuntu",
   "install": "bash .cursor/install.sh",
+  "start": "bash scripts/cyberrange-boot.sh",
   "terminals": [
     {
       "name": "cyber-api",
-      "command": "cd backend && .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000",
-      "description": "FastAPI backend on :8000. Shells out via `sudo -n ip ...` to provision live netns/bridge/veth guests."
-    },
-    {
-      "name": "cyber-ui",
-      "command": "cd frontend && npm run preview",
-      "description": "Vite production preview of the React UI on :5173."
+      "command": "bash scripts/cyberrange-boot.sh; tail -F backend/data/api.log",
+      "description": "Keeps the API and nginx portal up (ports 80/8080/8000) and follows the API log."
     }
   ],
   "ports": [
-    { "name": "api", "port": 8000 },
-    { "name": "ui", "port": 5173 }
+    { "name": "portal", "port": 80 },
+    { "name": "portal-alt", "port": 8080 },
+    { "name": "api", "port": 8000 }
   ]
 }

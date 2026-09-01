@@ -29,19 +29,6 @@ detect_lan_ip() {
   printf '%s\n' "172.26.1.3"
 }
 
-port_listening() {
-  local port="$1"
-  if command -v ss >/dev/null 2>&1; then
-    ss -ltn | awk '{print $4}' | grep -Eq "[:.]${port}$"
-  else
-    netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]${port}$"
-  fi
-}
-
-api_ok() {
-  curl -sf --max-time 2 "http://127.0.0.1:8000/api/health" >/dev/null
-}
-
 chmod +x "$ROOT/scripts/install-ubuntu-deps.sh"
 "$ROOT/scripts/install-ubuntu-deps.sh"
 
@@ -69,38 +56,8 @@ for p in 80 8080 5173 8000; do
     || true
 done
 
-echo "== nginx on ports 80 and 8080 (static UI + API proxy) =="
-sudo cp "$ROOT/scripts/nginx-lan.conf" /etc/nginx/sites-available/cyberrange
-sudo ln -sfn /etc/nginx/sites-available/cyberrange /etc/nginx/sites-enabled/cyberrange
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-if command -v systemctl >/dev/null && systemctl is-system-running >/dev/null 2>&1; then
-  sudo systemctl enable --now nginx || true
-  sudo systemctl reload nginx || sudo systemctl restart nginx
-else
-  sudo nginx -s reload 2>/dev/null || sudo nginx
-fi
-
-echo "== API on :8000 =="
-cd "$ROOT/backend"
-if api_ok; then
-  echo "API already running on :8000"
-else
-  if port_listening 8000; then
-    echo "Port 8000 is in use but /api/health failed — stop the other process and retry." >&2
-    exit 1
-  fi
-  nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 \
-    >>"$ROOT/backend/data/api.log" 2>&1 &
-  for _ in $(seq 1 30); do
-    api_ok && break
-    sleep 0.3
-  done
-  api_ok
-fi
-
-# Vite preview is optional (Cursor / npm run preview). Do not start it here:
-# a second bind on :5173 raises Node's Unhandled 'error' event (EADDRINUSE).
+chmod +x "$ROOT/scripts/install-boot-services.sh"
+"$ROOT/scripts/install-boot-services.sh"
 
 echo
 echo "Login from this Ubuntu or another PC on the same network:"
@@ -108,4 +65,4 @@ echo "  http://${HOST_IP}/login"
 echo "  http://${HOST_IP}:8080/login"
 echo
 echo "API health: http://${HOST_IP}/api/health"
-echo "Leave this host running. Press Ctrl+C will not stop nginx/API started in the background."
+echo "Services are enabled on boot (systemd Restart=always, or cron watchdog)."

@@ -1,0 +1,13 @@
+[Unit]
+Description=University Cyber Range nginx site (ports 80 and 8080)
+After=network-online.target
+Wants=network-online.target
+Before=nginx.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/cyberrange-boot --prepare-only
+
+[Install]
+WantedBy=multi-user.target

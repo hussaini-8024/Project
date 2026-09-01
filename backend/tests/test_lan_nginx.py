@@ -21,9 +21,18 @@ def test_nginx_lan_serves_built_ui_not_vite() -> None:
 def test_install_scripts_exist() -> None:
     assert (ROOT / "scripts" / "install-ubuntu-deps.sh").is_file()
     assert (ROOT / "scripts" / "run-ubuntu-lan.sh").is_file()
+    assert (ROOT / "scripts" / "cyberrange-boot.sh").is_file()
+    assert (ROOT / "scripts" / "install-boot-services.sh").is_file()
     text = (ROOT / "scripts" / "run-ubuntu-lan.sh").read_text()
     assert "install-ubuntu-deps.sh" in text
-    assert "Unhandled" in text or "5173" in text
+    assert "install-boot-services.sh" in text
+
+
+def test_systemd_unit_restarts_api() -> None:
+    unit = (ROOT / "scripts" / "systemd" / "cyberrange-api.service").read_text()
+    assert "Restart=always" in unit
+    assert "uvicorn" in unit
+    assert "WantedBy=multi-user.target" in unit
 
 
 def test_health_login_urls_use_port_80(api) -> None:
@@ -45,3 +54,9 @@ def test_default_public_ui_is_port_80() -> None:
 def test_lan_ipv4s_includes_configured_host() -> None:
     ips = lan_ipv4s()
     assert "172.26.1.3" in ips
+
+
+def test_environment_start_boots_portal() -> None:
+    env = (ROOT / ".cursor" / "environment.json").read_text()
+    assert "cyberrange-boot.sh" in env
+    assert '"port": 80' in env

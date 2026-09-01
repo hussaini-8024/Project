@@ -101,7 +101,9 @@ chmod +x scripts/install-ubuntu-deps.sh scripts/run-ubuntu-lan.sh
 ./scripts/run-ubuntu-lan.sh         # nginx :80/:8080 + API :8000
 ```
 
-`run-ubuntu-lan.sh` also runs the install step, so one command is enough after a successful install. The UI is the production build served by nginx from `/var/www/cyberrange` (Vite is not left running on :5173, which used to crash with Node’s `Unhandled 'error' event` / `EADDRINUSE`).
+`run-ubuntu-lan.sh` also runs the install step, so one command is enough after a successful install. It enables **boot services** so nginx and the API start after reboot and restart if they die (`systemd` `Restart=always` when systemd is PID 1; otherwise `cron` `@reboot` plus a one-minute watchdog).
+
+The UI is the production build served by nginx from `/var/www/cyberrange` (Vite is not left running on :5173, which used to crash with Node’s `Unhandled 'error' event` / `EADDRINUSE`).
 
 Then, **on this Ubuntu or any other PC on the same network**, try these in a browser:
 
