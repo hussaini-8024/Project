@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Start the Cyber Range so typing the Ubuntu IP in a browser works (port 80).
-# Ping uses ICMP. The web page is HTTP on TCP 80 — that is why ping can work
-# while http://172.26.1.3 does not, until nginx is listening on 80.
+# Install every OS package the Cyber Range needs on Ubuntu, then start it so
+# http://<LAN-IP>/login works (port 80). Ping is ICMP; the website is TCP 80/8080.
 set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOST_IP="${PUBLIC_HOST:-172.26.1.3}"
 export PUBLIC_HOST="$HOST_IP"
@@ -10,21 +10,36 @@ export PUBLIC_UI_PORT="${PUBLIC_UI_PORT:-80}"
 export CORS_ALLOW_LAN=true
 export COOKIE_SECURE=false
 
-echo "University Cyber Range — bind 0.0.0.0, login http://${HOST_IP}/login"
+echo "== Installing packages (python, node, nginx, iproute, firewall) =="
+sudo apt-get update -y
+sudo apt-get install -y --no-install-recommends \
+  ca-certificates curl git gnupg \
+  python3 python3-venv python3-pip \
+  nginx \
+  iproute2 busybox bridge-utils iptables \
+  build-essential
 
-sudo apt-get update -qq
-sudo apt-get install -y python3 python3-venv python3-pip nginx iproute2 busybox bridge-utils iptables
-if command -v ufw >/dev/null && sudo ufw status 2>/dev/null | grep -qi active; then
+if ! command -v node >/dev/null 2>&1 || ! node -v | grep -qE 'v(1[8-9]|[2-9][0-9])'; then
+  echo "== Installing Node.js 20 =="
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+fi
+node -v
+npm -v
+
+echo "== Opening HTTP ports (ufw + iptables). Ping does not open these. =="
+if command -v ufw >/dev/null; then
   sudo ufw allow 80/tcp || true
+  sudo ufw allow 8080/tcp || true
   sudo ufw allow 5173/tcp || true
   sudo ufw allow 8000/tcp || true
 fi
+for p in 80 8080 5173 8000; do
+  sudo iptables -C INPUT -p tcp --dport "$p" -j ACCEPT 2>/dev/null \
+    || sudo iptables -I INPUT -p tcp --dport "$p" -j ACCEPT
+done
 
-if ! command -v node >/dev/null; then
-  echo "Install Node 20+ then re-run. Example: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs" >&2
-  exit 1
-fi
-
+echo "== Backend venv =="
 cd "$ROOT/backend"
 if [ ! -x .venv/bin/uvicorn ]; then
   python3 -m venv .venv
@@ -33,14 +48,14 @@ if [ ! -x .venv/bin/uvicorn ]; then
 fi
 mkdir -p data
 
+echo "== Frontend build =="
 cd "$ROOT/frontend"
 if [ ! -d node_modules ]; then
   npm install --no-audit --no-fund
 fi
-if [ ! -d dist ]; then
-  npm run build
-fi
+npm run build
 
+echo "== nginx on ports 80 and 8080 =="
 sudo cp "$ROOT/scripts/nginx-lan.conf" /etc/nginx/sites-available/cyberrange
 sudo ln -sfn /etc/nginx/sites-available/cyberrange /etc/nginx/sites-enabled/cyberrange
 sudo rm -f /etc/nginx/sites-enabled/default
@@ -53,9 +68,10 @@ else
 fi
 
 echo
-echo "Open in a browser (no port number needed):"
+echo "Login from this Ubuntu or another PC on the same network:"
 echo "  http://${HOST_IP}/login"
-echo "  http://${HOST_IP}"
+echo "  http://${HOST_IP}:8080/login"
+echo "  http://${HOST_IP}:5173/login"
 echo
 
 cd "$ROOT/backend"

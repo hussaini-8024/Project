@@ -91,10 +91,6 @@ Open http://localhost:5173 and sign in as `student`.
 This range is meant to run **on your Ubuntu host** (IP `172.26.1.3`), not only inside Cursor. On that machine:
 
 ```bash
-sudo apt update
-sudo apt install -y python3 python3-venv python3-pip iproute2 busybox bridge-utils iptables
-# Node 20+ required (nodejs from nodesource or snap)
-
 git clone https://github.com/hussaini-8024/Project.git
 cd Project
 git checkout cursor/university-cyber-range-a428
@@ -102,13 +98,17 @@ chmod +x scripts/run-ubuntu-lan.sh
 ./scripts/run-ubuntu-lan.sh
 ```
 
-Then, **on this Ubuntu or any other PC on the same network**, open (no extra port):
+The script installs whatever is missing (Python venv, Node.js 20, nginx, iproute2, firewall rules) and starts the range.
+
+Then, **on this Ubuntu or any other PC on the same network**, try these in a browser:
 
 ```text
 http://172.26.1.3/login
+http://172.26.1.3:8080/login
+http://172.26.1.3:5173/login
 ```
 
-Ping can succeed while the page does not: ping is ICMP; the browser uses **TCP port 80**. The start script installs nginx on port 80 in front of the UI. If `ufw` is enabled it opens ports 80, 5173, and 8000.
+Ping can succeed while the page does not: ping is ICMP; the browser uses **TCP 80** (or 8080 / 5173). If Ubuntu Firewall (`ufw`) was on, the script opens those ports.
 
 The UI and API bind `0.0.0.0`. Vite accepts LAN hostnames (`allowedHosts: true`). CORS includes `http://172.26.1.3:5173` and other RFC1918 origins (`CORS_ALLOW_LAN=true`). Keep `COOKIE_SECURE=false` for plain HTTP. Change `PUBLIC_HOST` in `.env` if your IP is different (`hostname -I`).
 

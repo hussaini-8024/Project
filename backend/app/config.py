@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     cors_origins: str = (
         "http://localhost:5173,http://127.0.0.1:5173,"
-        "http://172.26.1.3:5173,http://172.26.1.3"
+        "http://172.26.1.3:5173,http://172.26.1.3,http://172.26.1.3:8080"
     )
     # Allow login/API from other PCs on the same LAN (private RFC1918 / localhost).
     cors_allow_lan: bool = True

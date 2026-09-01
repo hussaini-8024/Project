@@ -15,8 +15,8 @@ cd "$REPO_ROOT"
 # python3-venv/pip -> backend virtualenv
 if command -v sudo >/dev/null 2>&1; then
   sudo apt-get update -y
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    iproute2 busybox bridge-utils iptables python3-venv python3-pip
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      iproute2 busybox bridge-utils iptables python3-venv python3-pip nginx curl
 fi
 
 # --- Backend: virtualenv + dependencies ---
