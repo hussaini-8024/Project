@@ -65,6 +65,6 @@ fi
 
 echo
 echo "Portal boot services installed. They start on reboot and restart if they die."
-echo "  Login: http://127.0.0.1:18080/login"
-echo "  Alt:   http://127.0.0.1:18081/login"
-echo "  API:   http://127.0.0.1:18000/api/health"
+echo "  Campus server: http://172.26.1.3/login"
+echo "  On this host:  http://127.0.0.1/login"
+echo "  Fallbacks:     http://127.0.0.1:8080/login  http://127.0.0.1:18080/login"

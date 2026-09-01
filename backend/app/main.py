@@ -106,8 +106,10 @@ app.include_router(ws.router)
 
 def lan_ipv4s() -> list[str]:
     cfg = get_settings()
-    found: set[str] = set()
     public = (cfg.public_host or "").strip()
+    if cfg.public_host_only:
+        return [public] if public else []
+    found: set[str] = set()
     if public:
         found.add(public)
     try:
@@ -136,8 +138,10 @@ def health() -> dict:
         "status": "ok",
         "version": __version__,
         "provider": cfg.compute_provider,
+        "server_ip": cfg.public_host,
         "lan_ips": ips,
         "login_urls": login_urls,
+        "local_login_url": "http://127.0.0.1/login",
     }
 
 

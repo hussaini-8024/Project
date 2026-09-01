@@ -19,16 +19,19 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     cors_origins: str = (
+        "http://localhost,http://127.0.0.1,"
+        "http://localhost:80,http://127.0.0.1:80,"
+        "http://localhost:8080,http://127.0.0.1:8080,"
         "http://localhost:18080,http://127.0.0.1:18080,"
-        "http://localhost:18081,http://127.0.0.1:18081,"
-        "http://172.26.1.3:18080,http://172.26.1.3:18081,"
-        "http://172.30.0.2:18080,http://172.30.0.2:18081"
+        "http://172.26.1.3,http://172.26.1.3:80,"
+        "http://172.26.1.3:8080,http://172.26.1.3:18080"
     )
     # Allow login/API from other PCs on the same LAN (private RFC1918 / localhost).
     cors_allow_lan: bool = True
-    # Extra address to advertise on the login page (your Ubuntu LAN IP).
+    # Campus Ubuntu server address — the only IP advertised for remote login.
     public_host: str = "172.26.1.3"
-    public_ui_port: int = 18080
+    public_ui_port: int = 80
+    public_host_only: bool = True
 
     # Host reserve — never allocate 100% of RAM to student labs
     host_total_ram_mb: int = 131072  # 128 GB
