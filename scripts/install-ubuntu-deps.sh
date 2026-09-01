@@ -33,6 +33,7 @@ sudo apt-get install -y \
   software-properties-common \
   python3 python3-venv python3-pip python3-dev \
   build-essential libssl-dev libffi-dev pkg-config \
+  libfreetype6-dev libjpeg-dev zlib1g-dev \
   nginx \
   iproute2 busybox bridge-utils iptables nftables kmod procps \
   iputils-ping uidmap \

@@ -9,6 +9,7 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
 python-multipart==0.0.20
 pypdf==5.1.0
+reportlab==4.2.5
 psutil==7.0.0
 pyotp==2.9.0
 httpx==0.28.1
