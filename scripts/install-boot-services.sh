@@ -48,7 +48,7 @@ if command -v systemctl >/dev/null 2>&1 && systemctl is-system-running >/dev/nul
   sudo systemctl enable cyberrange-prepare.service nginx.service cron.service cyberrange-api.service
   sudo systemctl start cyberrange-prepare.service
   sudo systemctl restart nginx.service || sudo nginx -s reload || sudo nginx
-  if curl -sf --max-time 2 http://127.0.0.1:8000/api/health >/dev/null 2>&1; then
+  if curl -sf --max-time 2 http://127.0.0.1:18000/api/health >/dev/null 2>&1; then
     echo "API already listening; leaving the running process in place."
   else
     sudo systemctl restart cyberrange-api.service
@@ -65,6 +65,6 @@ fi
 
 echo
 echo "Portal boot services installed. They start on reboot and restart if they die."
-echo "  API:   http://127.0.0.1:8000/api/health"
-echo "  Login: http://127.0.0.1/login"
-echo "  Alt:   http://127.0.0.1:8080/login"
+echo "  Login: http://127.0.0.1:18080/login"
+echo "  Alt:   http://127.0.0.1:18081/login"
+echo "  API:   http://127.0.0.1:18000/api/health"

@@ -76,7 +76,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 mkdir -p data
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 18000
 
 # UI (second terminal)
 cd frontend
@@ -84,13 +84,19 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and sign in as `student`.
+Open http://localhost:18173 and sign in as `student`. Production-style access uses nginx on **18080** (see below).
 
-### Ubuntu on the LAN — access by IP `172.26.1.3`
+### Ubuntu on the LAN — dedicated ports 18080 / 18081 / 18000
 
-This range is meant to run **on your Ubuntu host** (IP `172.26.1.3`), not only inside Cursor. Other features (Python venv, Node.js to *build* the UI, nginx, live-lab tools `ip`/`busybox`/bridge) must be installed **first**, then the site is started.
+Do **not** use port 80, 8080, 5173, or 8000 — those collide with other software and with `http://127.0.0.1` in a browser on another PC. This project listens on:
 
-On that machine:
+| Service | Port |
+| --- | --- |
+| Login / UI (nginx) | **18080** |
+| Login alternate | **18081** |
+| API (uvicorn, also via nginx `/api`) | **18000** |
+
+On the Ubuntu host:
 
 ```bash
 git clone https://github.com/hussaini-8024/Project.git
@@ -98,28 +104,37 @@ cd Project
 git checkout cursor/university-cyber-range-a428
 chmod +x scripts/install-ubuntu-deps.sh scripts/run-ubuntu-lan.sh
 ./scripts/install-ubuntu-deps.sh    # packages + build — do this first
-./scripts/run-ubuntu-lan.sh         # nginx :80/:8080 + API :8000
+./scripts/run-ubuntu-lan.sh         # nginx :18080/:18081 + API :18000
 ```
 
 `run-ubuntu-lan.sh` also runs the install step, so one command is enough after a successful install. It enables **boot services** so nginx and the API start after reboot and restart if they die (`systemd` `Restart=always` when systemd is PID 1; otherwise `cron` `@reboot` plus a one-minute watchdog).
 
-The UI is the production build served by nginx from `/var/www/cyberrange` (Vite is not left running on :5173, which used to crash with Node’s `Unhandled 'error' event` / `EADDRINUSE`).
+The UI is the production build served by nginx from `/var/www/cyberrange`.
 
-Then, **on this Ubuntu or any other PC on the same network**, try these in a browser:
+Then, **on this Ubuntu or any other PC on the same network**, open:
 
 ```text
-http://172.26.1.3/login
-http://172.26.1.3:8080/login
+http://<ubuntu-ip>:18080/login
+http://<ubuntu-ip>:18081/login
 ```
 
-Ping can succeed while the page does not: ping is ICMP; the browser uses **TCP 80** (or 8080). If Ubuntu Firewall (`ufw`) was on, the start script opens those ports.
+Example if the host address is `172.30.0.2` or `172.26.1.3`:
 
-The UI and API bind `0.0.0.0`. Vite accepts LAN hostnames (`allowedHosts: true`). CORS includes `http://172.26.1.3:5173` and other RFC1918 origins (`CORS_ALLOW_LAN=true`). Keep `COOKIE_SECURE=false` for plain HTTP. Change `PUBLIC_HOST` in `.env` if your IP is different (`hostname -I`).
+```text
+http://172.30.0.2:18080/login
+http://172.26.1.3:18080/login
+```
+
+Do not open `http://127.0.0.1/login` from another computer — `127.0.0.1` is that computer, not the Ubuntu host.
+
+Ping can succeed while the page does not: ping is ICMP; the browser uses **TCP 18080**. If Ubuntu Firewall (`ufw`) was on, the start script opens 18080, 18081, and 18000.
+
+The UI and API bind `0.0.0.0`. CORS includes RFC1918 origins (`CORS_ALLOW_LAN=true`). Keep `COOKIE_SECURE=false` for plain HTTP. Change `PUBLIC_HOST` in `.env` if your IP is different (`hostname -I`).
 
 Do not expose this development preview to the public internet.
 
-- API docs: http://localhost:8000/docs
-- Health: http://localhost:8000/api/health
+- API docs: http://localhost:18080/docs
+- Health: http://localhost:18080/api/health
 
 Development uses SQLite (`backend/data/cyberrange.db`) and `COMPUTE_PROVIDER=auto`.
 

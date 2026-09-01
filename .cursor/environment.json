@@ -7,12 +7,12 @@
     {
       "name": "cyber-api",
       "command": "bash scripts/cyberrange-boot.sh; tail -F backend/data/api.log",
-      "description": "Keeps the API and nginx portal up (ports 80/8080/8000) and follows the API log."
+      "description": "Keeps the API (:18000) and nginx portal (:18080/:18081) up and follows the API log."
     }
   ],
   "ports": [
-    { "name": "portal", "port": 80 },
-    { "name": "portal-alt", "port": 8080 },
-    { "name": "api", "port": 8000 }
+    { "name": "portal", "port": 18080 },
+    { "name": "portal-alt", "port": 18081 },
+    { "name": "api", "port": 18000 }
   ]
 }
