@@ -1,202 +1,182 @@
-# MS Office 2016 LAN Install — Ansible AWX Project
+# University Cybersecurity Virtual Lab / Cyber Range
 
-Automated deployment of **Microsoft Office 2016** to Windows systems on your LAN using **Ansible AWX**. Installers are pulled from a network share on each target machine, then installed silently via WinRM.
+Private **Cyber Range as a Service** for a university campus. Each student receives an isolated laboratory. The platform is **container-first** and uses full KVM/QEMU virtual machines only when a complete operating system or kernel is required.
 
-**GitHub repository:** https://github.com/hussaini-8024/Project.git
+This repository is a functional management plane: authentication, RBAC, persistent labs, machine lifecycle, a dynamic resource scheduler, quotas, assignments, audit, backups, browser terminal/console gateways, and capacity benchmarking. Development mode uses a mock compute provider so the UI and APIs work without Docker or libvirt. Production attaches Docker and KVM on the workload plane.
 
-> **License note:** You must supply your own legally licensed Office 2016 media (ODT `setup.exe`, `configuration.xml`, and source files). This project does not include Microsoft installers.
+**GitHub:** https://github.com/hussaini-8024/Project
 
 ---
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  GH[GitHub Repo] --> AWX[Ansible AWX]
-  AWX -->|WinRM over LAN| WIN1[Windows PC 1]
-  AWX -->|WinRM over LAN| WIN2[Windows PC 2]
-  SHARE[LAN File Share] -->|setup.exe + Office source| WIN1
-  SHARE -->|setup.exe + Office source| WIN2
+```text
+                         INTERNET
+                            |
+                         FIREWALL / TLS
+                            |
+                    FRONTEND / API (management plane)
+                            |
+                     LAB RESOURCE SCHEDULER
+                            |
+          +-----------------+-----------------+
+          |                 |                 |
+       Docker            KVM/QEMU          Network
+       Engine             libvirt          Manager
+          |                 |                 |
+    Containers             VMs          Private labs
 ```
 
-1. AWX syncs playbooks from GitHub.
-2. Job template runs `playbooks/install-office2016.yml` against a Windows inventory.
-3. Each Windows host copies Office files from a LAN UNC path and runs a silent install.
+**Principle:** lightweight container → full VM only if the exercise needs its own kernel.
+
+Logged-in user ≠ active lab ≠ running container ≠ running VM. Hundreds of accounts can exist; only running workloads consume the lab RAM pool.
+
+---
+
+## Demo accounts
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Super administrator | `admin` | `CyberRange!Admin2026` |
+| Instructor | `instructor` | `CyberRange!Teach2026` |
+| Lab manager | `labmanager` | `CyberRange!Lab2026` |
+| Student (Alex Chen, `STU-000245`) | `student` | `CyberRange!Stud2026` |
+
+Change these immediately on a production host.
+
+---
+
+## Collaboration & study features
+
+- **Announcements & notification bell** — a top-bar bell (all users) polls `GET /api/notifications`
+  every ~20s and shows an unread badge. Instructors/admins compose announcements from the bell:
+  instructors target a student group, admins can also target *all students*. New assignments also
+  notify students. See `docs/API.md`.
+- **Command Search** (`/commands`) — an offline catalogue of ~60 common cybersecurity tool commands
+  (nmap, hydra, sqlmap, gobuster, john, hashcat, netcat, tcpdump, metasploit, openssl, dig, curl, …)
+  with case-insensitive search and copyable commands. Works fully offline.
+- **AUKC AI Search** (`/aukc`) — the branded **AU Kamra AI Agent**, an offline book-search engine.
+  Administrators upload PDF books; their text is extracted with `pypdf`, stored as searchable
+  chunks in the database, and ranked with a local BM25 relevance algorithm. All authenticated
+  users search the shared library and get passages cited by book title and page number, with the
+  matched terms highlighted. Fully self-contained — **no external AI, no API keys, no outbound
+  calls**. Accessible from the **AUKC AI Search** entry in the top menu bar. Max PDF size is set by
+  `AUKC_BOOK_MAX_MB` (see `.env.example`).
+
+---
+
+## Quick start (development)
+
+Requires Python 3.12+ and Node 20+.
+
+```bash
+# API
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+mkdir -p data
+uvicorn app.main:app --reload --host 0.0.0.0 --port 18000
+
+# UI (second terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:18173 and sign in as `student` (dev-only Vite). For the campus portal use port **80** below.
+
+### Deploy on the campus Ubuntu server `172.26.1.3`
+
+Run these commands **on that Ubuntu server** (the machine whose address is `172.26.1.3`). Cursor Cloud is a different computer; it cannot own `172.26.1.3`.
+
+```bash
+git clone https://github.com/hussaini-8024/Project.git
+cd Project
+git checkout cursor/university-cyber-range-a428
+chmod +x scripts/deploy-ubuntu-server.sh
+./scripts/deploy-ubuntu-server.sh
+```
+
+That installs packages, builds the UI, enables boot services, and listens on:
+
+| URL | Who uses it |
+| --- | --- |
+| **http://172.26.1.3/login** | Every other PC on the LAN (the only remote address) |
+| **http://127.0.0.1/login** | A browser **on the server**, or Cursor when port 80 is forwarded |
+| http://172.26.1.3:8080/login | Fallback if 80 is filtered |
+| http://172.26.1.3:18080/login | Extra fallback |
+
+`http://127.0.0.1/login` from a laptop or from Cursor on Windows is **your PC**, not the server. That produces `ERR_CONNECTION_REFUSED`. Other PCs must use **http://172.26.1.3/login**.
+
+The advertised API health `login_urls` list **only** `172.26.1.3` (`PUBLIC_HOST_ONLY=true`).
+
+Services start again after reboot (systemd `Restart=always`, or cron watchdog).
+
+- API docs: http://172.26.1.3/docs
+- Health: http://172.26.1.3/api/health
+
+Development uses SQLite (`backend/data/cyberrange.db`) and `COMPUTE_PROVIDER=auto`.
+
+Linux terminals are **real shells** inside isolated guests (Alpine userspace + Linux network namespaces). Machines in the same student lab share a private **10.0.0.0/8** bridge, so `ping dvwa-target` and `ping 10.0.0.3` work. Other student labs stay unreachable. Administrators can create additional networks and deploy machines onto them.
+
+---
+
+## Docker Compose
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Postgres, Redis, API, queue worker, and the nginx-hosted UI start together. Set `COMPUTE_PROVIDER=hybrid` on a KVM host after installing Docker and libvirt.
+
+---
+
+## Capacity model (targets, not guarantees)
+
+Configured for a **128 GB RAM / 3.2 TB** campus server with a **16–24 GB host reserve**. The remaining pool is scheduled dynamically.
+
+| Population | Engineering target |
+| --- | --- |
+| Registered students | 500+ accounts (no compute cost) |
+| Logged-in students | 100+ if most are idle |
+| Container-heavy active labs | 40–60 |
+| Concurrent full VMs | 8–16 |
+| Host pressure | stay under 80–85%; block heavy labs above 90% |
+
+The **Capacity Manager** and **load-test suite** (`POST /api/resources/loadtest`) measure safe concurrency from CPU, RAM, storage, IOPS, and latency. Do not hard-code a maximum user count.
 
 ---
 
 ## Repository layout
 
+```text
+backend/          FastAPI services, scheduler, providers, Alembic
+frontend/         React + TypeScript + Vite + Tailwind
+docs/             Production deployment, API, project report PDF
+loadtest/         CLI capacity runner
+docker-compose.yml
 ```
-.
-├── playbooks/install-office2016.yml    # Main playbook (use in AWX job template)
-├── roles/office2016/                   # Install role (LAN copy + silent setup)
-├── inventory/hosts.example.yml         # Example Windows LAN inventory
-├── group_vars/windows_lan.yml          # Default Office / LAN variables
-├── scripts/
-│   ├── add-awx-office2016-project.sh # Register GitHub project in AWX
-│   └── add-awx-windows-host.sh         # Add Windows hosts to AWX inventory
-├── requirements.yml                    # ansible.windows collection
-└── ansible.cfg
-```
+
+Ansible playbooks that were already in this repository remain under `playbooks/` and `roles/` and are unrelated to the cyber range runtime.
 
 ---
 
-## Prerequisites
+## Security
 
-### LAN file share (on each Windows target)
+- Students never receive the Docker socket, host root shell, or libvirt management socket.
+- Each student lab has its own network namespace / VLAN / bridge.
+- Vulnerable templates are labeled **Training Target — Authorized Laboratory Use Only**.
+- Testing is restricted to the owning student's isolated environment.
+- Audit records are append-only through the API.
+- Administrators can enable TOTP MFA.
 
-Place licensed Office 2016 media on a share reachable by all PCs, for example:
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for TLS, KVM, storage layout, and multi-node notes.
 
-```
-\\fileserver\software\Office2016\
-├── setup.exe              # Office Deployment Tool
-├── configuration.xml      # optional (generated if missing)
-└── Office\                # optional ODT source folder
-    └── ...
-```
-
-### Windows targets
-
-- Windows 7 SP1+ / Windows 10 / Windows Server 2012 R2+
-- WinRM enabled (HTTP 5985 or HTTPS 5986)
-- Account with local admin rights
-- Read access to the LAN share
-
-### AWX
-
-- Organization, inventory (Windows hosts), and Machine credential (WinRM)
-- Execution environment with `ansible.windows` collection (see `requirements.yml`)
-
----
-
-## Add GitHub project to AWX (Projects menu)
-
-### Option A — Automated script (recommended)
-
-From Git Bash or WSL on Windows:
+A full project report (why the range exists, how it was built, software and strategies, and solved installation/configuration questions) is in [docs/University-Cyber-Range-Project-Report.pdf](docs/University-Cyber-Range-Project-Report.pdf). Regenerate it with:
 
 ```bash
-export AWX_URL="https://awx.example.com"
-export AWX_TOKEN="your-oauth-token"
-export AWX_ORGANIZATION_ID="1"
-export AWX_INVENTORY_ID="5"
-
-./scripts/add-awx-office2016-project.sh
+pip install reportlab
+python docs/generate_project_report.py
 ```
-
-This creates or updates:
-
-| AWX resource   | Value |
-|----------------|-------|
-| **Project name** | MS Office 2016 LAN Install |
-| **SCM URL** | `https://github.com/hussaini-8024/Project.git` |
-| **Branch** | `main` |
-| **Job template** | Install MS Office 2016 |
-| **Playbook** | `playbooks/install-office2016.yml` |
-| **Schedule** | Weekly (Sunday 02:00 UTC) — optional |
-
-After running the script, open **AWX → Resources → Projects** to confirm the GitHub link appears in the project menu.
-
-### Option B — Manual AWX UI
-
-1. **Resources → Projects → Add**
-2. **Name:** `MS Office 2016 LAN Install`
-3. **SCM type:** Git
-4. **SCM URL:** `https://github.com/hussaini-8024/Project.git`
-5. **SCM branch:** `main`
-6. Enable **Clean** and **Update revision on job launch**
-7. **Save** → click **Sync** (cloud icon)
-
-Then create a job template:
-
-1. **Resources → Templates → Add → Add job template**
-2. **Name:** `Install MS Office 2016`
-3. **Job type:** Run
-4. **Inventory:** your Windows LAN inventory
-5. **Project:** MS Office 2016 LAN Install
-6. **Playbook:** `playbooks/install-office2016.yml`
-7. **Credentials:** WinRM machine credential
-8. **Extra variables** (example):
-
-```yaml
-office2016_lan_source_path: "\\\\fileserver\\software\\Office2016"
-```
-
-9. **Save** → **Schedules → Add** for automatic recurring runs
-
----
-
-## Add Windows hosts to AWX inventory
-
-```bash
-export AWX_URL="https://awx.example.com"
-export AWX_TOKEN="your-token"
-export AWX_INVENTORY_ID="5"
-export WINRM_PASSWORD="YourAdminPassword"
-
-./scripts/add-awx-windows-host.sh pc01 192.168.1.101
-./scripts/add-awx-windows-host.sh pc02 192.168.1.102
-```
-
-Or copy `inventory/hosts.example.yml` and import into AWX.
-
----
-
-## Run manually (without AWX)
-
-```bash
-cp inventory/hosts.example.yml inventory/hosts.yml
-# Edit inventory/hosts.yml with your hosts and credentials
-
-ansible-galaxy collection install -r requirements.yml
-ansible-playbook playbooks/install-office2016.yml \
-  -e office2016_lan_source_path='\\fileserver\software\Office2016'
-```
-
----
-
-## Configuration variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `office2016_lan_source_path` | `\\fileserver\software\Office2016` | UNC path to Office media on LAN |
-| `office2016_staging_path` | `C:\Temp\Office2016` | Local staging folder on target |
-| `office2016_product_id` | `ProPlusRetail` | Office product ID for ODT |
-| `office2016_edition` | `64` | `32` or `64` |
-| `office2016_language` | `en-us` | Install language |
-| `office2016_channel` | `Volume` | ODT channel |
-| `office2016_remove_existing` | `false` | Remove existing Office first |
-| `office2016_reboot` | `if_required` | Reboot after install (exit 3010) |
-
-Override in AWX **Extra Variables**, **Survey**, or `group_vars/windows_lan.yml`.
-
----
-
-## Automatic LAN deployment schedule
-
-The registration script creates a weekly schedule. To change timing in AWX:
-
-1. **Resources → Templates → Install MS Office 2016 → Schedules**
-2. Edit RRULE or create a new schedule (e.g. nightly `0 1 * * *`)
-
-Each scheduled run installs Office on all hosts in the inventory that do not already have Office 2016 (idempotent).
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| LAN share not found | Verify UNC path from target PC; check share permissions for WinRM user |
-| WinRM connection failed | Open port 5985; run `winrm quickconfig` on target |
-| Setup exit code 3010 | Normal — reboot required; playbook handles when `office2016_reboot: if_required` |
-| Project sync failed | Confirm AWX can reach GitHub; use deploy key or credential if private repo |
-
----
-
-## Links
-
-- **GitHub project:** https://github.com/hussaini-8024/Project.git
-- **Playbook:** `playbooks/install-office2016.yml`
-- **AWX project script:** `scripts/add-awx-office2016-project.sh`

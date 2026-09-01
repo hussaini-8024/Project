@@ -1,0 +1,203 @@
+from __future__ import annotations
+
+from datetime import datetime
+from ipaddress import IPv4Network
+
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
+
+from app.models import LabNetwork, Machine, MachineStatus
+from app.services.netutil import DEFAULT_LAB_CIDR, readdress_slash8
+
+
+def migrate_network_schema(engine: Engine) -> None:
+    with engine.begin() as conn:
+        row = conn.execute(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='networks'")).fetchone()
+        if not row:
+            return
+        sql = " ".join((row[0] or "").split())
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(networks)"))]
+        if "kind" not in cols:
+            conn.execute(text("ALTER TABLE networks ADD COLUMN kind VARCHAR(32) DEFAULT 'student'"))
+            cols.append("kind")
+        if "created_by" not in cols:
+            conn.execute(text("ALTER TABLE networks ADD COLUMN created_by VARCHAR(36)"))
+            cols.append("created_by")
+        unique_lab = "UNIQUE (lab_id)" in sql or "UNIQUE(lab_id)" in sql.replace(" ", "")
+        if not unique_lab:
+            return
+        conn.execute(text("PRAGMA foreign_keys=OFF"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE networks_new (
+                    id VARCHAR(36) NOT NULL PRIMARY KEY,
+                    lab_id VARCHAR(36),
+                    name VARCHAR(64) NOT NULL,
+                    cidr VARCHAR(32) NOT NULL DEFAULT '10.0.0.0/8',
+                    vlan_id INTEGER NOT NULL,
+                    namespace VARCHAR(64) NOT NULL,
+                    isolated BOOLEAN NOT NULL DEFAULT 1,
+                    internet BOOLEAN NOT NULL DEFAULT 0,
+                    bridge VARCHAR(64) NOT NULL DEFAULT '',
+                    kind VARCHAR(32) DEFAULT 'student',
+                    created_by VARCHAR(36),
+                    created_at DATETIME NOT NULL,
+                    FOREIGN KEY(lab_id) REFERENCES student_labs (id) ON DELETE SET NULL,
+                    FOREIGN KEY(created_by) REFERENCES users (id)
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO networks_new (
+                    id, lab_id, name, cidr, vlan_id, namespace, isolated, internet,
+                    bridge, kind, created_by, created_at
+                )
+                SELECT
+                    id, lab_id, name, cidr, vlan_id, namespace, isolated, internet,
+                    bridge, COALESCE(kind, 'student'), created_by, created_at
+                FROM networks
+                """
+            )
+        )
+        conn.execute(text("DROP TABLE networks"))
+        conn.execute(text("ALTER TABLE networks_new RENAME TO networks"))
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def migrate_user_groups(engine: Engine) -> None:
+    """Add the nullable group_id column to the existing users table.
+
+    The `groups` table itself is created automatically by ``Base.metadata.create_all``;
+    only the pre-existing ``users`` table needs a manual ALTER. SQLite does not enforce
+    the ON DELETE SET NULL added here, so group deletion detaches members in code.
+    """
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        ).fetchone()
+        if not row:
+            return
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(users)"))]
+        if "group_id" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN group_id VARCHAR(36)"))
+
+
+def migrate_group_memberships(engine: Engine) -> None:
+    """Create the group_memberships join table and move legacy users.group_id into it.
+
+    Idempotent: the table is created only if missing (``create_all`` normally makes it),
+    and each legacy ``users.group_id`` value is copied once, guarded by an existence check.
+    The join table is the source of truth going forward; the legacy column is left in place.
+    """
+    from uuid import uuid4
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS group_memberships (
+                    id VARCHAR(36) NOT NULL PRIMARY KEY,
+                    user_id VARCHAR(36) NOT NULL,
+                    group_id VARCHAR(36) NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    UNIQUE (user_id, group_id),
+                    FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE,
+                    FOREIGN KEY(group_id) REFERENCES groups (id) ON DELETE CASCADE
+                )
+                """
+            )
+        )
+        users_cols = [r[1] for r in conn.execute(text("PRAGMA table_info(users)"))]
+        if "group_id" not in users_cols:
+            return
+        legacy = conn.execute(
+            text("SELECT id, group_id FROM users WHERE group_id IS NOT NULL AND group_id != ''")
+        ).fetchall()
+        for user_id, group_id in legacy:
+            exists = conn.execute(
+                text(
+                    "SELECT 1 FROM group_memberships WHERE user_id = :u AND group_id = :g"
+                ),
+                {"u": user_id, "g": group_id},
+            ).fetchone()
+            if exists:
+                continue
+            conn.execute(
+                text(
+                    "INSERT INTO group_memberships (id, user_id, group_id, created_at) "
+                    "VALUES (:id, :u, :g, :ts)"
+                ),
+                {
+                    "id": str(uuid4()),
+                    "u": user_id,
+                    "g": group_id,
+                    "ts": datetime.utcnow().isoformat(sep=" "),
+                },
+            )
+
+
+def migrate_notifications(engine: Engine) -> None:
+    """Add link/ref/kind columns to the pre-existing notifications table.
+
+    The `announcements` table is created automatically by ``create_all``; only the
+    older ``notifications`` table needs these additive, idempotent ALTERs.
+    """
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'")
+        ).fetchone()
+        if not row:
+            return
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(notifications)"))]
+        if "kind" not in cols:
+            conn.execute(
+                text("ALTER TABLE notifications ADD COLUMN kind VARCHAR(32) DEFAULT 'announcement'")
+            )
+        if "link" not in cols:
+            conn.execute(text("ALTER TABLE notifications ADD COLUMN link VARCHAR(255) DEFAULT ''"))
+        if "ref_id" not in cols:
+            conn.execute(text("ALTER TABLE notifications ADD COLUMN ref_id VARCHAR(36) DEFAULT ''"))
+
+
+def migrate_slash8_networks(db: Session) -> None:
+    """Rewrite leftover student /24 labs onto 10.0.0.0/8. Admin-created CIDRs are left alone."""
+    restart_ids: list[str] = []
+    changed = False
+    for net in db.query(LabNetwork).all():
+        if (net.kind or "student") != "student":
+            continue
+        try:
+            parsed = IPv4Network(net.cidr, strict=False)
+        except ValueError:
+            parsed = None
+        if parsed and parsed.prefixlen == 8:
+            continue
+        readdress_slash8(net, DEFAULT_LAB_CIDR)
+        changed = True
+        for iface in net.interfaces:
+            machine = iface.machine
+            if machine and machine.status == MachineStatus.RUNNING:
+                machine.status = MachineStatus.STOPPED
+                restart_ids.append(machine.id)
+    if not changed:
+        return
+    db.commit()
+    from app.services.guest import provision_guest
+
+    for machine_id in restart_ids:
+        machine = db.get(Machine, machine_id)
+        if not machine:
+            continue
+        try:
+            provision_guest(machine)
+            machine.status = MachineStatus.RUNNING
+            machine.error_message = ""
+        except Exception as exc:
+            machine.status = MachineStatus.ERROR
+            machine.error_message = str(exc)[:400]
+    db.commit()
