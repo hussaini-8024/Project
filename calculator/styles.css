@@ -1,0 +1,142 @@
+:root {
+  --bg: #0f1218;
+  --panel: #1a2030;
+  --panel-edge: #2a3348;
+  --text: #f4f6fb;
+  --muted: #8b95ab;
+  --key: #273044;
+  --key-hover: #33405a;
+  --util: #3a445c;
+  --op: #e08a2d;
+  --op-hover: #f09a3d;
+  --eq: #3d9a78;
+  --eq-hover: #48b08a;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #1e2a44 0%, transparent 55%),
+    radial-gradient(800px 500px at 100% 100%, #1a2e28 0%, transparent 50%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.calc {
+  width: min(100%, 360px);
+  background: linear-gradient(180deg, #222b40, var(--panel));
+  border: 1px solid var(--panel-edge);
+  border-radius: 28px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.calc__display {
+  background: #0c1018;
+  border-radius: 18px;
+  padding: 20px 18px 16px;
+  margin-bottom: 16px;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.calc__expression {
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.calc__value {
+  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  word-break: break-all;
+}
+
+.calc__keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.key {
+  appearance: none;
+  border: 0;
+  border-radius: 16px;
+  min-height: 64px;
+  background: var(--key);
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.key:hover {
+  background: var(--key-hover);
+}
+
+.key:active,
+.key.is-pressed {
+  transform: scale(0.97);
+}
+
+.key--util {
+  background: var(--util);
+  font-size: 1.1rem;
+}
+
+.key--op {
+  background: var(--op);
+}
+
+.key--op:hover {
+  background: var(--op-hover);
+}
+
+.key--eq {
+  background: var(--eq);
+}
+
+.key--eq:hover {
+  background: var(--eq-hover);
+}
+
+.key--wide {
+  grid-column: span 2;
+}
+
+.calc__hint {
+  margin: 14px 2px 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (max-width: 400px) {
+  .key {
+    min-height: 56px;
+  }
+}

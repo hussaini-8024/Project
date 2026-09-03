@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="calc" aria-label="Calculator">
+        <header class="calc__display">
+          <div id="expression" class="calc__expression" aria-live="polite"></div>
+          <div id="display" class="calc__value" role="status" aria-live="polite">0</div>
+        </header>
+        <div class="calc__keys" role="group" aria-label="Calculator keys">
+          <button type="button" data-key="C" class="key key--util">AC</button>
+          <button type="button" data-key="±" class="key key--util">±</button>
+          <button type="button" data-key="%" class="key key--util">%</button>
+          <button type="button" data-key="÷" class="key key--op">÷</button>
+
+          <button type="button" data-key="7" class="key">7</button>
+          <button type="button" data-key="8" class="key">8</button>
+          <button type="button" data-key="9" class="key">9</button>
+          <button type="button" data-key="×" class="key key--op">×</button>
+
+          <button type="button" data-key="4" class="key">4</button>
+          <button type="button" data-key="5" class="key">5</button>
+          <button type="button" data-key="6" class="key">6</button>
+          <button type="button" data-key="−" class="key key--op">−</button>
+
+          <button type="button" data-key="1" class="key">1</button>
+          <button type="button" data-key="2" class="key">2</button>
+          <button type="button" data-key="3" class="key">3</button>
+          <button type="button" data-key="+" class="key key--op">+</button>
+
+          <button type="button" data-key="0" class="key key--wide">0</button>
+          <button type="button" data-key="." class="key">.</button>
+          <button type="button" data-key="=" class="key key--eq">=</button>
+        </div>
+        <p class="calc__hint">Keyboard: numbers, + − * /, Enter, Escape, Backspace</p>
+      </section>
+    </main>
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
