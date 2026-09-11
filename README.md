@@ -1,3 +1,9 @@
+# PKCouncil + project tools
+
+**PKCouncil** (custom WordPress learning platform) lives in [`pkcouncil/`](pkcouncil/README.md): theme, plugin, Docker compose, and documentation.
+
+---
+
 # MS Office 2016 LAN Install — Ansible AWX Project
 
 Automated deployment of **Microsoft Office 2016** to Windows systems on your LAN using **Ansible AWX**. Installers are pulled from a network share on each target machine, then installed silently via WinRM.
