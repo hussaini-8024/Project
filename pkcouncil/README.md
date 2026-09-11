@@ -21,6 +21,21 @@ Public site → Buy course → Payment verification (pending)
 
 Teachers see only assigned courses and those courses' students.
 
+## Install on an existing WordPress site
+
+Download these two zips (also in `dist/`):
+
+- `pkcouncil-theme.zip` — Appearance → Themes → Add New → Upload Theme
+- `pkcouncil-core-plugin.zip` — Plugins → Add New → Upload Plugin
+
+Then:
+
+1. Activate **PKCouncil Core**
+2. Activate the **PKCouncil** theme
+3. Settings → Permalinks → Save (flush rewrite rules)
+
+Admin login is your **WordPress administrator** username and password, on `/login/` or in `wp-admin`.
+
 ## Local (PHP + MariaDB)
 
 WordPress core is not stored in this repository. Use Docker (below) or point a WordPress install at:
