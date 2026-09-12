@@ -33,6 +33,63 @@ class PKC_Rewrites {
         add_rewrite_rule('^teacher/?$', 'index.php?pkc_route=teacher', 'top');
     }
 
+    /**
+     * Hosts without Apache rewrite need /index.php/... URLs.
+     * WordPress core also sends /login/ to wp-login.php — send visitors to PKCouncil login instead.
+     */
+    public static function compat_redirects() {
+        if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+            return;
+        }
+        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $path = '/' . trim($path, '/');
+        if ($path === '/') {
+            return;
+        }
+        if (strpos($path, '/index.php') !== false || strpos($path, '/wp-admin') !== false || strpos($path, '/wp-content') !== false || strpos($path, '/wp-json') !== false) {
+            return;
+        }
+        $slug = trim($path, '/');
+        $qs = $_SERVER['QUERY_STRING'] ?? '';
+        $with_qs = static function ($url) use ($qs) {
+            if ($qs === '' || strpos($url, '?') !== false) {
+                return $url;
+            }
+            return $url . '?' . $qs;
+        };
+
+        if ($slug === 'login' && !is_page('login')) {
+            $dest = pkc_page_url('login');
+            $dest_path = (string) parse_url($dest, PHP_URL_PATH);
+            if (untrailingslashit($dest_path) !== untrailingslashit($path)) {
+                nocache_headers();
+                wp_safe_redirect($with_qs($dest), 302);
+                exit;
+            }
+        }
+
+        global $wp_rewrite;
+        if (!($wp_rewrite instanceof WP_Rewrite) || !$wp_rewrite->using_index_permalinks()) {
+            return;
+        }
+
+        if (in_array($slug, array('courses', 'about-us', 'contact-us'), true) && !is_page($slug)) {
+            $dest = pkc_page_url($slug);
+            $dest_path = (string) parse_url($dest, PHP_URL_PATH);
+            if (untrailingslashit($dest_path) !== untrailingslashit($path)) {
+                nocache_headers();
+                wp_safe_redirect($with_qs($dest), 302);
+                exit;
+            }
+        }
+
+        if (is_404()) {
+            nocache_headers();
+            wp_safe_redirect($with_qs(home_url('/index.php' . user_trailingslashit($path))), 302);
+            exit;
+        }
+    }
+
     public static function query_vars($vars) {
         array_push($vars, 'pkc_route', 'pkc_slug', 'pkc_id', 'pkc_id2', 'pkc_token');
         return $vars;
@@ -51,7 +108,7 @@ class PKC_Rewrites {
         }
         if ($route === 'logout') {
             PKC_Auth::logout();
-            wp_safe_redirect(pkc_url('login/'));
+            wp_safe_redirect(pkc_login_url());
             exit;
         }
 

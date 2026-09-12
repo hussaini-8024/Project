@@ -21,6 +21,8 @@ class PKC_Plugin {
         add_filter('template_include', array('PKC_Rewrites', 'template'), 99);
         add_filter('document_title_parts', array('PKC_Rewrites', 'title'));
         add_action('rest_api_init', array('PKC_REST', 'register'));
+        add_action('template_redirect', array('PKC_Rewrites', 'compat_redirects'), 1);
+        add_action('init', array($this, 'maybe_handle_public_post'), 5);
         add_action('admin_post_nopriv_pkc_payment', array($this, 'handle_payment'));
         add_action('admin_post_pkc_payment', array($this, 'handle_payment'));
         add_action('admin_post_nopriv_pkc_login', array($this, 'handle_login'));
@@ -39,6 +41,19 @@ class PKC_Plugin {
         }
     }
 
+    public function maybe_handle_public_post() {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            return;
+        }
+        $action = sanitize_key($_POST['action'] ?? '');
+        if ($action === 'pkc_login') {
+            $this->handle_login();
+        }
+        if ($action === 'pkc_payment') {
+            $this->handle_payment();
+        }
+    }
+
     public function handle_login() {
         check_admin_referer('pkc_login');
         $res = PKC_Auth::login(
@@ -49,7 +64,9 @@ class PKC_Plugin {
         );
         if (is_wp_error($res)) {
             pkc_flash('login_error', $res->get_error_message());
-            wp_safe_redirect(pkc_url('login/?portal=' . sanitize_text_field($_POST['portal'] ?? 'student')));
+            $portal = sanitize_text_field($_POST['portal'] ?? 'student');
+            $url = add_query_arg('portal', $portal === 'teacher' ? 'teacher' : 'student', pkc_page_url('login'));
+            wp_safe_redirect($url);
             exit;
         }
         wp_safe_redirect($res->redirect);
@@ -78,6 +95,7 @@ class PKC_Plugin {
             'rest' => esc_url_raw(rest_url('pkc/v1/')),
             'nonce' => $acc->csrf ?? '',
             'home' => home_url('/'),
+            'login' => pkc_login_url(),
             'loggedIn' => (bool) $acc,
             'role' => $acc->type ?? '',
             'mustChange' => $acc ? (int) $acc->must_change_password : 0,

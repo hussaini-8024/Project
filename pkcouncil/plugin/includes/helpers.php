@@ -8,7 +8,45 @@ function pkc_settings($key = null, $default = null) {
 }
 
 function pkc_url($path = '') {
-    return home_url('/' . ltrim($path, '/'));
+    $path = ltrim((string) $path, '/');
+    $q = '';
+    if (strpos($path, '?') !== false) {
+        list($path, $q) = explode('?', $path, 2);
+        $q = '?' . $q;
+    }
+    $path = untrailingslashit($path);
+    global $wp_rewrite;
+    if ($wp_rewrite instanceof WP_Rewrite && $wp_rewrite->using_index_permalinks()) {
+        $base = trim($wp_rewrite->root, '/');
+        $url = $path === '' ? home_url('/' . $base . '/') : home_url(user_trailingslashit($base . '/' . $path));
+        return $url . $q;
+    }
+    $url = $path === '' ? home_url('/') : home_url(user_trailingslashit($path));
+    return $url . $q;
+}
+
+function pkc_page_url($slug) {
+    $slug = sanitize_title($slug);
+    $pages = get_option('pkc_pages', array());
+    if (!empty($pages[$slug])) {
+        $link = get_permalink((int) $pages[$slug]);
+        if ($link) {
+            return $link;
+        }
+    }
+    $page = get_page_by_path($slug);
+    if ($page) {
+        return get_permalink($page);
+    }
+    return pkc_url($slug . '/');
+}
+
+function pkc_login_url($portal = 'student') {
+    $url = pkc_page_url('login');
+    if ($portal === 'teacher') {
+        return add_query_arg('portal', 'teacher', $url);
+    }
+    return $url;
 }
 
 function pkc_asset($file) {

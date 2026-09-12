@@ -22,7 +22,7 @@ $price = PKC_Coupons::course_price($course);
     <div class="pkc-panel pkc-alert-ok">Payment submitted. PKCouncil will verify it shortly. You will receive access after approval.</div>
   <?php endif; ?>
   <?php if ($error) : ?><div class="pkc-alert"><?php echo esc_html($error); ?></div><?php endif; ?>
-  <form class="pkc-panel pkc-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+  <form class="pkc-panel pkc-form" method="post" action="<?php echo esc_url(pkc_url('course/' . $course->slug . '/buy/')); ?>" enctype="multipart/form-data">
     <?php wp_nonce_field('pkc_payment'); ?>
     <input type="hidden" name="action" value="pkc_payment">
     <input type="hidden" name="course_id" value="<?php echo (int) $course->id; ?>">

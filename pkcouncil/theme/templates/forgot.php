@@ -11,7 +11,7 @@ $portal = sanitize_text_field($_GET['portal'] ?? 'student');
       <button class="pkc-btn pkc-btn--gold" type="submit">Send reset link</button>
       <p class="pkc-form-msg" data-form-msg hidden></p>
     </form>
-    <p><a href="<?php echo esc_url(home_url('/login/?portal=' . $portal)); ?>">Back to login</a></p>
+    <p><a href="<?php echo esc_url(pkc_login_url($portal)); ?>">Back to login</a></p>
   </div>
 </section>
 <?php get_footer(); ?>

@@ -22,6 +22,8 @@ class PKC_Activator {
         $v = get_option('pkc_db_version');
         if ($v !== PKC_VERSION) {
             self::create_tables();
+            self::create_pages();
+            flush_rewrite_rules(false);
             update_option('pkc_db_version', PKC_VERSION);
         }
     }

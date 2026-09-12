@@ -38,7 +38,8 @@ html{scroll-behavior:smooth}
 html[data-theme="dark"]{color-scheme:dark}
 body.pkc-body{
   margin:0;background:var(--bg);color:var(--ink);
-  font-family:var(--font);line-height:1.6;
+  font-family:var(--font);font-size:17px;line-height:1.7;
+  letter-spacing:.01em;-webkit-font-smoothing:antialiased;
 }
 img{max-width:100%;display:block}
 a{color:var(--primary);text-decoration:none}
@@ -53,10 +54,10 @@ a{color:var(--primary);text-decoration:none}
 }
 .pkc-header__inner{display:flex;align-items:center;gap:24px;padding:14px 0}
 .pkc-logo{display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:700}
-.pkc-logo__word{font-family:var(--serif);font-size:1.25rem;letter-spacing:-.03em}
+.pkc-logo__word{font-family:var(--serif);font-size:1.35rem;letter-spacing:-.02em}
 .pkc-logo__mark{color:var(--primary);display:grid}
-.pkc-nav{display:flex;gap:22px;margin-left:auto;font-weight:500}
-.pkc-nav a{color:var(--ink);opacity:.82}
+.pkc-nav{display:flex;gap:22px;margin-left:auto;font-weight:550;font-size:1.02rem}
+.pkc-nav a{color:var(--ink);opacity:.9}
 .pkc-nav a:hover{opacity:1}
 .pkc-header__actions{display:flex;align-items:center;gap:10px}
 .pkc-btn{
@@ -87,9 +88,11 @@ html[data-theme="light"] .pkc-theme__moon,html[data-theme="dark"] .pkc-theme__su
 .pkc-kicker{letter-spacing:.18em;text-transform:uppercase;font-size:.72rem;color:var(--gold-2);font-weight:700;margin:0 0 10px}
 html[data-theme="dark"] .pkc-kicker{color:var(--gold)}
 h1,h2,h3{font-family:var(--serif);letter-spacing:-.03em;line-height:1.15;margin:0 0 .6em}
-h1{font-size:clamp(2.1rem,5vw,4.1rem);font-weight:650}
-h2{font-size:clamp(1.6rem,3vw,2.4rem)}
-.pkc-lede{font-size:1.12rem;color:var(--muted);max-width:46ch}
+h1{font-size:clamp(2rem,4.6vw,3.6rem);font-weight:650}
+h2{font-size:clamp(1.5rem,2.8vw,2.2rem)}
+h3{font-size:1.2rem}
+p{margin:0 0 1em}
+.pkc-lede{font-size:1.125rem;color:var(--muted);max-width:48ch;line-height:1.75}
 .pkc-hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
 .pkc-hero__stage{position:relative;height:420px}
 .pkc-orbit{position:absolute;inset:40px;border:1px dashed color-mix(in srgb,var(--gold) 55%,transparent);border-radius:50%;animation:spin 28s linear infinite}
@@ -140,20 +143,25 @@ html[data-theme="dark"] .pkc-cta__inner{background:linear-gradient(135deg,#10202
 .pkc-footer h2{font-size:1rem}
 .pkc-footer__base{display:flex;justify-content:space-between;margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:.9rem}
 .pkc-page-hero{padding:56px 0 28px}
-.pkc-page{padding:48px 0 80px}
+.pkc-page .pkc-btn{margin:0 8px 8px 0}
 .pkc-prose .pkc-panel{padding:24px;margin-bottom:18px}
 .pkc-filters{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 28px}
 .pkc-filters input,.pkc-filters select,.pkc-form input,.pkc-form select,.pkc-form textarea{
-  width:100%;padding:.8rem .9rem;border-radius:12px;border:1px solid var(--line);
-  background:var(--surface);color:var(--ink);font:inherit;
+  width:100%;padding:.95rem 1rem;border-radius:14px;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink);font:inherit;font-size:1.05rem;
 }
-.pkc-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:24px}
-.pkc-form label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92rem}
+.pkc-form{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px}
+.pkc-form label{display:flex;flex-direction:column;gap:8px;font-weight:600;font-size:.98rem;color:var(--ink)}
 .pkc-span{grid-column:1/-1}
 .pkc-check{flex-direction:row!important;align-items:center;gap:8px}
 .pkc-contact{display:grid;grid-template-columns:1.4fr .8fr;gap:20px;padding-bottom:80px}
 .pkc-auth{min-height:70vh;display:grid;place-items:center;padding:40px 16px}
-.pkc-auth__card{width:min(460px,100%);padding:32px}
+.pkc-auth__card{width:min(440px,100%);padding:36px 32px 40px}
+.pkc-auth__card h1{font-size:clamp(1.7rem,3vw,2.15rem);margin-bottom:.35em}
+.pkc-auth__lead{color:var(--muted);font-size:1.02rem;line-height:1.65;margin:0 0 1.25rem}
+.pkc-form--stack,.pkc-auth .pkc-form{grid-template-columns:1fr;padding:0;gap:16px}
+.pkc-auth .pkc-btn{width:100%;padding:1rem 1.2rem;font-size:1.05rem}
+.pkc-auth a{font-weight:600}
 .pkc-alert,.pkc-alert-ok{padding:12px 14px;border-radius:12px;margin:0 0 16px}
 .pkc-alert{background:color-mix(in srgb,var(--danger) 16%,var(--surface));color:var(--danger)}
 .pkc-alert-ok{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}

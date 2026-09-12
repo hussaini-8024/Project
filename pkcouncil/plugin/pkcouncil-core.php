@@ -3,7 +3,7 @@
  * Plugin Name: PKCouncil Core
  * Plugin URI: https://pkcouncil.org
  * Description: Custom learning platform for PKCouncil — courses, payments, student/teacher portals, quizzes, chat, and administration. Business logic lives here, not in the theme.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: PKCouncil
  * Author URI: https://pkcouncil.org
  * License: GPL-2.0-or-later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PKC_VERSION', '1.0.0');
+define('PKC_VERSION', '1.0.2');
 define('PKC_FILE', __FILE__);
 define('PKC_DIR', plugin_dir_path(__FILE__));
 define('PKC_URL', plugin_dir_url(__FILE__));

@@ -18,7 +18,7 @@ class PKC_Mailer {
 
     public static function credentials($email, $name, $username, $password, $role = 'student') {
         $portal = $role === 'teacher' ? pkc_url('teacher/') : pkc_url('student/');
-        $body = "Hello {$name},\n\nYour PKCouncil {$role} account is ready.\n\nLogin: " . pkc_url('login/') . "\nUsername: {$username}\nEmail: {$email}\nTemporary password: {$password}\n\nPlease sign in and change this password immediately.\nPortal: {$portal}\n\n— PKCouncil\n";
+        $body = "Hello {$name},\n\nYour PKCouncil {$role} account is ready.\n\nLogin: " . pkc_login_url($role === 'teacher' ? 'teacher' : 'student') . "\nUsername: {$username}\nEmail: {$email}\nTemporary password: {$password}\n\nPlease sign in and change this password immediately.\nPortal: {$portal}\n\n— PKCouncil\n";
         return self::send($email, 'Your PKCouncil login credentials', $body);
     }
 

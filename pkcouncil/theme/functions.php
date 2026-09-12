@@ -37,10 +37,15 @@ add_action('wp_head', function () {
 }, 1);
 
 function pkc_nav_items() {
+    if (!function_exists('pkc_page_url')) {
+        return array(
+            home_url('/') => 'Home',
+        );
+    }
     return array(
         home_url('/') => 'Home',
-        home_url('/courses/') => 'Courses',
-        home_url('/about-us/') => 'About Us',
-        home_url('/contact-us/') => 'Contact Us',
+        pkc_page_url('courses') => 'Courses',
+        pkc_page_url('about-us') => 'About Us',
+        pkc_page_url('contact-us') => 'Contact Us',
     );
 }

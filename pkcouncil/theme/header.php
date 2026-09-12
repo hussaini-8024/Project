@@ -33,13 +33,13 @@
       $acc = function_exists('pkc_current_account') ? pkc_current_account() : null;
       if ($acc && $acc->type === 'student') :
       ?>
-        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(home_url('/student/')); ?>">Portal</a>
+        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(function_exists('pkc_url') ? pkc_url('student/') : home_url('/')); ?>">Portal</a>
       <?php elseif ($acc && $acc->type === 'teacher') : ?>
-        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(home_url('/teacher/')); ?>">Portal</a>
+        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(function_exists('pkc_url') ? pkc_url('teacher/') : home_url('/')); ?>">Portal</a>
       <?php elseif (function_exists('pkc_is_admin_user') && pkc_is_admin_user()) : ?>
         <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(admin_url('admin.php?page=pkcouncil')); ?>">Admin</a>
       <?php else : ?>
-        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(home_url('/login/')); ?>">Login</a>
+        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(function_exists('pkc_login_url') ? pkc_login_url() : home_url('/')); ?>">Login</a>
       <?php endif; ?>
       <button class="pkc-burger" type="button" data-menu-toggle aria-expanded="false" aria-label="Open menu">
         <span></span><span></span><span></span>
@@ -51,6 +51,6 @@
   <?php foreach (pkc_nav_items() as $url => $label) : ?>
     <a href="<?php echo esc_url($url); ?>"><?php echo esc_html($label); ?></a>
   <?php endforeach; ?>
-  <a href="<?php echo esc_url(home_url('/login/')); ?>">Login</a>
+  <a href="<?php echo esc_url(function_exists('pkc_login_url') ? pkc_login_url() : home_url('/')); ?>">Login</a>
 </div>
 <main id="content" class="pkc-main">

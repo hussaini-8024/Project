@@ -283,7 +283,7 @@ class PKC_Auth {
     public static function require_student() {
         $a = self::current();
         if (!$a || $a->type !== 'student') {
-            wp_safe_redirect(pkc_url('login/'));
+            wp_safe_redirect(pkc_login_url());
             exit;
         }
         return $a;
@@ -292,7 +292,7 @@ class PKC_Auth {
     public static function require_teacher() {
         $a = self::current();
         if (!$a || $a->type !== 'teacher') {
-            wp_safe_redirect(pkc_url('login/?portal=teacher'));
+            wp_safe_redirect(pkc_login_url('teacher'));
             exit;
         }
         return $a;

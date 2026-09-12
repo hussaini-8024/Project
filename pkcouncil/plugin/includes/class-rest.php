@@ -124,7 +124,7 @@ class PKC_REST {
 
     public static function logout() {
         PKC_Auth::logout();
-        return array('ok' => true, 'redirect' => pkc_url('login/'));
+        return array('ok' => true, 'redirect' => pkc_login_url());
     }
 
     public static function forgot(WP_REST_Request $req) {
@@ -137,7 +137,7 @@ class PKC_REST {
         if (is_wp_error($r)) {
             return $r;
         }
-        return array('ok' => true, 'message' => 'Password updated. You can sign in now.', 'redirect' => pkc_url('login/'));
+        return array('ok' => true, 'message' => 'Password updated. You can sign in now.', 'redirect' => pkc_login_url());
     }
 
     public static function me() {

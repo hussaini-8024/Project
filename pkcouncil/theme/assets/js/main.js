@@ -68,6 +68,32 @@
       help.textContent=opt&&opt.dataset.ins?opt.dataset.ins:'';
     });
   }
+  const login=document.querySelector('[data-login-form]');
+  if(login){
+    login.addEventListener('submit',e=>{
+      e.preventDefault();
+      const btn=login.querySelector('button[type="submit"]');
+      const alertEl=document.querySelector('[data-login-alert]');
+      const show=text=>{
+        if(!alertEl)return;
+        alertEl.hidden=!text;
+        alertEl.textContent=text||'';
+      };
+      if(btn){btn.disabled=true;}
+      const fd=new FormData(login);
+      api('auth/login',{method:'POST',body:JSON.stringify({
+        login:fd.get('login'),
+        password:fd.get('password'),
+        portal:fd.get('portal')||'student',
+        remember:fd.get('remember')==='1'
+      })})
+        .then(d=>{location.href=d.redirect||((window.pkcData&&pkcData.login)||'/');})
+        .catch(err=>{
+          if(btn){btn.disabled=false;}
+          show(err.message||'Login failed. Check your details and try again.');
+        });
+    });
+  }
   const forgot=document.querySelector('[data-forgot-form]');
   if(forgot){
     forgot.addEventListener('submit',e=>{

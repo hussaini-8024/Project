@@ -7,8 +7,8 @@
       <h1 class="reveal"><?php echo esc_html(pkc_settings('hero_title')); ?></h1>
       <p class="pkc-lede reveal"><?php echo esc_html(pkc_settings('hero_subtitle')); ?></p>
       <div class="pkc-hero__cta reveal">
-        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(home_url('/courses/')); ?>"><?php echo esc_html(pkc_settings('hero_cta_primary')); ?></a>
-        <a class="pkc-btn pkc-btn--ghost" href="<?php echo esc_url(home_url('/courses/?sort=featured')); ?>"><?php echo esc_html(pkc_settings('hero_cta_secondary')); ?></a>
+        <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(pkc_page_url('courses')); ?>"><?php echo esc_html(pkc_settings('hero_cta_primary')); ?></a>
+        <a class="pkc-btn pkc-btn--ghost" href="<?php echo esc_url(add_query_arg('sort', 'featured', pkc_page_url('courses'))); ?>"><?php echo esc_html(pkc_settings('hero_cta_secondary')); ?></a>
       </div>
     </div>
     <div class="pkc-hero__stage" aria-hidden="true">
@@ -102,7 +102,7 @@
       <p><?php echo esc_html(pkc_settings('contact_cta_text')); ?></p>
     </div>
     <div class="pkc-hero__cta">
-      <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(home_url('/contact-us/')); ?>">Contact Us</a>
+      <a class="pkc-btn pkc-btn--gold" href="<?php echo esc_url(pkc_page_url('contact-us')); ?>">Contact Us</a>
       <a class="pkc-btn pkc-btn--ghost" href="<?php echo esc_url(pkc_whatsapp_url('Hello PKCouncil, I have a question about courses.')); ?>" target="_blank" rel="noopener">WhatsApp</a>
     </div>
   </div>

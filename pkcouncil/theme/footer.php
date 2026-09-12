@@ -9,10 +9,10 @@
     </div>
     <div>
       <h2>Quick links</h2>
-      <a href="<?php echo esc_url(home_url('/courses/')); ?>">Courses</a>
-      <a href="<?php echo esc_url(home_url('/about-us/')); ?>">About Us</a>
-      <a href="<?php echo esc_url(home_url('/contact-us/')); ?>">Contact Us</a>
-      <a href="<?php echo esc_url(home_url('/login/')); ?>">Login</a>
+      <a href="<?php echo esc_url(pkc_page_url('courses')); ?>">Courses</a>
+      <a href="<?php echo esc_url(pkc_page_url('about-us')); ?>">About Us</a>
+      <a href="<?php echo esc_url(pkc_page_url('contact-us')); ?>">Contact Us</a>
+      <a href="<?php echo esc_url(pkc_login_url()); ?>">Login</a>
     </div>
     <div>
       <h2>Contact</h2>
@@ -25,7 +25,7 @@
   </div>
   <div class="pkc-shell pkc-footer__base">
     <p>© <?php echo esc_html(gmdate('Y')); ?> PKCouncil. All rights reserved.</p>
-    <p><a href="<?php echo esc_url(home_url('/about-us/')); ?>">Academic integrity</a></p>
+    <p><a href="<?php echo esc_url(pkc_page_url('about-us')); ?>">Academic integrity</a></p>
   </div>
 </footer>
 <?php wp_footer(); ?>
