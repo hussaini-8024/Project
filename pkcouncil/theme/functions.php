@@ -3,6 +3,86 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!function_exists('pkc_url')) {
+    function pkc_url($path = '') {
+        $path = ltrim((string) $path, '/');
+        $q = '';
+        if (strpos($path, '?') !== false) {
+            list($path, $q) = explode('?', $path, 2);
+            $q = '?' . $q;
+        }
+        $path = untrailingslashit($path);
+        global $wp_rewrite;
+        if ($wp_rewrite instanceof WP_Rewrite && $wp_rewrite->using_index_permalinks()) {
+            $base = trim($wp_rewrite->root, '/');
+            $url = $path === '' ? home_url('/' . $base . '/') : home_url(user_trailingslashit($base . '/' . $path));
+            return $url . $q;
+        }
+        $url = $path === '' ? home_url('/') : home_url(user_trailingslashit($path));
+        return $url . $q;
+    }
+}
+
+if (!function_exists('pkc_page_url')) {
+    function pkc_page_url($slug) {
+        $slug = sanitize_title($slug);
+        $pages = get_option('pkc_pages', array());
+        if (!empty($pages[$slug])) {
+            $link = get_permalink((int) $pages[$slug]);
+            if ($link) {
+                return $link;
+            }
+        }
+        $page = get_page_by_path($slug);
+        if ($page) {
+            return get_permalink($page);
+        }
+        return pkc_url($slug . '/');
+    }
+}
+
+if (!function_exists('pkc_login_url')) {
+    function pkc_login_url($portal = 'student') {
+        $url = pkc_page_url('login');
+        if ($portal === 'teacher') {
+            return add_query_arg('portal', 'teacher', $url);
+        }
+        return $url;
+    }
+}
+
+add_action('init', function () {
+    remove_action('template_redirect', 'wp_redirect_admin_locations', 1000);
+}, 0);
+
+add_action('template_redirect', function () {
+    if (is_admin() || wp_doing_ajax() || wp_doing_cron() || is_preview()) {
+        return;
+    }
+    $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $path = '/' . trim($path, '/');
+    if ($path === '/' || strpos($path, '/index.php') !== false || strpos($path, '/wp-admin') !== false || strpos($path, '/wp-json') !== false) {
+        return;
+    }
+    $slug = trim($path, '/');
+    $known = array('courses', 'about-us', 'contact-us', 'login');
+    if (in_array($slug, $known, true) && !is_page($slug)) {
+        $dest = pkc_page_url($slug);
+        $dest_path = (string) parse_url($dest, PHP_URL_PATH);
+        if ($dest && untrailingslashit($dest_path) !== untrailingslashit($path)) {
+            nocache_headers();
+            wp_safe_redirect($dest . (empty($_SERVER['QUERY_STRING']) ? '' : '?' . $_SERVER['QUERY_STRING']), 302);
+            exit;
+        }
+    }
+    global $wp_rewrite;
+    if (is_404() && $wp_rewrite instanceof WP_Rewrite && $wp_rewrite->using_index_permalinks()) {
+        nocache_headers();
+        wp_safe_redirect(home_url('/index.php' . user_trailingslashit($path)), 302);
+        exit;
+    }
+}, 0);
+
 add_action('after_setup_theme', function () {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
@@ -37,11 +117,6 @@ add_action('wp_head', function () {
 }, 1);
 
 function pkc_nav_items() {
-    if (!function_exists('pkc_page_url')) {
-        return array(
-            home_url('/') => 'Home',
-        );
-    }
     return array(
         home_url('/') => 'Home',
         pkc_page_url('courses') => 'Courses',

@@ -153,7 +153,8 @@ html[data-theme="dark"] .pkc-cta__inner{background:linear-gradient(135deg,#10202
 .pkc-form{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px}
 .pkc-form label{display:flex;flex-direction:column;gap:8px;font-weight:600;font-size:.98rem;color:var(--ink)}
 .pkc-span{grid-column:1/-1}
-.pkc-check{flex-direction:row!important;align-items:center;gap:8px}
+.pkc-check{flex-direction:row!important;align-items:center;justify-content:flex-start;gap:10px}
+.pkc-check input{width:auto;padding:0;accent-color:var(--primary)}
 .pkc-contact{display:grid;grid-template-columns:1.4fr .8fr;gap:20px;padding-bottom:80px}
 .pkc-auth{min-height:70vh;display:grid;place-items:center;padding:40px 16px}
 .pkc-auth__card{width:min(440px,100%);padding:36px 32px 40px}
