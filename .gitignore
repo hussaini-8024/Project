@@ -12,7 +12,3 @@ inventory/hosts.yml
 .DS_Store
 Thumbs.db
 *.swp
-
-# Local WordPress runtime
-pkcouncil/.env
-pkcouncil/wp-content/uploads/

@@ -1,6 +1,0 @@
-.pkc-wrap{max-width:1100px}
-.pkc-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0 28px}
-.pkc-stat{background:#0f3d42;color:#f4efe4;border-radius:14px;padding:18px 16px}
-.pkc-stat strong{display:block;font-size:28px;letter-spacing:-.03em}
-.pkc-stat span{opacity:.8;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-.pkc-admin-form .regular-text,.pkc-admin-form .large-text{max-width:720px}
