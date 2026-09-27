@@ -76,7 +76,7 @@ async function ensurePlatformSeed(client: PoolClient) {
     [semesterId],
   );
   await client.query(
-    `UPDATE classes SET session_code = CONCAT(c.course_code, '-SESSION-', LPAD(cl.id::text, 2, '0'))
+    `UPDATE classes SET session_code = CONCAT(c.course_code, '-SESSION-', LPAD(classes.id::text, 2, '0'))
      FROM courses c
      WHERE c.id = classes.course_id AND classes.session_code IS NULL`,
   );

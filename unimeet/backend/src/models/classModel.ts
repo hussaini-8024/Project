@@ -137,13 +137,13 @@ export async function createClass(input: {
 export async function updateClassStatus(id: number, status: ClassStatus) {
   const result = await query<ClassRow>(
     `UPDATE classes
-     SET status = $2,
+     SET status = $2::class_status,
          actual_start = CASE
-           WHEN $2 = 'live' THEN COALESCE(actual_start, now())
+           WHEN $2::class_status = 'live' THEN COALESCE(actual_start, now())
            ELSE actual_start
          END,
          ended_at = CASE
-           WHEN $2 = 'ended' THEN COALESCE(ended_at, now())
+           WHEN $2::class_status = 'ended' THEN COALESCE(ended_at, now())
            ELSE ended_at
          END
      WHERE id = $1
