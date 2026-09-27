@@ -9,13 +9,15 @@ export async function listCourses(filters: {
     const result = await query(
       `SELECT c.*, t.title AS teacher_title, tu.name AS teacher_name,
               p.code AS program_code, d.code AS department_code,
-              (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count
+              (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count,
+              sem.name AS semester_name, sem.academic_year
        FROM courses c
        JOIN enrollments e ON e.course_id = c.id
        LEFT JOIN teachers t ON t.id = c.teacher_id
        LEFT JOIN users tu ON tu.id = t.user_id
        LEFT JOIN programs p ON p.id = c.program_id
        LEFT JOIN departments d ON d.id = c.department_id
+       LEFT JOIN semesters sem ON sem.id = c.semester_id
        WHERE e.student_id = $1
        ORDER BY c.course_code`,
       [filters.studentId],
@@ -27,12 +29,14 @@ export async function listCourses(filters: {
     const result = await query(
       `SELECT c.*, t.title AS teacher_title, tu.name AS teacher_name,
               p.code AS program_code, d.code AS department_code,
-              (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count
+              (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count,
+              sem.name AS semester_name, sem.academic_year
        FROM courses c
        LEFT JOIN teachers t ON t.id = c.teacher_id
        LEFT JOIN users tu ON tu.id = t.user_id
        LEFT JOIN programs p ON p.id = c.program_id
        LEFT JOIN departments d ON d.id = c.department_id
+       LEFT JOIN semesters sem ON sem.id = c.semester_id
        WHERE c.teacher_id = $1
        ORDER BY c.course_code`,
       [filters.teacherId],
@@ -43,13 +47,36 @@ export async function listCourses(filters: {
   const result = await query(
     `SELECT c.*, t.title AS teacher_title, tu.name AS teacher_name,
             p.code AS program_code, d.code AS department_code,
-            (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count
+            (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count,
+            sem.name AS semester_name, sem.academic_year
      FROM courses c
      LEFT JOIN teachers t ON t.id = c.teacher_id
      LEFT JOIN users tu ON tu.id = t.user_id
      LEFT JOIN programs p ON p.id = c.program_id
      LEFT JOIN departments d ON d.id = c.department_id
+     LEFT JOIN semesters sem ON sem.id = c.semester_id
      ORDER BY c.course_code`,
+  );
+  return result.rows;
+}
+
+export async function listAvailableCourses(studentId: number) {
+  const result = await query(
+    `SELECT c.*, t.title AS teacher_title, tu.name AS teacher_name,
+            p.code AS program_code, d.code AS department_code,
+            (SELECT COUNT(*)::int FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count,
+            sem.name AS semester_name, sem.academic_year
+     FROM courses c
+     LEFT JOIN teachers t ON t.id = c.teacher_id
+     LEFT JOIN users tu ON tu.id = t.user_id
+     LEFT JOIN programs p ON p.id = c.program_id
+     LEFT JOIN departments d ON d.id = c.department_id
+     LEFT JOIN semesters sem ON sem.id = c.semester_id
+     WHERE NOT EXISTS (
+       SELECT 1 FROM enrollments e WHERE e.course_id = c.id AND e.student_id = $1
+     )
+     ORDER BY c.course_code`,
+    [studentId],
   );
   return result.rows;
 }
@@ -58,12 +85,13 @@ export async function getCourseById(id: number) {
   const result = await query(
     `SELECT c.*, t.title AS teacher_title, t.id AS teacher_row_id, tu.name AS teacher_name,
             tu.id AS teacher_user_id, p.code AS program_code, p.name AS program_name,
-            d.code AS department_code
+            d.code AS department_code, sem.name AS semester_name, sem.academic_year
      FROM courses c
      LEFT JOIN teachers t ON t.id = c.teacher_id
      LEFT JOIN users tu ON tu.id = t.user_id
      LEFT JOIN programs p ON p.id = c.program_id
      LEFT JOIN departments d ON d.id = c.department_id
+     LEFT JOIN semesters sem ON sem.id = c.semester_id
      WHERE c.id = $1`,
     [id],
   );
@@ -80,11 +108,18 @@ export async function createCourse(input: {
   section?: string | null;
   creditHours?: number;
   description?: string | null;
+  semesterId?: number | null;
+  academicYear?: string | null;
+  status?: string | null;
+  maxStudents?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }) {
   const result = await query(
     `INSERT INTO courses
-      (course_code, course_name, teacher_id, program_id, department_id, semester, section, credit_hours, description)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      (course_code, course_name, teacher_id, program_id, department_id, semester, section, credit_hours, description,
+       semester_id, academic_year, status, max_students, start_date, end_date)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [
       input.courseCode,
@@ -96,13 +131,28 @@ export async function createCourse(input: {
       input.section ?? null,
       input.creditHours ?? 3,
       input.description ?? null,
+      input.semesterId ?? null,
+      input.academicYear ?? null,
+      input.status ?? "active",
+      input.maxStudents ?? null,
+      input.startDate ?? null,
+      input.endDate ?? null,
     ],
   );
   return result.rows[0];
 }
 
 export async function listEnrollments(courseId: number) {
-  const result = await query(
+  const result = await query<{
+    id: number;
+    enrolled_at: string;
+    student_id: number;
+    university_student_id: string;
+    semester: number;
+    section: string;
+    name: string;
+    email: string;
+  }>(
     `SELECT e.id, e.enrolled_at, s.id AS student_id, s.student_id AS university_student_id,
             s.semester, s.section, u.name, u.email
      FROM enrollments e

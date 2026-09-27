@@ -387,9 +387,10 @@ tr:hover td { background: rgba(201, 163, 90, 0.06); }
 .side-dock {
   border-left: 1px solid rgba(255,255,255,0.06);
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   min-height: 0;
   background: rgba(255,255,255,0.02);
+  overflow: auto;
 }
 .hud, .dock-card { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
 .metric { display: flex; justify-content: space-between; font-size: 13px; margin: 7px 0; color: #d7d0c3; }
@@ -412,9 +413,48 @@ tr:hover td { background: rgba(201, 163, 90, 0.06); }
 .empty { padding: 28px; color: var(--muted); text-align: center; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .page-lead { max-width: 720px; margin: -8px 0 18px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 18px; }
+.filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0 16px; }
+.nav-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #24180a;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.4fr) 2fr auto;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #efe6d4;
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--navy-3), var(--gold));
+}
+.history-card {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.chat-log { max-height: 420px; overflow: auto; margin: 12px 0; }
+.chat-line { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.chat-line p { margin: 6px 0 0; }
 
 @media (max-width: 960px) {
-  .login-page, .shell, .stats, .two, .wizard, .classroom-body { grid-template-columns: 1fr; }
+  .login-page, .shell, .stats, .two, .wizard, .classroom-body, .filters, .bar-row { grid-template-columns: 1fr; }
   .sidebar { position: relative; height: auto; }
   .main { padding: 18px; }
   .login-hero { display: none; }

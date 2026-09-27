@@ -1,11 +1,18 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { IconBook, IconClock, IconHome, IconLogout, IconSpark, IconUser } from "./Icons";
+import { IconBell, IconBook, IconChart, IconClock, IconHome, IconLogout, IconSpark, IconUser } from "./Icons";
 
 const links = [
   { to: "/dashboard", label: "Dashboard", roles: ["student", "teacher", "admin"], icon: IconHome },
   { to: "/courses", label: "Courses", roles: ["student", "teacher", "admin"], icon: IconBook },
   { to: "/attendance", label: "Attendance", roles: ["student", "teacher", "admin"], icon: IconClock },
+  { to: "/reports", label: "Reports", roles: ["student", "teacher", "admin"], icon: IconChart },
+  { to: "/analytics", label: "Analytics", roles: ["teacher", "admin"], icon: IconChart },
+  { to: "/notifications", label: "Notifications", roles: ["student", "teacher", "admin"], icon: IconBell },
+  { to: "/semesters", label: "Semesters", roles: ["admin"], icon: IconBook },
+  { to: "/admin/grades", label: "Grade rules", roles: ["admin"], icon: IconClock },
   { to: "/ai", label: "AI Studio", roles: ["student", "teacher", "admin"], icon: IconSpark },
   { to: "/profile", label: "Profile", roles: ["student", "teacher", "admin"], icon: IconUser },
 ];
@@ -13,6 +20,14 @@ const links = [
 export function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    api<{ unread: number }>("/api/notifications")
+      .then((data) => setUnread(data.unread))
+      .catch(() => undefined);
+  }, []);
+
   if (!user) return null;
   const initial = user.name.trim().slice(0, 1).toUpperCase();
 
@@ -33,6 +48,7 @@ export function AppShell() {
               <NavLink key={link.to} to={link.to} className={({ isActive }) => (isActive ? "active" : "")}>
                 <link.icon size={18} />
                 {link.label}
+                {link.to === "/notifications" && unread > 0 ? <span className="nav-count">{unread}</span> : null}
               </NavLink>
             ))}
         </nav>

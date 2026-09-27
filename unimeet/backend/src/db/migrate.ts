@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
+import type { PoolClient } from "pg";
 import { pool } from "./pool.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -42,6 +43,320 @@ Week 5 — Relational design and transactions
 Reading: Elmasri & Navathe, chapters on relational design and transaction processing.
 `.trim();
 
+async function ensurePlatformSeed(client: PoolClient) {
+  await client.query(
+    `INSERT INTO semesters (name, academic_year, start_date, end_date, status)
+     VALUES ('Fall 2026', '2026-2027', '2026-08-15', '2026-12-20', 'active'),
+            ('Spring 2027', '2026-2027', '2027-01-10', '2027-05-20', 'planned'),
+            ('Summer 2027', '2026-2027', '2027-06-01', '2027-07-31', 'planned')
+     ON CONFLICT (name) DO NOTHING`,
+  );
+
+  const rules = await client.query(`SELECT COUNT(*)::int AS count FROM attendance_grade_rules`);
+  if (rules.rows[0].count === 0) {
+    await client.query(
+      `INSERT INTO attendance_grade_rules (min_percent, max_percent, grade, label, sort_order) VALUES
+        (90, 100, 'A', 'Excellent', 1),
+        (80, 89.99, 'B', 'Good', 2),
+        (70, 79.99, 'C', 'Satisfactory', 3),
+        (60, 69.99, 'D', 'Low', 4),
+        (0, 59.99, 'F', 'Fail', 5)`,
+    );
+  }
+  await client.query(
+    `INSERT INTO attendance_settings (id, low_threshold, late_join_minutes, early_leave_minutes)
+     VALUES (1, 75, 10, 10)
+     ON CONFLICT (id) DO NOTHING`,
+  );
+
+  const semester = await client.query<{ id: number }>(`SELECT id FROM semesters WHERE name = 'Fall 2026'`);
+  const semesterId = semester.rows[0]?.id ?? null;
+  await client.query(
+    `UPDATE courses SET semester_id = COALESCE(semester_id, $1), academic_year = COALESCE(academic_year, '2026-2027')`,
+    [semesterId],
+  );
+  await client.query(
+    `UPDATE classes SET session_code = CONCAT(c.course_code, '-SESSION-', LPAD(cl.id::text, 2, '0'))
+     FROM courses c
+     WHERE c.id = classes.course_id AND classes.session_code IS NULL`,
+  );
+  await client.query(
+    `UPDATE classes SET actual_start = start_time WHERE actual_start IS NULL AND status <> 'scheduled'`,
+  );
+  await client.query(
+    `UPDATE classes SET ended_at = end_time WHERE ended_at IS NULL AND status = 'ended'`,
+  );
+
+  const dept = await client.query<{ id: number }>(`SELECT id FROM departments WHERE code = 'CS'`);
+  const program = await client.query<{ id: number }>(`SELECT id FROM programs WHERE code = 'BSCS'`);
+  const ahmedTeacher = await client.query<{ id: number }>(`SELECT id FROM teachers WHERE teacher_id = 'TCH-2001'`);
+  const fatimaTeacher = await client.query<{ id: number }>(`SELECT id FROM teachers WHERE teacher_id = 'TCH-2002'`);
+  if (!dept.rows[0] || !program.rows[0] || !ahmedTeacher.rows[0] || !fatimaTeacher.rows[0]) return;
+
+  const extraCourses = [
+    ["CS-502", "Web Engineering", ahmedTeacher.rows[0].id, "Frontend and backend engineering for campus systems."],
+    ["CS-503", "Artificial Intelligence", fatimaTeacher.rows[0].id, "Search, knowledge representation, and learning."],
+    ["CS-504", "Mathematics", ahmedTeacher.rows[0].id, "Discrete mathematics for computer science."],
+  ] as const;
+  for (const [code, name, teacherId, description] of extraCourses) {
+    await client.query(
+      `INSERT INTO courses
+        (course_code, course_name, teacher_id, program_id, department_id, semester, section, credit_hours, description, semester_id, academic_year)
+       VALUES ($1,$2,$3,$4,$5,5,'A',3,$6,$7,'2026-2027')
+       ON CONFLICT (course_code) DO NOTHING`,
+      [code, name, teacherId, program.rows[0].id, dept.rows[0].id, description, semesterId],
+    );
+  }
+
+  const students = await client.query<{ id: number; student_id: string }>(
+    `SELECT id, student_id FROM students WHERE student_id IN ('STU-1001','STU-1002','STU-1003')`,
+  );
+  const courses = await client.query<{ id: number; course_code: string }>(
+    `SELECT id, course_code FROM courses WHERE course_code IN ('CS-501','CS-401','CS-502','CS-503','CS-504')`,
+  );
+  const byCode = Object.fromEntries(courses.rows.map((row) => [row.course_code, row.id]));
+  const bySid = Object.fromEntries(students.rows.map((row) => [row.student_id, row.id]));
+  for (const student of students.rows) {
+    for (const course of courses.rows) {
+      await client.query(
+        `INSERT INTO enrollments (student_id, course_id) VALUES ($1,$2)
+         ON CONFLICT (student_id, course_id) DO NOTHING`,
+        [student.id, course.id],
+      );
+    }
+  }
+
+  const teacherUser = await client.query<{ id: number }>(
+    `SELECT user_id AS id FROM teachers WHERE teacher_id = 'TCH-2001'`,
+  );
+  const createdBy = teacherUser.rows[0]?.id ?? null;
+
+  type SegmentSpec = { join: string; leave: string };
+  const seedEnded = async (
+    courseCode: string,
+    title: string,
+    room: string,
+    sessionCode: string,
+    start: string,
+    end: string,
+    segments: Record<string, SegmentSpec[]>,
+  ) => {
+    const courseId = byCode[courseCode];
+    if (!courseId) return;
+    const existingClass = await client.query<{ id: number }>(`SELECT id FROM classes WHERE room_name = $1`, [room]);
+    let classId = existingClass.rows[0]?.id;
+    if (!classId) {
+      const created = await client.query<{ id: number }>(
+        `INSERT INTO classes
+          (course_id, title, start_time, end_time, room_name, status, is_open_lab, created_by, session_code, actual_start, ended_at)
+         VALUES ($1,$2,$3,$4,$5,'ended',false,$6,$7,$3,$4)
+         RETURNING id`,
+        [courseId, title, start, end, room, createdBy, sessionCode],
+      );
+      classId = created.rows[0].id;
+    }
+    for (const [sid, segs] of Object.entries(segments)) {
+      const studentId = bySid[sid];
+      if (!studentId) continue;
+      const already = await client.query(
+        `SELECT 1 FROM attendance WHERE student_id = $1 AND class_id = $2`,
+        [studentId, classId],
+      );
+      if (already.rows[0]) continue;
+      const first = segs[0];
+      const last = segs[segs.length - 1];
+      const attendance = await client.query<{ id: number }>(
+        `INSERT INTO attendance
+          (student_id, class_id, join_time, last_join_time, leave_time, duration_seconds, status)
+         VALUES ($1,$2,$3,$4,$5,0,'present')
+         RETURNING id`,
+        [studentId, classId, first.join, last.join, last.leave],
+      );
+      for (const seg of segs) {
+        const seconds = Math.round((new Date(seg.leave).getTime() - new Date(seg.join).getTime()) / 1000);
+        await client.query(
+          `INSERT INTO attendance_segments
+            (attendance_id, student_id, class_id, joined_at, left_at, duration_seconds)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [attendance.rows[0].id, studentId, classId, seg.join, seg.leave, seconds],
+        );
+        await client.query(
+          `INSERT INTO attendance_events (student_id, class_id, kind, at) VALUES ($1,$2,'join',$3)`,
+          [studentId, classId, seg.join],
+        );
+        await client.query(
+          `INSERT INTO attendance_events (student_id, class_id, kind, at) VALUES ($1,$2,'leave',$3)`,
+          [studentId, classId, seg.leave],
+        );
+      }
+      await client.query(
+        `UPDATE attendance SET duration_seconds = (
+           SELECT COALESCE(SUM(duration_seconds),0) FROM attendance_segments WHERE attendance_id = $1
+         ) WHERE id = $1`,
+        [attendance.rows[0].id],
+      );
+    }
+  };
+
+  // Critical rejoin example: 10:00-10:20 + 10:40-11:00 = 40 minutes, not 60.
+  await seedEnded(
+    "CS-501",
+    "Join / leave / rejoin lab",
+    "cs501-rejoin-lab",
+    "CS-501-SESSION-REJOIN",
+    "2026-09-20T10:00:00+00:00",
+    "2026-09-20T11:40:00+00:00",
+    {
+      "STU-1001": [
+        { join: "2026-09-20T10:00:00+00:00", leave: "2026-09-20T10:20:00+00:00" },
+        { join: "2026-09-20T10:40:00+00:00", leave: "2026-09-20T11:00:00+00:00" },
+      ],
+      "STU-1002": [{ join: "2026-09-20T10:00:00+00:00", leave: "2026-09-20T11:40:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-20T10:00:00+00:00", leave: "2026-09-20T10:20:00+00:00" }],
+    },
+  );
+
+  await seedEnded(
+    "CS-502",
+    "Week 1 — HTTP and the campus frontend",
+    "cs502-week1",
+    "CS-502-SESSION-01",
+    "2026-09-08T09:00:00+00:00",
+    "2026-09-08T10:30:00+00:00",
+    {
+      "STU-1001": [{ join: "2026-09-08T09:00:00+00:00", leave: "2026-09-08T10:21:00+00:00" }],
+      "STU-1002": [{ join: "2026-09-08T09:00:00+00:00", leave: "2026-09-08T10:12:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-08T09:00:00+00:00", leave: "2026-09-08T10:03:00+00:00" }],
+    },
+  );
+  await seedEnded(
+    "CS-502",
+    "Week 2 — REST APIs",
+    "cs502-week2",
+    "CS-502-SESSION-02",
+    "2026-09-15T09:00:00+00:00",
+    "2026-09-15T10:30:00+00:00",
+    {
+      "STU-1001": [{ join: "2026-09-15T09:00:00+00:00", leave: "2026-09-15T10:21:00+00:00" }],
+      "STU-1002": [{ join: "2026-09-15T09:00:00+00:00", leave: "2026-09-15T10:12:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-15T09:00:00+00:00", leave: "2026-09-15T10:03:00+00:00" }],
+    },
+  );
+  await seedEnded(
+    "CS-503",
+    "Week 1 — Informed search",
+    "cs503-week1",
+    "CS-503-SESSION-01",
+    "2026-09-09T11:00:00+00:00",
+    "2026-09-09T12:40:00+00:00",
+    {
+      "STU-1001": [{ join: "2026-09-09T11:00:00+00:00", leave: "2026-09-09T12:10:00+00:00" }],
+      "STU-1002": [{ join: "2026-09-09T11:00:00+00:00", leave: "2026-09-09T12:23:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-09T11:00:00+00:00", leave: "2026-09-09T12:32:00+00:00" }],
+    },
+  );
+  await seedEnded(
+    "CS-504",
+    "Week 1 — Sets and relations",
+    "cs504-week1",
+    "CS-504-SESSION-01",
+    "2026-09-10T08:00:00+00:00",
+    "2026-09-10T09:30:00+00:00",
+    {
+      "STU-1001": [{ join: "2026-09-10T08:00:00+00:00", leave: "2026-09-10T09:23:00+00:00" }],
+      "STU-1002": [{ join: "2026-09-10T08:00:00+00:00", leave: "2026-09-10T09:12:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-10T08:00:00+00:00", leave: "2026-09-10T08:54:00+00:00" }],
+    },
+  );
+  await seedEnded(
+    "CS-504",
+    "Week 2 — Graphs and counting",
+    "cs504-week2",
+    "CS-504-SESSION-02",
+    "2026-09-17T08:00:00+00:00",
+    "2026-09-17T09:30:00+00:00",
+    {
+      "STU-1001": [{ join: "2026-09-17T08:00:00+00:00", leave: "2026-09-17T09:23:00+00:00" }],
+      "STU-1002": [{ join: "2026-09-17T08:00:00+00:00", leave: "2026-09-17T09:12:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-17T08:00:00+00:00", leave: "2026-09-17T08:54:00+00:00" }],
+    },
+  );
+  await seedEnded(
+    "CS-401",
+    "Week 3 — Scheduling workshop",
+    "cs401-week3",
+    "CS-401-SESSION-01",
+    "2026-09-11T13:00:00+00:00",
+    "2026-09-11T14:30:00+00:00",
+    {
+      "STU-1001": [{ join: "2026-09-11T13:00:00+00:00", leave: "2026-09-11T14:21:00+00:00" }],
+      "STU-1002": [{ join: "2026-09-11T13:00:00+00:00", leave: "2026-09-11T14:12:00+00:00" }],
+      "STU-1003": [{ join: "2026-09-11T13:00:00+00:00", leave: "2026-09-11T14:03:00+00:00" }],
+    },
+  );
+
+  await client.query(
+    `INSERT INTO attendance_segments (attendance_id, student_id, class_id, joined_at, left_at, duration_seconds)
+     SELECT a.id, a.student_id, a.class_id,
+            COALESCE(a.join_time, cl.start_time),
+            COALESCE(a.leave_time, cl.end_time),
+            a.duration_seconds
+     FROM attendance a
+     JOIN classes cl ON cl.id = a.class_id
+     WHERE NOT EXISTS (SELECT 1 FROM attendance_segments s WHERE s.attendance_id = a.id)`,
+  );
+
+  const dbCourse = byCode["CS-501"];
+  const aliUser = await client.query<{ id: number }>(
+    `SELECT u.id FROM users u JOIN students s ON s.user_id = u.id WHERE s.student_id = 'STU-1001'`,
+  );
+  if (dbCourse && aliUser.rows[0]) {
+    const existingThread = await client.query(`SELECT 1 FROM discussions WHERE course_id = $1 LIMIT 1`, [dbCourse]);
+    if (!existingThread.rows[0]) {
+      const thread = await client.query<{ id: number }>(
+        `INSERT INTO discussions (course_id, user_id, title, body)
+         VALUES ($1,$2,'Indexing questions from Week 5','When should we add a composite index on enrollments?')
+         RETURNING id`,
+        [dbCourse, aliUser.rows[0].id],
+      );
+      await client.query(
+        `INSERT INTO discussion_replies (discussion_id, user_id, body)
+         VALUES ($1,$2,'Use it when the authorization check filters by course and student together.')`,
+        [thread.rows[0].id, createdBy],
+      );
+    }
+    const existingChat = await client.query(`SELECT 1 FROM classroom_messages WHERE course_id = $1 LIMIT 1`, [dbCourse]);
+    if (!existingChat.rows[0]) {
+      await client.query(
+        `INSERT INTO classroom_messages (course_id, user_id, body) VALUES
+          ($1,$2,'Office hours stay in this classroom chat, not the live meeting chat.'),
+          ($1,$3,'Understood — I will post assignment questions here.')`,
+        [dbCourse, createdBy, aliUser.rows[0].id],
+      );
+    }
+    const existingAnn = await client.query(`SELECT 1 FROM announcements WHERE course_id = $1 LIMIT 1`, [dbCourse]);
+    if (!existingAnn.rows[0]) {
+      await client.query(
+        `INSERT INTO announcements (course_id, user_id, title, body)
+         VALUES ($1,$2,'Midterm attendance policy','Attendance grades use actual connected minutes, not first-join to last-leave.')`,
+        [dbCourse, createdBy],
+      );
+    }
+  }
+
+  const users = await client.query<{ id: number }>(`SELECT id FROM users`);
+  const existingNotes = await client.query(`SELECT COUNT(*)::int AS count FROM notifications`);
+  if (existingNotes.rows[0].count === 0) {
+    for (const user of users.rows) {
+      await client.query(
+        `INSERT INTO notifications (user_id, title, body, kind, link)
+         VALUES ($1,'Fall 2026 is open','Attendance, discussions, and classroom chat are ready.','info','/dashboard')`,
+        [user.id],
+      );
+    }
+  }
+}
+
 async function main() {
   const client = await pool.connect();
   try {
@@ -55,10 +370,13 @@ async function main() {
     const schemaPath = resolve(__dirname, "../../../database/schema.sql");
     const schema = readFileSync(schemaPath, "utf8");
     await client.query(schema);
+    const extendPath = resolve(__dirname, "../../../database/schema-extend.sql");
+    await client.query(readFileSync(extendPath, "utf8"));
 
     const existing = await client.query("SELECT COUNT(*)::int AS count FROM users");
     if (existing.rows[0].count > 0 && !reset) {
-      console.log("Database already seeded. Use npm run db:reset to rebuild.");
+      await ensurePlatformSeed(client);
+      console.log("Existing UniMeet database extended with attendance reporting.");
       return;
     }
 
@@ -262,6 +580,7 @@ async function main() {
     await markPast(sara, 28 * 60, "partial");
 
     await client.query("COMMIT");
+    await ensurePlatformSeed(client);
     console.log("UniMeet database ready.");
     console.log("Demo password for every account: UniMeet@2026");
     console.log("  Admin   ADM-3001  Registrar Office");

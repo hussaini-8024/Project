@@ -46,3 +46,18 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
   return data as T;
 }
+
+export async function downloadCsv(path: string, filename: string) {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const response = await fetch(path, { headers, credentials: "include" });
+  if (!response.ok) throw new Error("Export failed");
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}

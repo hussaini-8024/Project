@@ -91,6 +91,16 @@ export function mergeClasses(...lists: Record<string, unknown>[][]) {
   return [...map.values()];
 }
 
+export async function nextSessionCode(courseId: number) {
+  const course = await query<{ course_code: string }>(`SELECT course_code FROM courses WHERE id = $1`, [courseId]);
+  const count = await query<{ n: number }>(
+    `SELECT COUNT(*)::int AS n FROM classes WHERE course_id = $1`,
+    [courseId],
+  );
+  const prefix = (course.rows[0]?.course_code ?? "SESSION").replace(/\s+/g, "");
+  return `${prefix}-SESSION-${String((count.rows[0]?.n ?? 0) + 1).padStart(2, "0")}`;
+}
+
 export async function createClass(input: {
   courseId: number;
   title?: string;
@@ -101,10 +111,12 @@ export async function createClass(input: {
   isOpenLab?: boolean;
   createdBy?: number;
 }) {
-  const result = await query(
+  const sessionCode = await nextSessionCode(input.courseId);
+  const result = await query<ClassRow & { session_code: string | null }>(
     `INSERT INTO classes
-      (course_id, title, start_time, end_time, room_name, status, is_open_lab, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      (course_id, title, start_time, end_time, room_name, status, is_open_lab, created_by, session_code,
+       actual_start)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
      RETURNING *`,
     [
       input.courseId,
@@ -115,14 +127,27 @@ export async function createClass(input: {
       input.status ?? "scheduled",
       input.isOpenLab ?? false,
       input.createdBy ?? null,
+      sessionCode,
+      input.status === "live" ? new Date().toISOString() : null,
     ],
   );
   return result.rows[0];
 }
 
 export async function updateClassStatus(id: number, status: ClassStatus) {
-  const result = await query(
-    `UPDATE classes SET status = $2 WHERE id = $1 RETURNING *`,
+  const result = await query<ClassRow>(
+    `UPDATE classes
+     SET status = $2,
+         actual_start = CASE
+           WHEN $2 = 'live' THEN COALESCE(actual_start, now())
+           ELSE actual_start
+         END,
+         ended_at = CASE
+           WHEN $2 = 'ended' THEN COALESCE(ended_at, now())
+           ELSE ended_at
+         END
+     WHERE id = $1
+     RETURNING *`,
     [id, status],
   );
   return result.rows[0] ?? null;

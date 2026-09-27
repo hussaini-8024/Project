@@ -44,6 +44,7 @@ export async function listAttendance(filters: {
   studentId?: number;
   classId?: number;
   courseId?: number;
+  teacherId?: number;
 }) {
   const clauses: string[] = [];
   const params: unknown[] = [];
@@ -58,6 +59,10 @@ export async function listAttendance(filters: {
   if (filters.courseId) {
     params.push(filters.courseId);
     clauses.push(`cl.course_id = $${params.length}`);
+  }
+  if (filters.teacherId) {
+    params.push(filters.teacherId);
+    clauses.push(`c.teacher_id = $${params.length}`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const result = await query(

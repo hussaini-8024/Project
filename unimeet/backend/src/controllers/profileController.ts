@@ -7,6 +7,8 @@ import { listClasses, listLiveClasses, mergeClasses } from "../models/classModel
 import { listCourses } from "../models/courseModel.js";
 import { getStudentByUserId, getTeacherByUserId, updatePassword, updateProfile } from "../models/userModel.js";
 import { publicProfile } from "../services/authService.js";
+import { listNotifications } from "../services/platformService.js";
+import { institutionReports, studentReport } from "../services/reportService.js";
 
 export async function dashboardHandler(req: Request, res: Response) {
   const user = req.user!;
@@ -25,9 +27,11 @@ export async function dashboardHandler(req: Request, res: Response) {
     : scoped;
   const attendance = student
     ? await listAttendance({ studentId: student.id })
-    : user.role === "admin" || user.role === "teacher"
-      ? await listAttendance({})
-      : [];
+    : user.role === "teacher"
+      ? await listAttendance({ teacherId: teacher?.id })
+      : user.role === "admin"
+        ? await listAttendance({})
+        : [];
 
   let users = 0;
   if (user.role === "admin") {
@@ -35,11 +39,22 @@ export async function dashboardHandler(req: Request, res: Response) {
     users = count.rows[0].count;
   }
 
+  const myReport = student ? await studentReport(student.id) : null;
+  const scopedReports =
+    user.role === "admin" || user.role === "teacher"
+      ? await institutionReports({ teacherId: teacher?.id })
+      : null;
+  const inbox = await listNotifications(user.id);
+
   res.json({
     user: await publicProfile(user),
     courses,
     classes,
     attendance,
+    report: myReport,
+    institution: scopedReports,
+    notifications: inbox.notifications.slice(0, 6),
+    unread: inbox.unread,
     stats: {
       courses: courses.length,
       liveClasses: classes.filter((c) => c.status === "live" || c.is_open_lab).length,

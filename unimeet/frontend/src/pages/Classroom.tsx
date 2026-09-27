@@ -18,6 +18,7 @@ import { applyQualityAction, collectRoomStats } from "../lib/network";
 import { classifyNetwork, decideAction, TIER_COPY } from "../lib/quality";
 import type { ClassSession, NetworkSnapshot, QualityAction, QualityTier } from "../types";
 import { useAuth } from "../auth/AuthContext";
+import { formatMinutes } from "../lib/format";
 
 interface TokenResponse {
   token: string;
@@ -167,6 +168,13 @@ function ClassroomChrome({
             <option value="very_poor">Simulate very poor</option>
             <option value="critical">Simulate critical</option>
           </select>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => navigator.clipboard.writeText(`${window.location.origin}/classroom/${session.class.id}`)}
+          >
+            Copy link
+          </button>
           <Link className="btn btn-danger" to="/dashboard">
             Leave
           </Link>
@@ -186,6 +194,7 @@ function ClassroomChrome({
             simulated={simulated || null}
           />
           <ParticipantsList />
+          <LiveAttendance classId={session.class.id} />
           <div style={{ minHeight: 220 }}>
             <Chat />
           </div>
@@ -196,6 +205,66 @@ function ClassroomChrome({
         <RoomAudioRenderer />
       </footer>
     </>
+  );
+}
+
+function LiveAttendance({ classId }: { classId: number }) {
+  const { user } = useAuth();
+  const [roster, setRoster] = useState<{ studentId: number; name: string; online: boolean; currentSeconds: number; totalSeconds: number; lastLeft: string | null; joins: number }[]>([]);
+  const [summary, setSummary] = useState<{ enrolled: number; attended: number; absent: number; average: number; expectedSeconds: number; students: { name: string; totalSeconds: number; percent: number; grade: string }[] } | null>(null);
+
+  useEffect(() => {
+    if (user?.role === "student") return;
+    const tick = () =>
+      api<{ roster: typeof roster }>(`/api/classes/${classId}/live`)
+        .then((data) => setRoster(data.roster))
+        .catch(() => undefined);
+    tick();
+    const timer = window.setInterval(tick, 2000);
+    return () => window.clearInterval(timer);
+  }, [classId, user?.role]);
+
+  if (user?.role === "student") return null;
+
+  return (
+    <div className="dock-card">
+      <strong>Live attendance</strong>
+      {roster.map((row) => (
+        <div key={row.studentId} className="metric">
+          <span>
+            {row.name} · {row.online ? "Online" : "Offline"}
+          </span>
+          <span>
+            {row.online ? `now ${formatMinutes(row.currentSeconds)} · ` : ""}
+            total {formatMinutes(row.totalSeconds)}
+          </span>
+        </div>
+      ))}
+      <button
+        className="btn btn-danger"
+        type="button"
+        onClick={async () => {
+          const ended = await api<{ summary: NonNullable<typeof summary> }>(`/api/classes/${classId}/end`, { method: "POST" });
+          setSummary(ended.summary);
+        }}
+      >
+        End session
+      </button>
+      {summary ? (
+        <div>
+          <strong>Session summary</strong>
+          <p>
+            {formatMinutes(summary.expectedSeconds)} · {summary.attended} attended · {summary.absent} absent · avg {summary.average}%
+          </p>
+          {summary.students.map((row) => (
+            <div className="metric" key={row.name}>
+              <span>{row.name}</span>
+              <span>{formatMinutes(row.totalSeconds)} · {row.percent}% · {row.grade}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -14,6 +14,7 @@ interface Catalog {
 export function CoursesPage() {
   const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [available, setAvailable] = useState<Course[]>([]);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -32,6 +33,9 @@ export function CoursesPage() {
 
   useEffect(() => {
     reload();
+    if (user?.role === "student") {
+      api<{ courses: Course[] }>("/api/courses/available").then((d) => setAvailable(d.courses));
+    }
     if (user?.role === "admin") {
       api<Catalog>("/api/catalog").then((data) => {
         setCatalog(data);
@@ -100,6 +104,32 @@ export function CoursesPage() {
           </table>
         </div>
       </section>
+
+      {user?.role === "student" && available.length ? (
+        <section className="panel" style={{ marginBottom: 18 }}>
+          <h2>Join a class</h2>
+          <p className="muted">Self-enroll in an open subject. Attendance and discussion stay limited to courses you join.</p>
+          {available.map((course) => (
+            <div className="row" key={course.id} style={{ justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+              <div>
+                <strong>{course.course_code}</strong> {course.course_name}
+                <div className="muted">{course.teacher_name} · {course.semester_name ?? `Sem ${course.semester}`}</div>
+              </div>
+              <button
+                className="btn btn-gold"
+                type="button"
+                onClick={async () => {
+                  await api("/api/enrollments/self", { method: "POST", body: JSON.stringify({ courseId: course.id }) });
+                  reload();
+                  api<{ courses: Course[] }>("/api/courses/available").then((d) => setAvailable(d.courses));
+                }}
+              >
+                Enroll
+              </button>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       {user?.role === "admin" && catalog ? (
         <section className="panel">

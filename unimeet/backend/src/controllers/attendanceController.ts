@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { listAttendance } from "../models/attendanceModel.js";
-import { getStudentByUserId } from "../models/userModel.js";
+import { getStudentByUserId, getTeacherByUserId } from "../models/userModel.js";
 import { authorizeClassJoin } from "../services/accessService.js";
 import { recordJoin, recordLeave } from "../services/attendanceService.js";
 import { HttpError } from "../utils/httpError.js";
@@ -37,6 +37,11 @@ export async function listAttendanceHandler(req: Request, res: Response) {
   if (user.role === "student") {
     const student = await getStudentByUserId(user.id);
     res.json({ attendance: await listAttendance({ studentId: student?.id, classId, courseId }) });
+    return;
+  }
+  if (user.role === "teacher") {
+    const teacher = await getTeacherByUserId(user.id);
+    res.json({ attendance: await listAttendance({ classId, courseId, teacherId: teacher?.id }) });
     return;
   }
   res.json({ attendance: await listAttendance({ classId, courseId }) });

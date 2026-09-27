@@ -36,6 +36,9 @@ export interface Course {
   enrolled_count?: number;
   description?: string;
   teacher_id?: number;
+  semester_name?: string;
+  academic_year?: string;
+  credit_hours?: number;
 }
 
 export interface ClassSession {
@@ -50,6 +53,7 @@ export interface ClassSession {
   course_code?: string;
   course_name?: string;
   teacher_name?: string | null;
+  session_code?: string | null;
 }
 
 export interface AttendanceRow {

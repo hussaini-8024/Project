@@ -92,6 +92,35 @@ export function IconLogout(props: IconProps) {
   );
 }
 
+export function IconBell(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </Svg>
+  );
+}
+
+export function IconChart(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 19V5" />
+      <path d="M4 19h16" />
+      <path d="M8 15v-4" />
+      <path d="M12 15V8" />
+      <path d="M16 15v-7" />
+    </Svg>
+  );
+}
+
+export function IconChat(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M5 6h14v10H8l-3 3z" />
+    </Svg>
+  );
+}
+
 export function IconPulse(props: IconProps) {
   return (
     <Svg {...props}>

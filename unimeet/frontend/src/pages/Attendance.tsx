@@ -24,8 +24,8 @@ export function AttendancePage() {
         </div>
       </div>
       <p className="page-lead muted">
-        Open-lab / long sessions: 45+ minutes present, 20–44 partial, under 20 insufficient. Scheduled
-        lectures use 75% / 40% of the official class length.
+        Duration is the sum of join/leave segments. A 20-minute gap between leave and rejoin is not counted.
+        Session, subject, and overall percentages use actual connected minutes ÷ expected session minutes.
       </p>
       <section className="panel">
         <table>
