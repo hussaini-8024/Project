@@ -43,11 +43,11 @@ export function AiStudioPage() {
     <>
       <div className="topbar">
         <div>
-          <p className="muted">Added last — after classroom, attendance, and Smart 720p</p>
+          <p className="eyebrow">Lecture intelligence</p>
           <h1>AI lecture studio</h1>
         </div>
       </div>
-      <p className="muted">
+      <p className="page-lead muted">
         Works from the lecture transcript and notes. If you add an OpenAI key later, the same buttons
         use that engine. Until then, UniMeet answers from the local teaching corpus.
       </p>
@@ -63,8 +63,8 @@ export function AiStudioPage() {
       </label>
 
       <div className="grid two" style={{ marginTop: 18 }}>
-        <section className="panel" style={{ padding: 18 }}>
-          <h2 className="serif">Lecture summary</h2>
+        <section className="panel">
+          <h2>Lecture summary</h2>
           <button
             className="btn btn-gold"
             disabled={!!busy}
@@ -84,8 +84,8 @@ export function AiStudioPage() {
           {engine ? <p className="muted">Engine: {engine}</p> : null}
           <p>{summary}</p>
         </section>
-        <section className="panel" style={{ padding: 18 }}>
-          <h2 className="serif">Study assistant</h2>
+        <section className="panel">
+          <h2>Study assistant</h2>
           <textarea rows={3} value={question} onChange={(e) => setQuestion(e.target.value)} />
           <button
             className="btn btn-primary"
@@ -108,8 +108,8 @@ export function AiStudioPage() {
         </section>
       </div>
 
-      <section className="panel" style={{ padding: 18, marginTop: 18 }}>
-        <h2 className="serif">AI quiz</h2>
+      <section className="panel" style={{ marginTop: 8 }}>
+        <h2>AI quiz</h2>
         <div className="row">
           <button
             className="btn btn-gold"

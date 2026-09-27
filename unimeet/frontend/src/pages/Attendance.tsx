@@ -19,15 +19,15 @@ export function AttendancePage() {
     <>
       <div className="topbar">
         <div>
-          <p className="muted">University rule</p>
+          <p className="eyebrow">University rule</p>
           <h1>Attendance</h1>
         </div>
       </div>
-      <p className="muted">
+      <p className="page-lead muted">
         Open-lab / long sessions: 45+ minutes present, 20–44 partial, under 20 insufficient. Scheduled
         lectures use 75% / 40% of the official class length.
       </p>
-      <section className="panel" style={{ padding: 18, marginTop: 16 }}>
+      <section className="panel">
         <table>
           <thead>
             <tr>

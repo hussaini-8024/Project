@@ -71,7 +71,15 @@ export function ClassroomPage() {
     );
   }
 
-  if (!session) return <p className="muted" style={{ padding: 32 }}>Authorizing classroom entry…</p>;
+  if (!session) {
+    return (
+      <div className="denied card">
+        <p className="eyebrow">Horizon Hall</p>
+        <h1>Authorizing classroom entry…</h1>
+        <p className="muted">Checking login, enrollment, and whether this class is active.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="classroom" data-lk-theme="default">
@@ -136,6 +144,7 @@ function ClassroomChrome({
     <>
       <header className="classroom-top">
         <div>
+          <div className="pulse" style={{ marginBottom: 4 }}>Live classroom</div>
           <strong>
             {session.class.course_code} · {session.class.course_name}
           </strong>

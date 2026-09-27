@@ -66,11 +66,11 @@ export function CoursesPage() {
     <>
       <div className="topbar">
         <div>
-          <p className="muted">Academic structure</p>
+          <p className="eyebrow">Academic structure</p>
           <h1>Courses</h1>
         </div>
       </div>
-      <section className="panel" style={{ padding: 18, marginBottom: 18 }}>
+      <section className="panel" style={{ marginBottom: 18 }}>
         <div className="table-wrap">
           <table>
             <thead>
@@ -102,8 +102,8 @@ export function CoursesPage() {
       </section>
 
       {user?.role === "admin" && catalog ? (
-        <section className="panel" style={{ padding: 18 }}>
-          <h2 className="serif">Create course & enroll</h2>
+        <section className="panel">
+          <h2>Create course & enroll</h2>
           <p className="muted">BSCS → semester → section → course → teacher → students.</p>
           <div className="wizard" style={{ marginTop: 16 }}>
             <div className="steps">

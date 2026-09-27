@@ -38,12 +38,18 @@ export function LoginPage() {
     <div className="login-page">
       <section className="login-hero">
         <div>
+          <div className="login-kicker">Faculty of Computing · Official portal</div>
           <div className="crest">U</div>
           <h1>UniMeet</h1>
           <p>
-            The official virtual classroom of the Faculty of Computing. Enrollment-aware access,
-            attendance, and network-adaptive lectures for daily university use.
+            A calm, enrollment-aware classroom for daily university use — not a Zoom clone.
+            Live lectures, attendance, and Smart 720p on the same campus path.
           </p>
+          <div className="login-points">
+            <div><i /> Server-side JOIN CLASS authorization</div>
+            <div><i /> LiveKit video with university attendance</div>
+            <div><i /> Holds 720p when the network weakens</div>
+          </div>
         </div>
         <div className="login-meta">
           <span>BSCS · Semester system</span>
@@ -53,6 +59,7 @@ export function LoginPage() {
       </section>
       <div className="login-card-wrap">
         <form className="card login-card" onSubmit={onSubmit}>
+          <p className="eyebrow">Horizon Hall</p>
           <h2>University sign-in</h2>
           <p className="muted">Use your student, teacher, or registrar ID.</p>
           <div className="role-tabs">

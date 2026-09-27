@@ -27,7 +27,7 @@ export function CourseDetailPage() {
     <>
       <div className="topbar">
         <div>
-          <p className="muted">
+          <p className="eyebrow">
             {course.program_code} · Semester {course.semester} · Section {course.section}
           </p>
           <h1>
@@ -36,10 +36,10 @@ export function CourseDetailPage() {
         </div>
         <span className="muted">{course.teacher_title} {course.teacher_name}</span>
       </div>
-      <p>{course.description}</p>
-      <div className="grid two" style={{ marginTop: 18 }}>
-        <section className="panel" style={{ padding: 18 }}>
-          <h2 className="serif">Class sessions</h2>
+      <p className="page-lead">{course.description}</p>
+      <div className="grid two">
+        <section className="panel">
+          <h2>Class sessions</h2>
           <table>
             <tbody>
               {classes.map((item) => (
@@ -62,8 +62,8 @@ export function CourseDetailPage() {
             </tbody>
           </table>
         </section>
-        <section className="panel" style={{ padding: 18 }}>
-          <h2 className="serif">Roster</h2>
+        <section className="panel">
+          <h2>Roster</h2>
           {enrollments.map((row) => (
             <p key={row.id}>
               {row.name} · {row.university_student_id}

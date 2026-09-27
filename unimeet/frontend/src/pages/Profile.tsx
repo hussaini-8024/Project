@@ -33,11 +33,11 @@ export function ProfilePage() {
     <>
       <div className="topbar">
         <div>
-          <p className="muted">{user.universityId}</p>
+          <p className="eyebrow">{user.universityId}</p>
           <h1>Profile</h1>
         </div>
       </div>
-      <form className="panel" style={{ padding: 18, maxWidth: 560 }} onSubmit={onSubmit}>
+      <form className="panel" style={{ maxWidth: 560 }} onSubmit={onSubmit}>
         <label>
           Full name
           <input value={name} onChange={(e) => setName(e.target.value)} />
