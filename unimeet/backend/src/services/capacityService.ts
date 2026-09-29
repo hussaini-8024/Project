@@ -44,7 +44,7 @@ export async function classCapacity(courseId: number) {
     enrolled,
     capacity,
     remaining: Math.max(0, capacity - enrolled),
-    lectureHall: enrolled >= LECTURE_HALL_THRESHOLD || capacity >= LECTURE_HALL_THRESHOLD,
+    lectureHall: enrolled >= LECTURE_HALL_THRESHOLD,
     maxParticipants: ROOM_MAX_PARTICIPANTS,
   };
 }
