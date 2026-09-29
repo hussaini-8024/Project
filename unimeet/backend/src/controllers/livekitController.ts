@@ -20,9 +20,13 @@ export async function tokenHandler(req: Request, res: Response) {
   }
 
   const session = await createLiveKitToken(user, classRow.room_name, grant);
+  const { classCapacity } = await import("../services/capacityService.js");
+  const capacity = await classCapacity(classRow.course_id);
   res.json({
     ...session,
     class: classRow,
     identity: `${user.role}:${user.universityId}`,
+    capacity,
+    publishOnJoin: user.role !== "student",
   });
 }

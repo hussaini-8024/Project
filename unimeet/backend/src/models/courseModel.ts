@@ -134,7 +134,7 @@ export async function createCourse(input: {
       input.semesterId ?? null,
       input.academicYear ?? null,
       input.status ?? "active",
-      input.maxStudents ?? null,
+      input.maxStudents ?? 2000,
       input.startDate ?? null,
       input.endDate ?? null,
     ],
@@ -176,6 +176,9 @@ export async function isEnrolled(studentId: number, courseId: number) {
 }
 
 export async function enrollStudent(studentId: number, courseId: number) {
+  const { assertCanEnroll } = await import("../services/capacityService.js");
+  const already = await isEnrolled(studentId, courseId);
+  if (!already) await assertCanEnroll(courseId);
   const result = await query(
     `INSERT INTO enrollments (student_id, course_id)
      VALUES ($1, $2)

@@ -332,36 +332,55 @@ export async function liveRoster(classId: number) {
     course_id: number;
     title: string | null;
   }>(`SELECT * FROM classes WHERE id = $1`, [classId]);
-  const enrolled = await query(
-    `SELECT s.id AS student_id, s.student_id AS university_id, u.name
+  const now = Date.now();
+  const enrolled = await query<{
+    student_id: number;
+    university_id: string;
+    name: string;
+    joins: number;
+    online: boolean;
+    total_seconds: number;
+    last_left: string | null;
+    current_joined_at: string | null;
+  }>(
+    `SELECT s.id AS student_id,
+            s.student_id AS university_id,
+            u.name,
+            COUNT(seg.id)::int AS joins,
+            BOOL_OR(seg.id IS NOT NULL AND seg.left_at IS NULL) AS online,
+            COALESCE(SUM(
+              CASE
+                WHEN seg.id IS NULL THEN 0
+                ELSE EXTRACT(EPOCH FROM (COALESCE(seg.left_at, now()) - seg.joined_at))
+              END
+            ), 0)::int AS total_seconds,
+            MAX(seg.left_at) FILTER (WHERE seg.left_at IS NOT NULL) AS last_left,
+            MAX(seg.joined_at) FILTER (WHERE seg.left_at IS NULL) AS current_joined_at
      FROM enrollments e
      JOIN students s ON s.id = e.student_id
      JOIN users u ON u.id = s.user_id
+     LEFT JOIN attendance_segments seg
+       ON seg.student_id = s.id AND seg.class_id = $1
      WHERE e.course_id = (SELECT course_id FROM classes WHERE id = $1)
-     ORDER BY u.name`,
+     GROUP BY s.id, u.name
+     ORDER BY BOOL_OR(seg.id IS NOT NULL AND seg.left_at IS NULL) DESC, u.name`,
     [classId],
   );
-  const now = Date.now();
-  const rows = [];
-  for (const person of enrolled.rows) {
-    const segments = await listSegments(person.student_id as number, classId);
-    const open = segments.find((s) => !s.left_at);
-    const total = sumSegmentSeconds(segments, now);
-    const current = open
-      ? Math.max(0, Math.round((now - new Date(open.joined_at as string).getTime()) / 1000))
+  const rows = enrolled.rows.map((person) => {
+    const current = person.online && person.current_joined_at
+      ? Math.max(0, Math.round((now - new Date(person.current_joined_at).getTime()) / 1000))
       : 0;
-    const lastLeave = [...segments].reverse().find((s) => s.left_at)?.left_at ?? null;
-    rows.push({
+    return {
       studentId: person.student_id,
       name: person.name,
       universityId: person.university_id,
-      online: Boolean(open),
+      online: Boolean(person.online),
       currentSeconds: current,
-      totalSeconds: total,
-      lastLeft: lastLeave,
-      joins: segments.length,
-    });
-  }
+      totalSeconds: person.total_seconds,
+      lastLeft: person.last_left,
+      joins: person.joins,
+    };
+  });
   return { class: classRow.rows[0], roster: rows };
 }
 

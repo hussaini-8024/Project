@@ -15,8 +15,12 @@ brew install livekit
 ```
 
 ```bash
-livekit-server --dev --bind 0.0.0.0
+livekit-server --dev --config livekit.yaml --bind 0.0.0.0
 ```
+
+Each room accepts **up to 2,000 participants**. Students join as listeners (camera/mic off) and can enable devices from the control bar. Teachers publish. That is the lecture-hall pattern LiveKit is built for: many subscribers, few publishers.
+
+`--dev` still uses API key `devkey` and secret `secret`.
 
 Development credentials (already in `backend/.env`):
 

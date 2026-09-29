@@ -25,6 +25,8 @@ app.use("/api", router);
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(env.PORT, "0.0.0.0", () => {
+const server = app.listen(env.PORT, "0.0.0.0", () => {
   console.log(`UniMeet API listening on http://0.0.0.0:${env.PORT}`);
 });
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;

@@ -50,7 +50,7 @@ sudo -u postgres psql -c "CREATE DATABASE unimeet OWNER unimeet;"
 
 ```bash
 curl -sSL https://get.livekit.io | bash   # Linux
-livekit-server --dev --bind 0.0.0.0
+livekit-server --dev --config unimeet/livekit/livekit.yaml --bind 0.0.0.0
 ```
 
 Or `docker compose up livekit`.

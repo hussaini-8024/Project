@@ -25,6 +25,14 @@ interface TokenResponse {
   url: string;
   roomName: string;
   class: ClassSession;
+  publishOnJoin?: boolean;
+  capacity?: {
+    enrolled: number;
+    capacity: number;
+    remaining: number;
+    lectureHall: boolean;
+    maxParticipants: number;
+  };
 }
 
 export function ClassroomPage() {
@@ -88,8 +96,12 @@ export function ClassroomPage() {
         token={session.token}
         serverUrl={session.url}
         connect
-        audio
-        video={{ resolution: { width: 1280, height: 720, frameRate: 30 } }}
+        audio={Boolean(session.publishOnJoin)}
+        video={
+          session.publishOnJoin
+            ? { resolution: { width: 1280, height: 720, frameRate: 30 } }
+            : false
+        }
         options={{ adaptiveStream: true, dynacast: true }}
         onDisconnected={() => {
           if (user?.role === "student" && !left.current) {
@@ -138,7 +150,7 @@ function ClassroomChrome({
       { source: Track.Source.Camera, withPlaceholder: true },
       { source: Track.Source.ScreenShare, withPlaceholder: false },
     ],
-    { onlySubscribed: false },
+    { onlySubscribed: true },
   );
 
   return (
@@ -149,7 +161,12 @@ function ClassroomChrome({
           <strong>
             {session.class.course_code} · {session.class.course_name}
           </strong>
-          <div className="muted">{session.class.title}</div>
+          <div className="muted">
+            {session.class.title}
+            {session.capacity
+              ? ` · ${session.capacity.enrolled}/${session.capacity.capacity} enrolled · room cap ${session.capacity.maxParticipants}`
+              : null}
+          </div>
         </div>
         <div className="row">
           <label className="toggle">
@@ -229,7 +246,7 @@ function LiveAttendance({ classId }: { classId: number }) {
   return (
     <div className="dock-card">
       <strong>Live attendance</strong>
-      {roster.map((row) => (
+      {roster.slice(0, 40).map((row) => (
         <div key={row.studentId} className="metric">
           <span>
             {row.name} · {row.online ? "Online" : "Offline"}
@@ -240,6 +257,9 @@ function LiveAttendance({ classId }: { classId: number }) {
           </span>
         </div>
       ))}
+      {roster.length > 40 ? (
+        <p className="muted">{roster.length - 40} more students on the roster</p>
+      ) : null}
       <button
         className="btn btn-danger"
         type="button"
@@ -256,7 +276,7 @@ function LiveAttendance({ classId }: { classId: number }) {
           <p>
             {formatMinutes(summary.expectedSeconds)} · {summary.attended} attended · {summary.absent} absent · avg {summary.average}%
           </p>
-          {summary.students.map((row) => (
+          {summary.students.slice(0, 40).map((row) => (
             <div className="metric" key={row.name}>
               <span>{row.name}</span>
               <span>{formatMinutes(row.totalSeconds)} · {row.percent}% · {row.grade}</span>
@@ -270,15 +290,17 @@ function LiveAttendance({ classId }: { classId: number }) {
 
 function ParticipantsList() {
   const participants = useParticipants();
+  const shown = participants.slice(0, 40);
   return (
     <div className="dock-card">
       <strong>Participants · {participants.length}</strong>
-      {participants.map((p) => (
+      {shown.map((p) => (
         <div key={p.identity} className="metric">
           <span>{p.name || p.identity}</span>
           <span>{p.isCameraEnabled ? "Cam" : "Cam off"} · {p.isMicrophoneEnabled ? "Mic" : "Muted"}</span>
         </div>
       ))}
+      {participants.length > 40 ? <p className="muted">{participants.length - 40} more in the room</p> : null}
     </div>
   );
 }

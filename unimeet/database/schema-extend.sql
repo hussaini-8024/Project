@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS semesters (
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS semester_id INT REFERENCES semesters(id) ON DELETE SET NULL;
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS academic_year TEXT;
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE courses ADD COLUMN IF NOT EXISTS max_students INT;
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS max_students INT DEFAULT 2000;
+UPDATE courses SET max_students = 2000 WHERE max_students IS NULL;
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS start_date DATE;
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS end_date DATE;
 
@@ -118,3 +119,5 @@ CREATE INDEX IF NOT EXISTS idx_discussions_course ON discussions(course_id);
 CREATE INDEX IF NOT EXISTS idx_classroom_messages_course ON classroom_messages(course_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_courses_semester ON courses(semester_id);
+CREATE INDEX IF NOT EXISTS idx_segments_class_open ON attendance_segments(class_id, left_at);
+CREATE INDEX IF NOT EXISTS idx_presence_seen ON classroom_presence(course_id, last_seen DESC);
