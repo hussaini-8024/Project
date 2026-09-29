@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #14212b;
+  --ink-muted: #4a5b66;
+  --mist: #e7f1ef;
+  --surface: #f6faf9;
+  --brand: #0f5c56;
+  --brand-deep: #0a3d39;
+  --brand-soft: #1a7a72;
+  --accent: #e89b3c;
+  --accent-deep: #c67a1f;
+  --line: rgba(20, 33, 43, 0.1);
+  --glow: rgba(15, 92, 86, 0.18);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-mist: var(--mist);
+  --color-surface: var(--surface);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-line: var(--line);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 28%, white);
+  color: var(--brand-deep);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(12px, -10px, 0) scale(1.04);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-rise-delay-1 {
+  animation: rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.animate-rise-delay-2 {
+  animation: rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+
+.animate-drift {
+  animation: drift 14s ease-in-out infinite;
+}
+
+.hero-wash {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 20%, rgba(232, 155, 60, 0.22), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 15% 80%, rgba(26, 122, 114, 0.35), transparent 50%),
+    linear-gradient(145deg, #0a3d39 0%, #0f5c56 42%, #163f4a 100%);
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 65% at 60% 40%, black 20%, transparent 75%);
+}
+
+.course-cover {
+  background-size: 200% 200%;
+  animation: shimmer 10s ease-in-out infinite alternate;
+}

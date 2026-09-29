@@ -8,6 +8,13 @@ inventory/hosts.yml
 .vault_pass
 .env
 
+# Node / Next.js (web/)
+web/node_modules/
+web/.next/
+web/out/
+web/coverage/
+npm-debug.log*
+
 # OS / editor
 .DS_Store
 Thumbs.db
