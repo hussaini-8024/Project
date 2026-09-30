@@ -58,15 +58,27 @@ $hosted_class = null;
 if ( $hosted_id && class_exists( 'GCM_Class_Service' ) ) {
 	$candidate = GCM_Class_Service::get( $hosted_id );
 	if ( $candidate && 'live' === $candidate->status ) {
-		$fixed = GCM_Class_Service::ensure_meeting_links( $hosted_id );
-		$hosted_class = is_wp_error( $fixed ) ? $candidate : $fixed;
+		try {
+			$fixed = GCM_Class_Service::ensure_meeting_links( $hosted_id );
+			$hosted_class = is_wp_error( $fixed ) ? $candidate : $fixed;
+		} catch ( Exception $e ) {
+			$hosted_class = $candidate;
+		} catch ( Throwable $e ) {
+			$hosted_class = $candidate;
+		}
 	}
 }
 if ( ! $hosted_class && $active_course_id && class_exists( 'GCM_Class_Service' ) ) {
 	$live = GCM_Class_Service::get_live_for_course( $active_course_id );
 	if ( $live ) {
-		$fixed = GCM_Class_Service::ensure_meeting_links( (int) $live->id );
-		$hosted_class = is_wp_error( $fixed ) ? $live : $fixed;
+		try {
+			$fixed = GCM_Class_Service::ensure_meeting_links( (int) $live->id );
+			$hosted_class = is_wp_error( $fixed ) ? $live : $fixed;
+		} catch ( Exception $e ) {
+			$hosted_class = $live;
+		} catch ( Throwable $e ) {
+			$hosted_class = $live;
+		}
 	}
 }
 
@@ -103,7 +115,7 @@ get_header();
 				<h2><?php echo esc_html( $hosted_class->title ); ?></h2>
 				<p><?php esc_html_e( 'Share these details with students. You can customize the passcode before they join.', 'giga-class-market' ); ?></p>
 				<p class="gcm-hosted-meeting__open">
-					<?php if ( ! empty( $hosted_class->zoom_start_url ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_usable_meeting_url( $hosted_class->zoom_start_url ) ) : ?>
+					<?php if ( ! empty( $hosted_class->zoom_start_url ) && class_exists( 'GCM_Class_Service' ) && GCM_Class_Service::meeting_url_is_usable( $hosted_class->zoom_start_url ) ) : ?>
 						<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $hosted_class->zoom_start_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open live class as host', 'giga-class-market' ); ?></a>
 					<?php endif; ?>
 					<button type="button" class="gcm-button gcm-button--outline gcm-teacher-action" data-action="gcm_end_class" data-class-id="<?php echo esc_attr( $hosted_class->id ); ?>"><?php esc_html_e( 'End class', 'giga-class-market' ); ?></button>
@@ -184,9 +196,15 @@ get_header();
 							<?php foreach ( $upcoming as $class ) : ?>
 								<?php
 								if ( 'live' === $class->status && class_exists( 'GCM_Class_Service' ) ) {
-									$fixed = GCM_Class_Service::ensure_meeting_links( (int) $class->id );
-									if ( ! is_wp_error( $fixed ) ) {
-										$class = $fixed;
+									try {
+										$fixed = GCM_Class_Service::ensure_meeting_links( (int) $class->id );
+										if ( ! is_wp_error( $fixed ) ) {
+											$class = $fixed;
+										}
+									} catch ( Exception $e ) {
+										unset( $e );
+									} catch ( Throwable $e ) {
+										unset( $e );
 									}
 								}
 								?>
@@ -194,9 +212,9 @@ get_header();
 									<div>
 										<strong><?php echo esc_html( $class->title ); ?></strong>
 										<p>
-											<?php echo esc_html( gcm_format_exact_datetime( $class->scheduled_at ) ); ?>
+											<?php echo esc_html( function_exists( 'gcm_format_meeting_datetime' ) ? gcm_format_meeting_datetime( $class->scheduled_at ) : ( function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $class->scheduled_at ) : mysql2date( get_option( 'date_format' ) . ' H:i:s', $class->scheduled_at ) ) ); ?>
 											<?php if ( ! empty( $class->scheduled_end ) ) : ?>
-												– <?php echo esc_html( gcm_format_exact_datetime( $class->scheduled_end ) ); ?>
+												– <?php echo esc_html( function_exists( 'gcm_format_meeting_datetime' ) ? gcm_format_meeting_datetime( $class->scheduled_end ) : ( function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $class->scheduled_end ) : mysql2date( get_option( 'date_format' ) . ' H:i:s', $class->scheduled_end ) ) ); ?>
 											<?php endif; ?>
 											· <span class="gcm-status gcm-status-<?php echo esc_attr( $class->status ); ?>"><?php echo esc_html( ucfirst( $class->status ) ); ?></span>
 											<?php if ( 'live' === $class->status || 'ended' === $class->status ) : ?>
@@ -212,7 +230,7 @@ get_header();
 											</label>
 											<button type="button" class="gcm-button gcm-button--gold gcm-teacher-action" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Start class', 'giga-class-market' ); ?></button>
 										<?php elseif ( 'live' === $class->status ) : ?>
-											<?php if ( ! empty( $class->zoom_start_url ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_usable_meeting_url( $class->zoom_start_url ) ) : ?>
+											<?php if ( ! empty( $class->zoom_start_url ) && class_exists( 'GCM_Class_Service' ) && GCM_Class_Service::meeting_url_is_usable( $class->zoom_start_url ) ) : ?>
 												<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $class->zoom_start_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></a>
 											<?php else : ?>
 												<button type="button" class="gcm-button gcm-button--gold gcm-teacher-action" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></button>
@@ -241,7 +259,7 @@ get_header();
 													<?php foreach ( $roster as $row ) : ?>
 														<li>
 															<?php echo esc_html( $row->display_name ); ?>
-															<small><?php echo esc_html( function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $row->joined_at ) : mysql2date( get_option( 'date_format' ) . ' H:i:s', $row->joined_at ) ); ?></small>
+															<small><?php echo esc_html( function_exists( 'gcm_format_meeting_datetime' ) ? gcm_format_meeting_datetime( $row->joined_at ) : ( function_exists( 'gcm_format_exact_datetime' ) ? gcm_format_exact_datetime( $row->joined_at ) : mysql2date( get_option( 'date_format' ) . ' H:i:s', $row->joined_at ) ) ); ?></small>
 														</li>
 													<?php endforeach; ?>
 												</ul>

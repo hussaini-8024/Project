@@ -28,7 +28,9 @@ class GCM_Class_Service {
 		$title         = sanitize_text_field( $data['title'] ?? '' );
 		$scheduled_at  = sanitize_text_field( $data['scheduled_at'] ?? '' );
 		$scheduled_end = sanitize_text_field( $data['scheduled_end'] ?? '' );
-		$passcode      = isset( $data['passcode'] ) ? GCM_Zoom_Service::sanitize_passcode( $data['passcode'] ) : '';
+		$passcode      = isset( $data['passcode'] )
+			? ( class_exists( 'GCM_Zoom_Service' ) ? GCM_Zoom_Service::sanitize_passcode( $data['passcode'] ) : preg_replace( '/[^A-Za-z0-9@\-\_\*]/', '', (string) $data['passcode'] ) )
+			: '';
 
 		if ( ! $course_id || ! get_post( $course_id ) ) {
 			return new WP_Error( 'gcm_invalid_course', __( 'Invalid course.', 'giga-class-market' ) );
@@ -66,6 +68,10 @@ class GCM_Class_Service {
 			$teacher_id = (int) $assigned->ID;
 		}
 
+		if ( class_exists( 'GCM_Installer' ) ) {
+			GCM_Installer::ensure_class_passcode_column();
+		}
+
 		$row = array(
 			'course_id'     => $course_id,
 			'teacher_id'    => $teacher_id,
@@ -79,13 +85,18 @@ class GCM_Class_Service {
 			$row['zoom_passcode'] = $passcode;
 		}
 
-		$inserted = $wpdb->insert( $wpdb->prefix . 'gcm_classes', $row );
+		$table    = $wpdb->prefix . 'gcm_classes';
+		$inserted = class_exists( 'GCM_Installer' ) ? GCM_Installer::insert_row( $table, $row ) : 0;
+		if ( ! $inserted ) {
+			$ok = $wpdb->insert( $table, $row );
+			$inserted = $ok ? (int) $wpdb->insert_id : 0;
+		}
 
 		if ( ! $inserted ) {
 			return new WP_Error( 'gcm_class_failed', __( 'Unable to schedule class.', 'giga-class-market' ) );
 		}
 
-		return (int) $wpdb->insert_id;
+		return (int) $inserted;
 	}
 
 	/**
@@ -95,9 +106,22 @@ class GCM_Class_Service {
 	 * @return object|WP_Error Live class row.
 	 */
 	public static function host_now( $data ) {
-		$tz    = wp_timezone();
-		$start = new DateTimeImmutable( 'now', $tz );
-		$end   = $start->modify( '+60 minutes' );
+		try {
+			$tz    = wp_timezone();
+			$start = new DateTimeImmutable( 'now', $tz );
+			$end   = $start->modify( '+60 minutes' );
+		} catch ( Exception $e ) {
+			unset( $e );
+			$start = null;
+			$end   = null;
+		}
+		if ( $start && $end ) {
+			$start_sql = $start->format( 'Y-m-d H:i:s' );
+			$end_sql   = $end->format( 'Y-m-d H:i:s' );
+		} else {
+			$start_sql = current_time( 'mysql' );
+			$end_sql   = date( 'Y-m-d H:i:s', current_time( 'timestamp' ) + HOUR_IN_SECONDS );
+		}
 		$title = sanitize_text_field( $data['title'] ?? '' );
 		if ( ! $title ) {
 			$course_id = absint( $data['course_id'] ?? 0 );
@@ -109,8 +133,8 @@ class GCM_Class_Service {
 				'course_id'     => $data['course_id'] ?? 0,
 				'teacher_id'    => $data['teacher_id'] ?? get_current_user_id(),
 				'title'         => $title,
-				'scheduled_at'  => $start->format( 'Y-m-d H:i:s' ),
-				'scheduled_end' => $end->format( 'Y-m-d H:i:s' ),
+				'scheduled_at'  => $start_sql,
+				'scheduled_end' => $end_sql,
 				'passcode'      => $data['passcode'] ?? '',
 			)
 		);
@@ -148,8 +172,6 @@ class GCM_Class_Service {
 	 * @return object|WP_Error
 	 */
 	public static function start( $class_id, $actor_id = 0, $passcode = '' ) {
-		global $wpdb;
-
 		$class = self::get( $class_id );
 		if ( ! $class ) {
 			return new WP_Error( 'gcm_invalid_class', __( 'Class not found.', 'giga-class-market' ) );
@@ -159,46 +181,30 @@ class GCM_Class_Service {
 			return new WP_Error( 'gcm_forbidden', __( 'You cannot start this class.', 'giga-class-market' ) );
 		}
 
+		if ( class_exists( 'GCM_Installer' ) ) {
+			GCM_Installer::ensure_class_passcode_column();
+		}
+
 		if ( '' === trim( (string) $passcode ) && ! empty( $class->zoom_passcode ) ) {
 			$passcode = (string) $class->zoom_passcode;
 		}
 
 		$duration = self::duration_minutes( $class );
-		$zoom     = GCM_Zoom_Service::create_meeting( $class->title, $class->scheduled_at, $duration, (int) $class->id, $passcode );
+		$meeting  = self::build_meeting( $class, $passcode, $duration );
 
-		if ( is_wp_error( $zoom ) ) {
-			return $zoom;
-		}
-
-		$join_url   = isset( $zoom['join_url'] ) ? (string) $zoom['join_url'] : '';
-		$start_url  = isset( $zoom['start_url'] ) ? (string) $zoom['start_url'] : $join_url;
-		$meeting_id = isset( $zoom['meeting_id'] ) ? (string) $zoom['meeting_id'] : '';
-		$stored_pw  = isset( $zoom['passcode'] ) ? (string) $zoom['passcode'] : GCM_Zoom_Service::resolve_passcode( $passcode );
-
-		if ( '' === $join_url || ! GCM_Zoom_Service::is_usable_meeting_url( $join_url ) ) {
-			$zoom       = GCM_Zoom_Service::create_jitsi_meeting( $class->title, (int) $class->id, $stored_pw );
-			$join_url   = $zoom['join_url'];
-			$start_url  = $zoom['start_url'];
-			$meeting_id = $zoom['meeting_id'];
-			$stored_pw  = $zoom['passcode'];
-		}
-
-		$wpdb->update(
-			$wpdb->prefix . 'gcm_classes',
+		self::save_meeting_fields(
+			$class_id,
 			array(
 				'status'          => 'live',
-				'zoom_meeting_id' => $meeting_id,
-				'zoom_join_url'   => $join_url,
-				'zoom_start_url'  => $start_url,
-				'zoom_passcode'   => $stored_pw,
+				'zoom_meeting_id' => $meeting['meeting_id'],
+				'zoom_join_url'   => $meeting['join_url'],
+				'zoom_start_url'  => $meeting['start_url'],
+				'zoom_passcode'   => $meeting['passcode'],
 				'started_at'      => current_time( 'mysql' ),
-			),
-			array( 'id' => absint( $class_id ) ),
-			array( '%s', '%s', '%s', '%s', '%s', '%s' ),
-			array( '%d' )
+			)
 		);
 
-		return self::get( $class_id );
+		return self::with_meeting( $class, $meeting, 'live' );
 	}
 
 	/**
@@ -208,43 +214,167 @@ class GCM_Class_Service {
 	 * @return object|WP_Error
 	 */
 	public static function ensure_meeting_links( $class_id ) {
-		global $wpdb;
-
 		$class = self::get( $class_id );
 		if ( ! $class ) {
 			return new WP_Error( 'gcm_invalid_class', __( 'Class not found.', 'giga-class-market' ) );
 		}
 
-		if ( GCM_Zoom_Service::is_usable_meeting_url( $class->zoom_join_url ?? '' ) ) {
+		$join = isset( $class->zoom_join_url ) ? (string) $class->zoom_join_url : '';
+		if ( self::meeting_url_is_usable( $join ) ) {
 			return $class;
 		}
 
 		$passcode = ! empty( $class->zoom_passcode ) ? (string) $class->zoom_passcode : '';
-		$meeting  = GCM_Zoom_Service::create_meeting(
-			$class->title,
-			$class->scheduled_at,
-			self::duration_minutes( $class ),
-			(int) $class->id,
-			$passcode
-		);
-		if ( is_wp_error( $meeting ) ) {
-			$meeting = GCM_Zoom_Service::create_jitsi_meeting( $class->title, (int) $class->id, $passcode );
-		}
+		$meeting  = self::build_meeting( $class, $passcode, self::duration_minutes( $class ) );
 
-		$wpdb->update(
-			$wpdb->prefix . 'gcm_classes',
+		self::save_meeting_fields(
+			$class_id,
 			array(
 				'zoom_meeting_id' => $meeting['meeting_id'],
 				'zoom_join_url'   => $meeting['join_url'],
 				'zoom_start_url'  => $meeting['start_url'],
-				'zoom_passcode'   => isset( $meeting['passcode'] ) ? (string) $meeting['passcode'] : $passcode,
-			),
-			array( 'id' => absint( $class_id ) ),
-			array( '%s', '%s', '%s', '%s' ),
-			array( '%d' )
+				'zoom_passcode'   => $meeting['passcode'],
+			)
 		);
 
-		return self::get( $class_id );
+		return self::with_meeting( $class, $meeting );
+	}
+
+	/**
+	 * Create a meeting array that always has a join URL.
+	 *
+	 * @param object $class Class row.
+	 * @param string $passcode Passcode.
+	 * @param int    $duration Duration minutes.
+	 * @return array
+	 */
+	private static function build_meeting( $class, $passcode = '', $duration = 60 ) {
+		$title    = isset( $class->title ) ? (string) $class->title : '';
+		$class_id = isset( $class->id ) ? (int) $class->id : 0;
+		$start_at = isset( $class->scheduled_at ) ? (string) $class->scheduled_at : '';
+
+		try {
+			if ( class_exists( 'GCM_Meeting_Service' ) ) {
+				$meeting = GCM_Meeting_Service::create( $title, $start_at, $duration, $class_id, $passcode );
+			} elseif ( class_exists( 'GCM_Zoom_Service' ) ) {
+				$meeting = GCM_Zoom_Service::create_meeting( $title, $start_at, $duration, $class_id, $passcode );
+			} else {
+				$meeting = array();
+			}
+		} catch ( Exception $e ) {
+			unset( $e );
+			$meeting = array();
+		} catch ( Throwable $e ) {
+			unset( $e );
+			$meeting = array();
+		}
+
+		if ( is_wp_error( $meeting ) || ! is_array( $meeting ) || empty( $meeting['join_url'] ) || ! self::meeting_url_is_usable( $meeting['join_url'] ) ) {
+			if ( class_exists( 'GCM_Meeting_Service' ) ) {
+				$meeting = GCM_Meeting_Service::create_local( $title, $class_id, $passcode );
+			} elseif ( class_exists( 'GCM_Zoom_Service' ) ) {
+				$meeting = GCM_Zoom_Service::create_jitsi_meeting( $title, $class_id, $passcode );
+			} else {
+				$slug    = 'GigaClassMarket-' . ( $class_id ? $class_id : wp_rand( 1000, 9999 ) );
+				$url     = 'https://meet.jit.si/' . $slug;
+				$meeting = array(
+					'join_url'   => $url,
+					'start_url'  => $url,
+					'meeting_id' => 'jitsi-' . $slug,
+					'passcode'   => $passcode ? $passcode : 'GCM' . wp_rand( 1000, 9999 ),
+					'provider'   => 'jitsi',
+				);
+			}
+		}
+
+		if ( class_exists( 'GCM_Meeting_Service' ) ) {
+			return GCM_Meeting_Service::normalize( $meeting, $class_id, $passcode );
+		}
+
+		return array(
+			'join_url'   => isset( $meeting['join_url'] ) ? (string) $meeting['join_url'] : '',
+			'start_url'  => isset( $meeting['start_url'] ) ? (string) $meeting['start_url'] : ( isset( $meeting['join_url'] ) ? (string) $meeting['join_url'] : '' ),
+			'meeting_id' => isset( $meeting['meeting_id'] ) ? (string) $meeting['meeting_id'] : '',
+			'passcode'   => isset( $meeting['passcode'] ) ? (string) $meeting['passcode'] : $passcode,
+			'provider'   => isset( $meeting['provider'] ) ? (string) $meeting['provider'] : 'jitsi',
+		);
+	}
+
+	/**
+	 * Persist meeting columns, retrying without unknown columns.
+	 *
+	 * @param int   $class_id Class ID.
+	 * @param array $fields Column => value.
+	 * @return bool
+	 */
+	public static function save_meeting_fields( $class_id, $fields ) {
+		global $wpdb;
+
+		$class_id = absint( $class_id );
+		if ( ! $class_id || empty( $fields ) || ! is_array( $fields ) ) {
+			return false;
+		}
+
+		if ( class_exists( 'GCM_Installer' ) ) {
+			GCM_Installer::ensure_class_passcode_column();
+		}
+
+		$table = $wpdb->prefix . 'gcm_classes';
+		if ( class_exists( 'GCM_Installer' ) && method_exists( 'GCM_Installer', 'update_row' ) ) {
+			return (bool) GCM_Installer::update_row( $table, $fields, array( 'id' => $class_id ) );
+		}
+
+		$ok    = $wpdb->update( $table, $fields, array( 'id' => $class_id ) );
+		$error = (string) $wpdb->last_error;
+		if ( false !== $ok && '' === $error ) {
+			return true;
+		}
+		if ( $error && preg_match( "/Unknown column '([^']+)'/i", $error, $match ) ) {
+			unset( $fields[ $match[1] ] );
+			if ( ! empty( $fields ) ) {
+				$ok = $wpdb->update( $table, $fields, array( 'id' => $class_id ) );
+			}
+		}
+		return false !== $ok;
+	}
+
+	/**
+	 * Merge meeting fields onto a class object (used when DB update is partial).
+	 *
+	 * @param object $class Class row.
+	 * @param array  $meeting Meeting array.
+	 * @param string $status Optional status override.
+	 * @return object
+	 */
+	private static function with_meeting( $class, $meeting, $status = '' ) {
+		$fresh = self::get( isset( $class->id ) ? (int) $class->id : 0 );
+		if ( $fresh ) {
+			$class = $fresh;
+		}
+		if ( $status ) {
+			$class->status = $status;
+		}
+		$class->zoom_meeting_id = $meeting['meeting_id'];
+		$class->zoom_join_url   = $meeting['join_url'];
+		$class->zoom_start_url  = $meeting['start_url'];
+		$class->zoom_passcode   = $meeting['passcode'];
+		return $class;
+	}
+
+	/**
+	 * Usable meeting URL helper.
+	 *
+	 * @param string $url URL.
+	 * @return bool
+	 */
+	public static function meeting_url_is_usable( $url ) {
+		if ( class_exists( 'GCM_Meeting_Service' ) && method_exists( 'GCM_Meeting_Service', 'is_usable' ) ) {
+			return GCM_Meeting_Service::is_usable( $url );
+		}
+		if ( class_exists( 'GCM_Zoom_Service' ) && method_exists( 'GCM_Zoom_Service', 'is_usable_meeting_url' ) ) {
+			return GCM_Zoom_Service::is_usable_meeting_url( $url );
+		}
+		return ( '' !== (string) $url && false === strpos( (string) $url, '/live-class' ) );
 	}
 
 	/**
@@ -256,8 +386,6 @@ class GCM_Class_Service {
 	 * @return object|WP_Error
 	 */
 	public static function update_passcode( $class_id, $passcode, $actor_id = 0 ) {
-		global $wpdb;
-
 		$class = self::get( $class_id );
 		if ( ! $class ) {
 			return new WP_Error( 'gcm_invalid_class', __( 'Class not found.', 'giga-class-market' ) );
@@ -267,7 +395,12 @@ class GCM_Class_Service {
 			return new WP_Error( 'gcm_forbidden', __( 'You cannot change this passcode.', 'giga-class-market' ) );
 		}
 
-		$clean = GCM_Zoom_Service::sanitize_passcode( $passcode );
+		if ( class_exists( 'GCM_Zoom_Service' ) && method_exists( 'GCM_Zoom_Service', 'sanitize_passcode' ) ) {
+			$clean = GCM_Zoom_Service::sanitize_passcode( $passcode );
+		} else {
+			$clean = preg_replace( '/[^A-Za-z0-9@\-\_\*]/', '', (string) $passcode );
+			$clean = substr( (string) $clean, 0, 10 );
+		}
 		if ( strlen( $clean ) < 4 ) {
 			return new WP_Error( 'gcm_weak_passcode', __( 'Passcode must be 4–10 characters using letters, numbers, or @ - _ *.', 'giga-class-market' ) );
 		}
@@ -275,39 +408,54 @@ class GCM_Class_Service {
 		$join_url  = isset( $class->zoom_join_url ) ? (string) $class->zoom_join_url : '';
 		$start_url = isset( $class->zoom_start_url ) ? (string) $class->zoom_start_url : '';
 
-		if ( 'live' === $class->status && ! empty( $class->zoom_meeting_id ) && GCM_Zoom_Service::is_zoom_meeting_id( $class->zoom_meeting_id ) ) {
-			$updated = GCM_Zoom_Service::update_meeting_passcode( $class->zoom_meeting_id, $clean );
-			if ( is_wp_error( $updated ) ) {
-				return $updated;
-			}
-			if ( ! empty( $updated['passcode'] ) ) {
-				$clean = (string) $updated['passcode'];
-			}
-			if ( ! empty( $updated['join_url'] ) ) {
-				$join_url = (string) $updated['join_url'];
+		if ( 'live' === $class->status && ! empty( $class->zoom_meeting_id ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_zoom_meeting_id( $class->zoom_meeting_id ) ) {
+			try {
+				$updated = GCM_Zoom_Service::update_meeting_passcode( $class->zoom_meeting_id, $clean );
+				if ( ! is_wp_error( $updated ) ) {
+					if ( ! empty( $updated['passcode'] ) ) {
+						$clean = (string) $updated['passcode'];
+					}
+					if ( ! empty( $updated['join_url'] ) ) {
+						$join_url = (string) $updated['join_url'];
+					}
+				}
+			} catch ( Exception $e ) {
+				unset( $e );
+			} catch ( Throwable $e ) {
+				unset( $e );
 			}
 		}
 
 		$fields = array( 'zoom_passcode' => $clean );
-		$format = array( '%s' );
 		if ( $join_url ) {
 			$fields['zoom_join_url'] = $join_url;
-			$format[]                = '%s';
 		}
 		if ( $start_url ) {
 			$fields['zoom_start_url'] = $start_url;
-			$format[]                 = '%s';
 		}
 
-		$wpdb->update(
-			$wpdb->prefix . 'gcm_classes',
-			$fields,
-			array( 'id' => absint( $class_id ) ),
-			$format,
-			array( '%d' )
-		);
+		self::save_meeting_fields( $class_id, $fields );
 
-		return self::get( $class_id );
+		$fresh = self::get( $class_id );
+		if ( $fresh ) {
+			$fresh->zoom_passcode = $clean;
+			if ( $join_url ) {
+				$fresh->zoom_join_url = $join_url;
+			}
+			if ( $start_url ) {
+				$fresh->zoom_start_url = $start_url;
+			}
+			return $fresh;
+		}
+
+		$class->zoom_passcode = $clean;
+		if ( $join_url ) {
+			$class->zoom_join_url = $join_url;
+		}
+		if ( $start_url ) {
+			$class->zoom_start_url = $start_url;
+		}
+		return $class;
 	}
 
 	/**
@@ -333,18 +481,24 @@ class GCM_Class_Service {
 
 		$when = '';
 		if ( ! empty( $class->scheduled_at ) ) {
-			$when = function_exists( 'gcm_format_exact_datetime' )
-				? gcm_format_exact_datetime( $class->scheduled_at )
-				: mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $class->scheduled_at );
+			$when = function_exists( 'gcm_format_meeting_datetime' )
+				? gcm_format_meeting_datetime( $class->scheduled_at )
+				: ( function_exists( 'gcm_format_exact_datetime' )
+					? gcm_format_exact_datetime( $class->scheduled_at )
+					: mysql2date( get_option( 'date_format' ) . ' H:i:s', $class->scheduled_at ) );
 			if ( ! empty( $class->scheduled_end ) ) {
-				$end = function_exists( 'gcm_format_exact_datetime' )
-					? gcm_format_exact_datetime( $class->scheduled_end )
-					: mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $class->scheduled_end );
+				$end = function_exists( 'gcm_format_meeting_datetime' )
+					? gcm_format_meeting_datetime( $class->scheduled_end )
+					: ( function_exists( 'gcm_format_exact_datetime' )
+						? gcm_format_exact_datetime( $class->scheduled_end )
+						: mysql2date( get_option( 'date_format' ) . ' H:i:s', $class->scheduled_end ) );
 				$when .= ' – ' . $end;
 			}
 		}
 
-		$meeting_id = GCM_Zoom_Service::format_meeting_id( $class->zoom_meeting_id ?? '' );
+		$meeting_id = class_exists( 'GCM_Zoom_Service' ) && method_exists( 'GCM_Zoom_Service', 'format_meeting_id' )
+			? GCM_Zoom_Service::format_meeting_id( $class->zoom_meeting_id ?? '' )
+			: (string) ( $class->zoom_meeting_id ?? '' );
 		$passcode   = isset( $class->zoom_passcode ) ? (string) $class->zoom_passcode : '';
 		$join_url   = isset( $class->zoom_join_url ) ? (string) $class->zoom_join_url : '';
 		$invite_url = self::invitation_url( (int) $class->id );
@@ -390,20 +544,30 @@ class GCM_Class_Service {
 
 		$join_url  = isset( $class->zoom_join_url ) ? (string) $class->zoom_join_url : '';
 		$start_url = ! empty( $class->zoom_start_url ) ? (string) $class->zoom_start_url : $join_url;
-		$provider  = ( ! empty( $class->zoom_meeting_id ) && GCM_Zoom_Service::is_zoom_meeting_id( $class->zoom_meeting_id ) ) ? 'zoom' : 'jitsi';
-		if ( $join_url && false !== strpos( strtolower( $join_url ), 'zoom' ) ) {
+		$provider  = 'jitsi';
+		if ( ! empty( $class->zoom_meeting_id ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_zoom_meeting_id( $class->zoom_meeting_id ) ) {
 			$provider = 'zoom';
+		} elseif ( $join_url && false !== strpos( strtolower( $join_url ), 'zoom' ) ) {
+			$provider = 'zoom';
+		} elseif ( $join_url && ( false !== strpos( strtolower( $join_url ), 'jit.si' ) || false !== strpos( strtolower( $join_url ), 'jitsi' ) ) ) {
+			$provider = 'jitsi';
+		}
+
+		$meeting_id = isset( $class->zoom_meeting_id ) ? (string) $class->zoom_meeting_id : '';
+		$display    = $meeting_id;
+		if ( class_exists( 'GCM_Zoom_Service' ) && method_exists( 'GCM_Zoom_Service', 'format_meeting_id' ) ) {
+			$display = GCM_Zoom_Service::format_meeting_id( $meeting_id );
 		}
 
 		return array(
-			'meeting_id'          => isset( $class->zoom_meeting_id ) ? (string) $class->zoom_meeting_id : '',
-			'meeting_id_display'  => GCM_Zoom_Service::format_meeting_id( $class->zoom_meeting_id ?? '' ),
-			'passcode'            => isset( $class->zoom_passcode ) ? (string) $class->zoom_passcode : '',
-			'join_url'            => $join_url,
-			'start_url'           => $start_url,
-			'invite_url'          => self::invitation_url( (int) $class->id ),
-			'invite_text'         => self::invitation_text( $class ),
-			'provider'            => $provider,
+			'meeting_id'         => $meeting_id,
+			'meeting_id_display' => $display,
+			'passcode'           => isset( $class->zoom_passcode ) ? (string) $class->zoom_passcode : '',
+			'join_url'           => $join_url,
+			'start_url'          => $start_url,
+			'invite_url'         => self::invitation_url( (int) $class->id ),
+			'invite_text'        => self::invitation_text( $class ),
+			'provider'           => $provider,
 		);
 	}
 

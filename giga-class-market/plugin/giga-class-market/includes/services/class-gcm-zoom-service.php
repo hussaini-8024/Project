@@ -32,14 +32,40 @@ class GCM_Zoom_Service {
 		$passcode      = self::resolve_passcode( $passcode );
 
 		if ( '' !== $account_id && '' !== $client_id && '' !== $client_secret ) {
-			$zoom = self::create_zoom_meeting( $topic, $start_time, $duration_minutes, $account_id, $client_id, $client_secret, $host_email, $passcode );
-			if ( ! is_wp_error( $zoom ) ) {
-				return $zoom;
+			try {
+				$zoom = self::create_zoom_meeting( $topic, $start_time, $duration_minutes, $account_id, $client_id, $client_secret, $host_email, $passcode );
+				if ( ! is_wp_error( $zoom ) ) {
+					return $zoom;
+				}
+			} catch ( Exception $e ) {
+				unset( $e );
+			} catch ( Throwable $e ) {
+				unset( $e );
 			}
 			// Fall through to Jitsi so Start Class never sends users to a 404.
 		}
 
-		return self::create_jitsi_meeting( $topic, $class_id, $passcode );
+		try {
+			return self::create_jitsi_meeting( $topic, $class_id, $passcode );
+		} catch ( Exception $e ) {
+			unset( $e );
+		} catch ( Throwable $e ) {
+			unset( $e );
+		}
+
+		if ( class_exists( 'GCM_Meeting_Service' ) ) {
+			return GCM_Meeting_Service::create_jitsi( $topic, $class_id, $passcode );
+		}
+
+		$slug = 'GigaClassMarket-' . ( $class_id ? absint( $class_id ) : wp_rand( 1000, 9999 ) );
+		$url  = 'https://meet.jit.si/' . $slug;
+		return array(
+			'join_url'   => $url,
+			'start_url'  => $url,
+			'meeting_id' => 'jitsi-' . $slug,
+			'passcode'   => $passcode,
+			'provider'   => 'jitsi',
+		);
 	}
 
 	/**
@@ -174,7 +200,7 @@ class GCM_Zoom_Service {
 		$passcode   = self::resolve_passcode( $passcode );
 		$meeting_id = preg_replace( '/\D+/', '', (string) $meeting_id );
 		if ( '' === $meeting_id ) {
-			return new WP_Error( 'gcm_invalid_meeting', __( 'This meeting cannot update a Zoom passcode.', 'giga-class-market' ) );
+			return array( 'passcode' => $passcode );
 		}
 
 		$settings      = gcm_get_setting( 'zoom', array() );
@@ -188,62 +214,68 @@ class GCM_Zoom_Service {
 
 		$token = self::get_access_token( $account_id, $client_id, $client_secret );
 		if ( is_wp_error( $token ) ) {
-			return $token;
+			return array( 'passcode' => $passcode );
 		}
 
-		$response = wp_remote_request(
-			'https://api.zoom.us/v2/meetings/' . rawurlencode( $meeting_id ),
-			array(
-				'method'  => 'PATCH',
-				'timeout' => 30,
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $token,
-					'Content-Type'  => 'application/json',
-				),
-				'body'    => wp_json_encode(
-					array(
-						'password' => $passcode,
-					)
-				),
-			)
-		);
+		try {
+			$response = wp_remote_request(
+				'https://api.zoom.us/v2/meetings/' . rawurlencode( $meeting_id ),
+				array(
+					'method'  => 'PATCH',
+					'timeout' => 30,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+						'Content-Type'  => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'password' => $passcode,
+						)
+					),
+				)
+			);
 
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		if ( $code < 200 || $code >= 300 ) {
-			$data    = json_decode( wp_remote_retrieve_body( $response ), true );
-			$message = isset( $data['message'] ) ? (string) $data['message'] : __( 'Could not update the Zoom passcode.', 'giga-class-market' );
-			return new WP_Error( 'gcm_zoom_update_failed', $message );
-		}
-
-		$join_url = '';
-		$get      = wp_remote_get(
-			'https://api.zoom.us/v2/meetings/' . rawurlencode( $meeting_id ),
-			array(
-				'timeout' => 20,
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $token,
-				),
-			)
-		);
-		if ( ! is_wp_error( $get ) ) {
-			$payload = json_decode( wp_remote_retrieve_body( $get ), true );
-			if ( is_array( $payload ) && ! empty( $payload['join_url'] ) ) {
-				$join_url = (string) $payload['join_url'];
+			if ( is_wp_error( $response ) ) {
+				return array( 'passcode' => $passcode );
 			}
-			if ( is_array( $payload ) && ! empty( $payload['password'] ) ) {
-				$passcode = (string) $payload['password'];
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+			if ( $code < 200 || $code >= 300 ) {
+				return array( 'passcode' => $passcode );
 			}
+
+			$join_url = '';
+			$get      = wp_remote_get(
+				'https://api.zoom.us/v2/meetings/' . rawurlencode( $meeting_id ),
+				array(
+					'timeout' => 20,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+					),
+				)
+			);
+			if ( ! is_wp_error( $get ) ) {
+				$payload = json_decode( wp_remote_retrieve_body( $get ), true );
+				if ( is_array( $payload ) && ! empty( $payload['join_url'] ) ) {
+					$join_url = (string) $payload['join_url'];
+				}
+				if ( is_array( $payload ) && ! empty( $payload['password'] ) ) {
+					$passcode = (string) $payload['password'];
+				}
+			}
+
+			$out = array( 'passcode' => $passcode );
+			if ( $join_url ) {
+				$out['join_url'] = $join_url;
+			}
+			return $out;
+		} catch ( Exception $e ) {
+			unset( $e );
+		} catch ( Throwable $e ) {
+			unset( $e );
 		}
 
-		$out = array( 'passcode' => $passcode );
-		if ( $join_url ) {
-			$out['join_url'] = $join_url;
-		}
-		return $out;
+		return array( 'passcode' => $passcode );
 	}
 
 	/**

@@ -441,9 +441,58 @@ class GCM_Installer {
 			if ( $ok ) {
 				return (int) $wpdb->insert_id;
 			}
+			$error = (string) $wpdb->last_error;
+		}
+
+		if ( $error && preg_match( "/Unknown column '([^']+)'/i", $error, $match ) ) {
+			unset( $clean[ $match[1] ] );
+			if ( ! empty( $clean ) ) {
+				$ok = $wpdb->insert( $table, $clean );
+				if ( $ok ) {
+					return (int) $wpdb->insert_id;
+				}
+			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * Update a row, retrying without unknown columns.
+	 *
+	 * @param string $table Table name with prefix.
+	 * @param array  $data  Column => value.
+	 * @param array  $where Where clause.
+	 * @return bool
+	 */
+	public static function update_row( $table, $data, $where ) {
+		global $wpdb;
+
+		$clean = array();
+		foreach ( (array) $data as $key => $value ) {
+			if ( null !== $value ) {
+				$clean[ $key ] = $value;
+			}
+		}
+		if ( empty( $clean ) || empty( $where ) ) {
+			return false;
+		}
+
+		$ok    = $wpdb->update( $table, $clean, $where );
+		$error = (string) $wpdb->last_error;
+		if ( false !== $ok && '' === $error ) {
+			return true;
+		}
+
+		if ( $error && preg_match( "/Unknown column '([^']+)'/i", $error, $match ) ) {
+			unset( $clean[ $match[1] ] );
+			if ( ! empty( $clean ) ) {
+				$ok = $wpdb->update( $table, $clean, $where );
+				return false !== $ok;
+			}
+		}
+
+		return false !== $ok;
 	}
 
 	/**
@@ -457,6 +506,15 @@ class GCM_Installer {
 
 		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		return ( $found === $table );
+	}
+
+	/**
+	 * Add zoom_passcode on existing installs when dbDelta misses it.
+	 *
+	 * @return void
+	 */
+	public static function ensure_class_passcode_column() {
+		self::maybe_add_class_passcode_column();
 	}
 
 	/**

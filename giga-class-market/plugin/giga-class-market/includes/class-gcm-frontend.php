@@ -160,11 +160,12 @@ class GCM_Frontend {
 			'gcm-public',
 			'gcmPublic',
 			array(
-				'ajaxUrl'    => function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ),
-				'adminAjax'  => admin_url( 'admin-ajax.php' ),
-				'restUrl'    => rest_url( 'gcm/v1/form' ),
-				'nonce'      => wp_create_nonce( 'gcm_ajax_nonce' ),
-				'paymentUrl' => home_url( '/payment/' ),
+				'ajaxUrl'      => function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ),
+				'adminAjax'    => admin_url( 'admin-ajax.php' ),
+				'restUrl'      => rest_url( 'gcm/v1/form' ),
+				'nonce'        => wp_create_nonce( 'gcm_ajax_nonce' ),
+				'paymentUrl'   => home_url( '/payment/' ),
+				'errorMessage' => __( 'Something went wrong. Please try again.', 'giga-class-market' ),
 			)
 		);
 	}

@@ -3,7 +3,7 @@
  * Plugin Name: Giga Class Market
  * Plugin URI:  https://gigaclassmarket.com/
  * Description: Core course marketplace, enrollment, payment verification, student dashboard, and administration plugin for Giga Class Market.
- * Version:     1.3.8
+ * Version:     1.3.9
  * Author:      Giga Class Market
  * Text Domain: giga-class-market
  * Domain Path: /languages
@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_VERSION', '1.3.8' );
+define( 'GCM_VERSION', '1.3.9' );
 define( 'GCM_PLUGIN_FILE', __FILE__ );
 define( 'GCM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GCM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'GCM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-define( 'GCM_DB_VERSION', '1.3.8' );
+define( 'GCM_DB_VERSION', '1.3.9' );
 
 /**
  * Front-door AJAX URL (not /wp-admin/admin-ajax.php).
@@ -79,6 +79,27 @@ function gcm_get_setting( $section, $default = array() ) {
 		return $default;
 	}
 	return isset( $settings[ $section ] ) ? $settings[ $section ] : $default;
+}
+
+/**
+ * Format a meeting datetime (plugin-owned; works without the theme helper).
+ *
+ * @param string $mysql_datetime MySQL datetime.
+ * @return string
+ */
+function gcm_format_meeting_datetime( $mysql_datetime ) {
+	if ( function_exists( 'gcm_format_exact_datetime' ) ) {
+		return gcm_format_exact_datetime( $mysql_datetime );
+	}
+	$mysql_datetime = (string) $mysql_datetime;
+	if ( '' === $mysql_datetime ) {
+		return '';
+	}
+	$date_format = get_option( 'date_format' );
+	if ( ! is_string( $date_format ) || '' === $date_format ) {
+		$date_format = 'F j, Y';
+	}
+	return (string) mysql2date( $date_format . ' H:i:s', $mysql_datetime );
 }
 
 /**

@@ -1,6 +1,69 @@
 (function () {
 	'use strict';
 
+	function errorMessage() {
+		return (window.gcmPublic && gcmPublic.errorMessage) || 'Something went wrong. Please try again.';
+	}
+
+	function ajaxUrls() {
+		var urls = [];
+		if (window.gcmPublic && gcmPublic.ajaxUrl) {
+			urls.push(gcmPublic.ajaxUrl);
+		}
+		if (window.gcmPublic && gcmPublic.restUrl) {
+			urls.push(gcmPublic.restUrl);
+		}
+		if (window.gcmPublic && gcmPublic.adminAjax) {
+			urls.push(gcmPublic.adminAjax);
+		}
+		return urls;
+	}
+
+	function parseJsonResponse(response) {
+		return response.text().then(function (text) {
+			try {
+				var json = JSON.parse(text);
+				if (json && typeof json.success !== 'undefined') {
+					return json;
+				}
+			} catch (err) {}
+			return {
+				success: false,
+				_retry: true,
+				data: { message: errorMessage() }
+			};
+		});
+	}
+
+	function postAjax(body, asFormData) {
+		var urls = ajaxUrls();
+		function next(index) {
+			if (index >= urls.length) {
+				return Promise.resolve({
+					success: false,
+					data: { message: errorMessage() }
+				});
+			}
+			var options = {
+				method: 'POST',
+				credentials: 'same-origin',
+				body: body
+			};
+			if (!asFormData) {
+				options.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+			}
+			return fetch(urls[index], options).then(parseJsonResponse).then(function (json) {
+				if (json && json._retry) {
+					return next(index + 1);
+				}
+				return json;
+			}).catch(function () {
+				return next(index + 1);
+			});
+		}
+		return next(0);
+	}
+
 	function serializeForm(form) {
 		return new FormData(form);
 	}
@@ -24,14 +87,7 @@
 		}
 
 		setMessage(form, 'Submitting...', true);
-		var url = (window.gcmPublic && gcmPublic.ajaxUrl) || (window.gcmTheme && gcmTheme.formUrl) || (window.gcmPublic && gcmPublic.adminAjax);
-		fetch(url, {
-			method: 'POST',
-			credentials: 'same-origin',
-			body: formData
-		}).then(function (response) {
-			return response.json();
-		}).then(function (json) {
+		postAjax(formData, true).then(function (json) {
 			var message = json.data && json.data.message ? json.data.message : 'Request complete.';
 			setMessage(form, message, json.success);
 			if (json.success && form.classList.contains('gcm-contact-form')) {
@@ -52,8 +108,6 @@
 					window.location.reload();
 				}, 600);
 			}
-		}).catch(function () {
-			setMessage(form, 'Request failed. Please try again.', false);
 		});
 	}
 
@@ -68,23 +122,12 @@
 		data.append('nonce', window.gcmPublic.nonce);
 		data.append('class_id', joinBtn.getAttribute('data-class-id'));
 		joinBtn.disabled = true;
-		fetch(window.gcmPublic.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: data.toString()
-		}).then(function (response) {
-			return response.json();
-		}).then(function (json) {
+		postAjax(data.toString(), false).then(function (json) {
 			if (json.success && json.data && json.data.join_url) {
-				// Same-tab navigation avoids popup blockers and broken blank tabs.
 				window.location.assign(json.data.join_url);
 				return;
 			}
 			window.alert((json.data && json.data.message) || 'Unable to join class.');
-			joinBtn.disabled = false;
-		}).catch(function () {
-			window.alert('Unable to join class.');
 			joinBtn.disabled = false;
 		});
 	});
@@ -116,16 +159,9 @@
 			data.append('announcement_id', button.getAttribute('data-announcement-id'));
 		}
 		button.disabled = true;
-		fetch(window.gcmPublic.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: data.toString()
-		}).then(function (response) {
-			return response.json();
-		}).then(function (json) {
+		postAjax(data.toString(), false).then(function (json) {
 			if (!json.success) {
-				window.alert((json.data && json.data.message) || 'Request failed.');
+				window.alert((json.data && json.data.message) || errorMessage());
 				button.disabled = false;
 				return;
 			}
@@ -139,9 +175,6 @@
 			window.setTimeout(function () {
 				window.location.reload();
 			}, 400);
-		}).catch(function () {
-			window.alert('Request failed.');
-			button.disabled = false;
 		});
 	});
 
@@ -167,14 +200,7 @@
 		data.append('nonce', wrapper.getAttribute('data-nonce') || window.gcmPublic.nonce);
 
 		grid.innerHTML = '<p>Searching...</p>';
-		fetch(window.gcmPublic.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: data.toString()
-		}).then(function (response) {
-			return response.json();
-		}).then(function (json) {
+		postAjax(data.toString(), false).then(function (json) {
 			if (!json.success || !json.data.courses.length) {
 				grid.innerHTML = '<p>No courses found.</p>';
 				return;
@@ -192,8 +218,6 @@
 					: '<p class="gcm-price">' + regular.toFixed(2) + '</p>';
 				return '<article class="gcm-course-card' + (onSale ? ' gcm-course-card--sale' : '') + '">' + img + '<h3><a href="' + course.permalink + '">' + escapeHtml(course.title) + '</a></h3><p>' + escapeHtml(course.excerpt || '') + '</p>' + priceHtml + '<a class="gcm-button" href="' + window.gcmPublic.paymentUrl + '?course_id=' + course.id + '">Enroll now</a></article>';
 			}).join('');
-		}).catch(function () {
-			grid.innerHTML = '<p>Search failed.</p>';
 		});
 	});
 
@@ -210,19 +234,9 @@
 		data.append('completed', '1');
 
 		button.disabled = true;
-		fetch(window.gcmPublic.ajaxUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: data.toString()
-		}).then(function (response) {
-			return response.json();
-		}).then(function (json) {
+		postAjax(data.toString(), false).then(function (json) {
 			button.textContent = json.success ? 'Completed' : 'Try again';
 			button.disabled = !!json.success;
-		}).catch(function () {
-			button.textContent = 'Try again';
-			button.disabled = false;
 		});
 	});
 

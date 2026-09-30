@@ -32,13 +32,39 @@ class GCM_Attendance_Service {
 			return new WP_Error( 'gcm_not_live', __( 'This class is not live yet.', 'giga-class-market' ) );
 		}
 
-		// Repair broken legacy /live-class/ placeholder URLs.
-		$class = GCM_Class_Service::ensure_meeting_links( $class_id );
-		if ( is_wp_error( $class ) ) {
-			return $class;
+		try {
+			$repaired = GCM_Class_Service::ensure_meeting_links( $class_id );
+			if ( ! is_wp_error( $repaired ) && $repaired ) {
+				$class = $repaired;
+			}
+		} catch ( Exception $e ) {
+			unset( $e );
+		} catch ( Throwable $e ) {
+			unset( $e );
 		}
+
 		if ( 'live' !== $class->status ) {
 			return new WP_Error( 'gcm_not_live', __( 'This class is not live yet.', 'giga-class-market' ) );
+		}
+
+		$join = isset( $class->zoom_join_url ) ? (string) $class->zoom_join_url : '';
+		if ( '' === $join || ( class_exists( 'GCM_Class_Service' ) && ! GCM_Class_Service::meeting_url_is_usable( $join ) ) ) {
+			if ( class_exists( 'GCM_Meeting_Service' ) ) {
+				$meeting = GCM_Meeting_Service::create_local( $class->title, (int) $class->id, isset( $class->zoom_passcode ) ? (string) $class->zoom_passcode : '' );
+				GCM_Class_Service::save_meeting_fields(
+					$class_id,
+					array(
+						'zoom_meeting_id' => $meeting['meeting_id'],
+						'zoom_join_url'   => $meeting['join_url'],
+						'zoom_start_url'  => $meeting['start_url'],
+						'zoom_passcode'   => $meeting['passcode'],
+					)
+				);
+				$class->zoom_meeting_id = $meeting['meeting_id'];
+				$class->zoom_join_url   = $meeting['join_url'];
+				$class->zoom_start_url  = $meeting['start_url'];
+				$class->zoom_passcode   = $meeting['passcode'];
+			}
 		}
 
 		if ( empty( $class->zoom_join_url ) ) {

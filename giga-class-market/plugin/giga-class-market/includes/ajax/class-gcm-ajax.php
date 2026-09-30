@@ -189,7 +189,7 @@ class GCM_Ajax {
 		);
 
 		if ( ! $result ) {
-			wp_send_json_error( array( 'message' => __( 'Unable to update progress.', 'giga-class-market' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Unable to update progress.', 'giga-class-market' ) ), 200 );
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Progress updated.', 'giga-class-market' ) ) );
@@ -231,11 +231,11 @@ class GCM_Ajax {
 		$new_password     = isset( $_POST['new_password'] ) ? (string) wp_unslash( $_POST['new_password'] ) : '';
 
 		if ( ! wp_check_password( $current_password, $user->user_pass, $user->ID ) ) {
-			wp_send_json_error( array( 'message' => __( 'Current password is incorrect.', 'giga-class-market' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Current password is incorrect.', 'giga-class-market' ) ), 200 );
 		}
 
 		if ( strlen( $new_password ) < 8 ) {
-			wp_send_json_error( array( 'message' => __( 'New password must be at least 8 characters.', 'giga-class-market' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'New password must be at least 8 characters.', 'giga-class-market' ) ), 200 );
 		}
 
 		wp_set_password( $new_password, $user->ID );
@@ -522,7 +522,7 @@ class GCM_Ajax {
 		$course_ids = isset( $_POST['course_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['course_ids'] ) ) : array();
 		$user       = get_userdata( $teacher_id );
 		if ( ! $user || ! GCM_Roles::is_gcm_teacher_only( $user ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid teacher account.', 'giga-class-market' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Invalid teacher account.', 'giga-class-market' ) ), 200 );
 		}
 
 		GCM_Teacher_Service::set_teacher_courses( $teacher_id, $course_ids );
@@ -561,17 +561,25 @@ class GCM_Ajax {
 		GCM_Security::verify_ajax_nonce();
 		$this->require_teacher_or_admin();
 
-		$result = GCM_Class_Service::host_now(
-			array(
-				'course_id'  => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
-				'teacher_id' => get_current_user_id(),
-				'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
-				'passcode'   => isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
-			)
-		);
+		try {
+			$result = GCM_Class_Service::host_now(
+				array(
+					'course_id'  => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+					'teacher_id' => get_current_user_id(),
+					'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+					'passcode'   => isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
+				)
+			);
+		} catch ( Exception $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to host the meeting. Please try again.', 'giga-class-market' ) ), 200 );
+		} catch ( Throwable $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to host the meeting. Please try again.', 'giga-class-market' ) ), 200 );
+		}
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		$payload = GCM_Class_Service::meeting_payload( $result );
@@ -599,18 +607,26 @@ class GCM_Ajax {
 		$passcode = isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '';
 		$existing = GCM_Class_Service::get( $class_id );
 
-		// If already live with a broken link, repair and return URLs.
-		if ( $existing && 'live' === $existing->status ) {
-			$result = GCM_Class_Service::ensure_meeting_links( $class_id );
-			if ( ! is_wp_error( $result ) && '' !== $passcode ) {
-				$result = GCM_Class_Service::update_passcode( $class_id, $passcode, get_current_user_id() );
+		try {
+			// If already live with a broken link, repair and return URLs.
+			if ( $existing && 'live' === $existing->status ) {
+				$result = GCM_Class_Service::ensure_meeting_links( $class_id );
+				if ( ! is_wp_error( $result ) && '' !== $passcode ) {
+					$result = GCM_Class_Service::update_passcode( $class_id, $passcode, get_current_user_id() );
+				}
+			} else {
+				$result = GCM_Class_Service::start( $class_id, get_current_user_id(), $passcode );
 			}
-		} else {
-			$result = GCM_Class_Service::start( $class_id, get_current_user_id(), $passcode );
+		} catch ( Exception $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to start the class. Please try again.', 'giga-class-market' ) ), 200 );
+		} catch ( Throwable $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to start the class. Please try again.', 'giga-class-market' ) ), 200 );
 		}
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		$payload = GCM_Class_Service::meeting_payload( $result );
@@ -634,14 +650,22 @@ class GCM_Ajax {
 		GCM_Security::verify_ajax_nonce();
 		$this->require_teacher_or_admin();
 
-		$result = GCM_Class_Service::update_passcode(
-			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
-			isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
-			get_current_user_id()
-		);
+		try {
+			$result = GCM_Class_Service::update_passcode(
+				isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+				isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
+				get_current_user_id()
+			);
+		} catch ( Exception $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to update the passcode. Please try again.', 'giga-class-market' ) ), 200 );
+		} catch ( Throwable $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to update the passcode. Please try again.', 'giga-class-market' ) ), 200 );
+		}
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		$payload = GCM_Class_Service::meeting_payload( $result );
@@ -721,7 +745,7 @@ class GCM_Ajax {
 
 		$course_id = isset( $_REQUEST['course_id'] ) ? absint( $_REQUEST['course_id'] ) : 0;
 		if ( ! GCM_Teacher_Service::teacher_can_manage_course( get_current_user_id(), $course_id ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You are not assigned to this course.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You are not assigned to this course.', 'giga-class-market' ) ), 200 );
 		}
 
 		$students = GCM_Enrollment_Service::get_course_students( $course_id );
@@ -773,7 +797,7 @@ class GCM_Ajax {
 
 		$user_id = get_current_user_id();
 		if ( ! $user_id ) {
-			wp_send_json_error( array( 'message' => __( 'Please log in.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Please log in.', 'giga-class-market' ) ), 200 );
 		}
 
 		$result = GCM_Message_Service::send(
@@ -797,7 +821,7 @@ class GCM_Ajax {
 
 		$user_id = get_current_user_id();
 		if ( ! $user_id ) {
-			wp_send_json_error( array( 'message' => __( 'Please log in.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Please log in.', 'giga-class-market' ) ), 200 );
 		}
 
 		$course_id = isset( $_REQUEST['course_id'] ) ? absint( $_REQUEST['course_id'] ) : 0;
@@ -814,13 +838,21 @@ class GCM_Ajax {
 	public function join_live_class() {
 		GCM_Security::verify_ajax_nonce();
 
-		$result = GCM_Attendance_Service::record_join(
-			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
-			get_current_user_id()
-		);
+		try {
+			$result = GCM_Attendance_Service::record_join(
+				isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+				get_current_user_id()
+			);
+		} catch ( Exception $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to join class. Please try again.', 'giga-class-market' ) ), 200 );
+		} catch ( Throwable $e ) {
+			unset( $e );
+			wp_send_json_error( array( 'message' => __( 'Unable to join class. Please try again.', 'giga-class-market' ) ), 200 );
+		}
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		$joined_at = ! empty( $result->joined_at ) ? (string) $result->joined_at : '';
@@ -852,10 +884,10 @@ class GCM_Ajax {
 		$class_id = isset( $_REQUEST['class_id'] ) ? absint( $_REQUEST['class_id'] ) : 0;
 		$class    = GCM_Class_Service::get( $class_id );
 		if ( ! $class ) {
-			wp_send_json_error( array( 'message' => __( 'Class not found.', 'giga-class-market' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'Class not found.', 'giga-class-market' ) ), 200 );
 		}
 		if ( ! GCM_Teacher_Service::teacher_can_manage_course( get_current_user_id(), $class->course_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'You cannot view attendance for this class.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You cannot view attendance for this class.', 'giga-class-market' ) ), 200 );
 		}
 
 		wp_send_json_success(
@@ -874,7 +906,7 @@ class GCM_Ajax {
 	public function generate_certificate() {
 		GCM_Security::verify_ajax_nonce();
 		if ( ! current_user_can( 'gcm_manage_students' ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to issue certificates.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to issue certificates.', 'giga-class-market' ) ), 200 );
 		}
 
 		$user_id   = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
@@ -882,7 +914,7 @@ class GCM_Ajax {
 		$result    = GCM_Certificate_Service::generate_and_send( $user_id, $course_id, get_current_user_id() );
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		wp_send_json_success(
@@ -934,7 +966,7 @@ class GCM_Ajax {
 	public function create_coupon() {
 		GCM_Security::verify_ajax_nonce();
 		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 200 );
 		}
 
 		$result = GCM_Coupon_Service::create(
@@ -960,13 +992,13 @@ class GCM_Ajax {
 	public function toggle_coupon() {
 		GCM_Security::verify_ajax_nonce();
 		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 200 );
 		}
 
 		$coupon_id = isset( $_POST['coupon_id'] ) ? absint( $_POST['coupon_id'] ) : 0;
 		$coupon    = GCM_Coupon_Service::get( $coupon_id );
 		if ( ! $coupon ) {
-			wp_send_json_error( array( 'message' => __( 'Coupon not found.', 'giga-class-market' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'Coupon not found.', 'giga-class-market' ) ), 200 );
 		}
 
 		$result = GCM_Coupon_Service::update( $coupon_id, array( 'is_active' => empty( $coupon->is_active ) ? 1 : 0 ) );
@@ -981,7 +1013,7 @@ class GCM_Ajax {
 	public function delete_coupon() {
 		GCM_Security::verify_ajax_nonce();
 		if ( ! current_user_can( 'gcm_manage_payments' ) && ! current_user_can( 'gcm_manage_settings' ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage coupons.', 'giga-class-market' ) ), 200 );
 		}
 
 		$result = GCM_Coupon_Service::delete( isset( $_POST['coupon_id'] ) ? absint( $_POST['coupon_id'] ) : 0 );
@@ -996,7 +1028,7 @@ class GCM_Ajax {
 	public function bulk_generate_certificates() {
 		GCM_Security::verify_ajax_nonce();
 		if ( ! current_user_can( 'gcm_manage_students' ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to issue certificates.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to issue certificates.', 'giga-class-market' ) ), 200 );
 		}
 
 		global $wpdb;
@@ -1047,7 +1079,7 @@ class GCM_Ajax {
 		$payment_id = isset( $_POST['payment_id'] ) ? absint( $_POST['payment_id'] ) : 0;
 		$payment    = GCM_Payment_Service::get( $payment_id );
 		if ( ! $payment ) {
-			wp_send_json_error( array( 'message' => __( 'Payment not found.', 'giga-class-market' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'Payment not found.', 'giga-class-market' ) ), 200 );
 		}
 
 		$course = GCM_Course_Service::get( (int) $payment->course_id );
@@ -1076,7 +1108,7 @@ class GCM_Ajax {
 	public function moderate_review() {
 		GCM_Security::verify_ajax_nonce();
 		if ( ! current_user_can( 'gcm_manage_courses' ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to moderate reviews.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to moderate reviews.', 'giga-class-market' ) ), 200 );
 		}
 
 		$result = GCM_Review_Service::set_status(
@@ -1132,7 +1164,7 @@ class GCM_Ajax {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		wp_send_json_success(
@@ -1166,7 +1198,7 @@ class GCM_Ajax {
 			require_once ABSPATH . 'wp-admin/includes/image.php';
 			$upload = media_handle_upload( 'assignment_file', 0 );
 			if ( is_wp_error( $upload ) ) {
-				wp_send_json_error( array( 'message' => $upload->get_error_message() ), 400 );
+				wp_send_json_error( array( 'message' => $upload->get_error_message() ), 200 );
 			}
 			$file_id = (int) $upload;
 		}
@@ -1302,7 +1334,7 @@ class GCM_Ajax {
 
 		$course_id = isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0;
 		if ( ! GCM_Teacher_Service::teacher_can_manage_course( get_current_user_id(), $course_id ) && ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You are not assigned to this course.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You are not assigned to this course.', 'giga-class-market' ) ), 200 );
 		}
 
 		$questions = array();
@@ -1336,7 +1368,7 @@ class GCM_Ajax {
 		if ( current_user_can( 'manage_options' ) || current_user_can( 'gcm_teacher_dashboard' ) ) {
 			return;
 		}
-		wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'giga-class-market' ) ), 403 );
+		wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'giga-class-market' ) ), 200 );
 	}
 
 	/**
