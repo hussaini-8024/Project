@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.7.8' );
+define( 'GCM_THEME_VERSION', '1.8.0' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -108,9 +108,12 @@ function gcm_enqueue_assets() {
 		'gcm-main',
 		'gcmTheme',
 		array(
-			'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-			'contactNonce'  => wp_create_nonce( 'gcm_contact_nonce' ),
-			'progressNonce' => wp_create_nonce( 'gcm_progress_nonce' ),
+			'ajaxUrl'       => function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ),
+			'adminAjax'     => admin_url( 'admin-ajax.php' ),
+			'formUrl'       => function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ),
+			'restUrl'       => rest_url( 'gcm/v1/form' ),
+			'contactNonce'  => wp_create_nonce( 'gcm_ajax_nonce' ),
+			'progressNonce' => wp_create_nonce( 'gcm_ajax_nonce' ),
 			'i18n'          => array(
 				'sending' => __( 'Sending...', 'giga-class-market' ),
 				'sent'    => __( 'Thank you. We will contact you shortly.', 'giga-class-market' ),

@@ -99,6 +99,17 @@ get_header();
 						<button type="button" class="gcm-button gcm-button--gold gcm-join-live" data-class-id="<?php echo esc_attr( $item['class']->id ); ?>">
 							<?php esc_html_e( 'Join Live Class', 'giga-class-market' ); ?>
 						</button>
+						<?php
+						if ( class_exists( 'GCM_Class_Service' ) ) {
+							GCM_Class_Service::render_invite_panel(
+								$item['class'],
+								array(
+									'can_edit_passcode' => false,
+									'variant'           => 'student',
+								)
+							);
+						}
+						?>
 					<?php endforeach; ?>
 				</div>
 			<?php endif; ?>
@@ -287,7 +298,7 @@ get_header();
 		<aside class="gcm-dashboard__sidebar">
 			<div class="gcm-dashboard-card">
 				<h2><?php esc_html_e( 'My Profile', 'giga-class-market' ); ?></h2>
-				<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+				<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ) ); ?>">
 					<input type="hidden" name="action" value="gcm_update_profile">
 					<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
 					<label>
@@ -313,7 +324,7 @@ get_header();
 
 			<div class="gcm-dashboard-card">
 				<h2><?php esc_html_e( 'Change Password', 'giga-class-market' ); ?></h2>
-				<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+				<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ) ); ?>">
 					<input type="hidden" name="action" value="gcm_change_password">
 					<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
 					<label>

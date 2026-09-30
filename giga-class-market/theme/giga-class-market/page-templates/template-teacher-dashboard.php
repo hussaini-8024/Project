@@ -113,6 +113,7 @@ get_header();
 							<label><?php esc_html_e( 'Class title', 'giga-class-market' ); ?><input type="text" name="title" placeholder="<?php esc_attr_e( 'Optional', 'giga-class-market' ); ?>" /></label>
 							<label><?php esc_html_e( 'Starts', 'giga-class-market' ); ?><input type="datetime-local" name="scheduled_at" required /></label>
 							<label><?php esc_html_e( 'Ends', 'giga-class-market' ); ?><input type="datetime-local" name="scheduled_end" required /></label>
+							<label><?php esc_html_e( 'Meeting passcode (optional)', 'giga-class-market' ); ?><input type="text" name="passcode" maxlength="10" placeholder="<?php esc_attr_e( 'Leave blank to auto-generate when you start', 'giga-class-market' ); ?>" autocomplete="off" /></label>
 							<button type="submit" class="gcm-button gcm-button--gold"><?php esc_html_e( 'Schedule', 'giga-class-market' ); ?></button>
 							<div class="gcm-form-message" aria-live="polite"></div>
 						</form>
@@ -147,16 +148,32 @@ get_header();
 									</div>
 									<div class="gcm-teacher-class__actions">
 										<?php if ( 'scheduled' === $class->status ) : ?>
+											<label class="gcm-host-passcode-field">
+												<?php esc_html_e( 'Passcode', 'giga-class-market' ); ?>
+												<input type="text" class="gcm-host-passcode" maxlength="10" value="<?php echo esc_attr( isset( $class->zoom_passcode ) ? $class->zoom_passcode : '' ); ?>" placeholder="<?php esc_attr_e( 'Optional', 'giga-class-market' ); ?>" autocomplete="off" />
+											</label>
 											<button type="button" class="gcm-button gcm-button--gold gcm-teacher-action" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Start class', 'giga-class-market' ); ?></button>
 										<?php elseif ( 'live' === $class->status ) : ?>
 											<?php if ( ! empty( $class->zoom_start_url ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_usable_meeting_url( $class->zoom_start_url ) ) : ?>
-												<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $class->zoom_start_url ); ?>"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></a>
+												<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $class->zoom_start_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></a>
 											<?php else : ?>
 												<button type="button" class="gcm-button gcm-button--gold gcm-teacher-action" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Open live class', 'giga-class-market' ); ?></button>
 											<?php endif; ?>
 											<button type="button" class="gcm-button gcm-button--outline gcm-teacher-action" data-action="gcm_end_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'End class', 'giga-class-market' ); ?></button>
 										<?php endif; ?>
 									</div>
+									<?php
+									if ( 'live' === $class->status && class_exists( 'GCM_Class_Service' ) ) {
+										GCM_Class_Service::render_invite_panel(
+											$class,
+											array(
+												'can_edit_passcode' => true,
+												'is_host'           => true,
+												'variant'           => 'teacher',
+											)
+										);
+									}
+									?>
 									<?php if ( in_array( $class->status, array( 'live', 'ended' ), true ) && class_exists( 'GCM_Attendance_Service' ) ) : ?>
 										<?php $roster = GCM_Attendance_Service::get_for_class( (int) $class->id ); ?>
 										<?php if ( ! empty( $roster ) ) : ?>
@@ -384,8 +401,8 @@ get_header();
 			<div class="gcm-dashboard-card">
 				<h2><?php esc_html_e( 'How live class works', 'giga-class-market' ); ?></h2>
 				<ol>
-					<li><?php esc_html_e( 'Set start and end time for each class.', 'giga-class-market' ); ?></li>
-					<li><?php esc_html_e( 'Click Start class to create Zoom — students see Join immediately.', 'giga-class-market' ); ?></li>
+					<li><?php esc_html_e( 'Set start and end time for each class. You can set a custom passcode now or when you start.', 'giga-class-market' ); ?></li>
+					<li><?php esc_html_e( 'Click Start class — Meeting ID, passcode, join link, and invitation appear so you can share them.', 'giga-class-market' ); ?></li>
 					<li><?php esc_html_e( 'Upload study material for this course.', 'giga-class-market' ); ?></li>
 					<li><?php esc_html_e( 'Answer questions in the shared chat room.', 'giga-class-market' ); ?></li>
 					<li><?php esc_html_e( 'Attendance is recorded when students click Join.', 'giga-class-market' ); ?></li>

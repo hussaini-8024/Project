@@ -36,6 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<label><?php esc_html_e( 'Title', 'giga-class-market' ); ?><input type="text" name="title" placeholder="<?php esc_attr_e( 'Optional', 'giga-class-market' ); ?>" /></label>
 			<label><?php esc_html_e( 'Starts', 'giga-class-market' ); ?><input type="datetime-local" name="scheduled_at" required /></label>
 			<label><?php esc_html_e( 'Ends', 'giga-class-market' ); ?><input type="datetime-local" name="scheduled_end" required /></label>
+			<label><?php esc_html_e( 'Meeting passcode (optional)', 'giga-class-market' ); ?><input type="text" name="passcode" maxlength="10" placeholder="<?php esc_attr_e( 'Leave blank to auto-generate', 'giga-class-market' ); ?>" autocomplete="off" /></label>
 			<p>
 				<button type="submit" class="button button-primary"><?php esc_html_e( 'Schedule class', 'giga-class-market' ); ?></button>
 				<span class="gcm-form-message"></span>
@@ -50,13 +51,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<th><?php esc_html_e( 'Course', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Schedule', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Status', 'giga-class-market' ); ?></th>
+				<th><?php esc_html_e( 'Meeting', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Attendance', 'giga-class-market' ); ?></th>
 				<th><?php esc_html_e( 'Actions', 'giga-class-market' ); ?></th>
 			</tr>
 		</thead>
 		<tbody>
 			<?php if ( empty( $classes ) ) : ?>
-				<tr><td colspan="6"><?php esc_html_e( 'No classes scheduled yet.', 'giga-class-market' ); ?></td></tr>
+				<tr><td colspan="7"><?php esc_html_e( 'No classes scheduled yet.', 'giga-class-market' ); ?></td></tr>
 			<?php endif; ?>
 			<?php foreach ( $classes as $class ) : ?>
 				<tr>
@@ -69,9 +71,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php endif; ?>
 					</td>
 					<td><span class="gcm-status gcm-status-<?php echo esc_attr( $class->status ); ?>"><?php echo esc_html( ucfirst( $class->status ) ); ?></span></td>
+					<td>
+						<?php if ( 'live' === $class->status && class_exists( 'GCM_Class_Service' ) ) : ?>
+							<?php
+							GCM_Class_Service::render_invite_panel(
+								$class,
+								array(
+									'can_edit_passcode' => true,
+									'is_host'           => true,
+									'variant'           => 'admin',
+								)
+							);
+							?>
+						<?php elseif ( ! empty( $class->zoom_passcode ) ) : ?>
+							<?php echo esc_html( sprintf( __( 'Passcode set: %s', 'giga-class-market' ), $class->zoom_passcode ) ); ?>
+						<?php else : ?>
+							—
+						<?php endif; ?>
+					</td>
 					<td><?php echo esc_html( (string) GCM_Attendance_Service::count_for_class( (int) $class->id ) ); ?></td>
 					<td>
 						<?php if ( 'scheduled' === $class->status ) : ?>
+							<input type="text" class="gcm-host-passcode" maxlength="10" value="<?php echo esc_attr( isset( $class->zoom_passcode ) ? $class->zoom_passcode : '' ); ?>" placeholder="<?php esc_attr_e( 'Passcode', 'giga-class-market' ); ?>" autocomplete="off" style="width:7.5rem;margin-right:6px;" />
 							<button type="button" class="button button-primary gcm-ajax-button" data-action="gcm_start_class" data-class-id="<?php echo esc_attr( $class->id ); ?>"><?php esc_html_e( 'Start class', 'giga-class-market' ); ?></button>
 						<?php elseif ( 'live' === $class->status ) : ?>
 							<?php if ( ! empty( $class->zoom_start_url ) ) : ?>

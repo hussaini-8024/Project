@@ -89,6 +89,18 @@ get_header();
 						class="gcm-button gcm-button--gold gcm-join-live"
 						data-class-id="<?php echo esc_attr( $live_class->id ); ?>"
 					><?php echo esc_html( $my_joined_at ? __( 'Rejoin live class', 'giga-class-market' ) : __( 'Join live class', 'giga-class-market' ) ); ?></button>
+					<?php
+					if ( class_exists( 'GCM_Class_Service' ) ) {
+						GCM_Class_Service::render_invite_panel(
+							$live_class,
+							array(
+								'can_edit_passcode' => false,
+								'is_host'           => false,
+								'variant'           => 'student',
+							)
+						);
+					}
+					?>
 				</section>
 			<?php endif; ?>
 

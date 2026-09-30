@@ -18,12 +18,14 @@
 	function ajaxForm(form) {
 		var formData = serializeForm(form);
 		formData.append('action', form.getAttribute('data-action'));
+		formData.append('gcm_ajax', '1');
 		if (!formData.get('nonce') && window.gcmPublic) {
 			formData.append('nonce', window.gcmPublic.nonce);
 		}
 
 		setMessage(form, 'Submitting...', true);
-		fetch(window.gcmPublic.ajaxUrl, {
+		var url = (window.gcmPublic && gcmPublic.ajaxUrl) || (window.gcmTheme && gcmTheme.formUrl) || (window.gcmPublic && gcmPublic.adminAjax);
+		fetch(url, {
 			method: 'POST',
 			credentials: 'same-origin',
 			body: formData
@@ -91,6 +93,11 @@
 		data.append('nonce', window.gcmPublic.nonce);
 		if (button.getAttribute('data-class-id')) {
 			data.append('class_id', button.getAttribute('data-class-id'));
+			var row = button.closest('li, tr, .gcm-teacher-class');
+			var passInput = row ? row.querySelector('.gcm-host-passcode') : null;
+			if (passInput && passInput.value) {
+				data.append('passcode', passInput.value);
+			}
 		}
 		if (button.getAttribute('data-note-id')) {
 			data.append('note_id', button.getAttribute('data-note-id'));
@@ -117,7 +124,10 @@
 			}
 			var meetingUrl = (json.data && (json.data.start_url || json.data.join_url)) || '';
 			if (meetingUrl && button.getAttribute('data-action') === 'gcm_start_class') {
-				window.location.assign(meetingUrl);
+				window.open(meetingUrl, '_blank', 'noopener');
+				window.setTimeout(function () {
+					window.location.reload();
+				}, 500);
 				return;
 			}
 			window.setTimeout(function () {
@@ -208,6 +218,65 @@
 			button.textContent = 'Try again';
 			button.disabled = false;
 		});
+	});
+
+	function copyText(value, button) {
+		if (!value) {
+			return;
+		}
+		var original = button ? button.textContent : '';
+		var done = function () {
+			if (!button) {
+				return;
+			}
+			button.textContent = 'Copied';
+			window.setTimeout(function () {
+				button.textContent = original;
+			}, 1600);
+		};
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(value).then(done).catch(function () {
+				window.prompt('Copy this:', value);
+			});
+			return;
+		}
+		window.prompt('Copy this:', value);
+	}
+
+	document.addEventListener('click', function (event) {
+		var copyBtn = event.target.closest('.gcm-copy-value');
+		if (copyBtn) {
+			event.preventDefault();
+			copyText(copyBtn.getAttribute('data-copy') || '', copyBtn);
+			return;
+		}
+
+		var copyInvite = event.target.closest('.gcm-copy-invite');
+		if (copyInvite) {
+			event.preventDefault();
+			var panel = copyInvite.closest('.gcm-meeting-invite');
+			var source = panel ? panel.querySelector('.gcm-invite-source') : null;
+			copyText(source ? source.value : '', copyInvite);
+			return;
+		}
+
+		var shareBtn = event.target.closest('.gcm-share-invite');
+		if (!shareBtn) {
+			return;
+		}
+		event.preventDefault();
+		var sharePanel = shareBtn.closest('.gcm-meeting-invite');
+		var shareSource = sharePanel ? sharePanel.querySelector('.gcm-invite-source') : null;
+		var shareData = {
+			title: shareBtn.getAttribute('data-title') || 'Live class invitation',
+			text: shareSource ? shareSource.value : (shareBtn.getAttribute('data-text') || ''),
+			url: shareBtn.getAttribute('data-url') || ''
+		};
+		if (navigator.share) {
+			navigator.share(shareData).catch(function () {});
+			return;
+		}
+		copyText([shareData.text, shareData.url].filter(Boolean).join('\n\n'), shareBtn);
 	});
 
 	function escapeHtml(value) {

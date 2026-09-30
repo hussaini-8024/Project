@@ -46,8 +46,9 @@ $services = array(
 		</ul>
 	</aside>
 
-	<form id="inquiry" class="gcm-contact-form gcm-inquiry-anchor gcm-animate" data-gcm-ajax-form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+		<form id="inquiry" class="gcm-contact-form gcm-inquiry-anchor gcm-animate" data-gcm-ajax-form method="post" action="<?php echo esc_url( function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ) ); ?>">
 		<input type="hidden" name="action" value="gcm_contact_submit">
+		<input type="hidden" name="gcm_ajax" value="1">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
 		<label>
 			<span><?php esc_html_e( 'Full Name', 'giga-class-market' ); ?></span>

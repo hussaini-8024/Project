@@ -37,22 +37,24 @@ class GCM_Notification_Service {
 		}
 
 		$table = $wpdb->prefix . 'gcm_notifications';
-		$wpdb->insert(
-			$table,
-			array(
-				'user_id'    => $user_id ? $user_id : null,
-				'type'       => sanitize_key( $type ),
-				'title'      => sanitize_text_field( $title ),
-				'message'    => wp_kses_post( $message ),
-				'channel'    => 'email',
-				'status'     => 'queued',
-				'meta'       => wp_json_encode( $meta ),
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+		$row   = array(
+			'type'       => sanitize_key( $type ),
+			'title'      => sanitize_text_field( $title ),
+			'message'    => wp_kses_post( $message ),
+			'channel'    => 'email',
+			'status'     => 'queued',
+			'meta'       => wp_json_encode( $meta ),
+			'created_at' => current_time( 'mysql' ),
 		);
+		if ( $user_id ) {
+			$row['user_id'] = $user_id;
+		}
 
-		$notification_id = (int) $wpdb->insert_id;
+		$notification_id = class_exists( 'GCM_Installer' ) ? GCM_Installer::insert_row( $table, $row ) : 0;
+		if ( ! $notification_id ) {
+			$wpdb->insert( $table, $row );
+			$notification_id = (int) $wpdb->insert_id;
+		}
 		$status          = 'failed';
 
 		if ( is_email( $email ) ) {

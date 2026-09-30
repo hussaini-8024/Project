@@ -81,31 +81,84 @@
 		});
 	}
 
+	function formEndpoints() {
+		var urls = [];
+		if (window.gcmTheme && gcmTheme.formUrl) {
+			urls.push(gcmTheme.formUrl);
+		}
+		if (window.gcmTheme && gcmTheme.restUrl) {
+			urls.push(gcmTheme.restUrl);
+		}
+		if (window.gcmPublic && gcmPublic.ajaxUrl) {
+			urls.push(gcmPublic.ajaxUrl);
+		}
+		if (window.gcmTheme && gcmTheme.adminAjax) {
+			urls.push(gcmTheme.adminAjax);
+		}
+		return urls;
+	}
+
+	function parseJsonResponse(response) {
+		return response.text().then(function (text) {
+			try {
+				return JSON.parse(text);
+			} catch (err) {
+				return { success: false, data: { message: (window.gcmTheme && gcmTheme.i18n && gcmTheme.i18n.error) || 'Something went wrong. Please try again.' } };
+			}
+		});
+	}
+
+	function postFormData(urls, index, data) {
+		if (index >= urls.length) {
+			return Promise.resolve({
+				success: false,
+				data: { message: (window.gcmTheme && gcmTheme.i18n && gcmTheme.i18n.error) || 'Something went wrong. Please try again.' }
+			});
+		}
+
+		return window.fetch(urls[index], {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: data
+		}).then(parseJsonResponse).then(function (payload) {
+			if (payload && typeof payload.success !== 'undefined') {
+				return payload;
+			}
+			return postFormData(urls, index + 1, data);
+		}).catch(function () {
+			return postFormData(urls, index + 1, data);
+		});
+	}
+
 	function initAjaxForms() {
 		document.querySelectorAll('[data-gcm-ajax-form], [data-gcm-progress-form]').forEach(function (form) {
 			form.addEventListener('submit', function (event) {
 				var status = form.querySelector('.gcm-form-status');
 				var button = form.querySelector('button[type="submit"]');
 				var data = new FormData(form);
+				var urls = formEndpoints();
+				var fallback = form.getAttribute('action');
 
 				event.preventDefault();
+				if (!data.get('gcm_ajax')) {
+					data.append('gcm_ajax', '1');
+				}
+				if (fallback && urls.indexOf(fallback) === -1) {
+					urls.push(fallback);
+				}
+				if (!urls.length) {
+					urls.push(fallback || '/?gcm_ajax=1');
+				}
+
 				if (status) {
 					status.textContent = window.gcmTheme && gcmTheme.i18n ? gcmTheme.i18n.sending : 'Sending...';
+					status.classList.remove('is-error');
 				}
 				if (button) {
 					button.disabled = true;
 				}
 
-				window.fetch(form.getAttribute('action'), {
-					method: 'POST',
-					credentials: 'same-origin',
-					body: data
-				})
-					.then(function (response) {
-						return response.json().catch(function () {
-							return { success: response.ok };
-						});
-					})
+				postFormData(urls, 0, data)
 					.then(function (payload) {
 						var message = payload && payload.data && payload.data.message ? payload.data.message : null;
 						if (status) {
@@ -114,12 +167,6 @@
 						}
 						if (payload.success && form.hasAttribute('data-gcm-ajax-form')) {
 							form.reset();
-						}
-					})
-					.catch(function () {
-						if (status) {
-							status.textContent = window.gcmTheme && gcmTheme.i18n ? gcmTheme.i18n.error : 'Something went wrong.';
-							status.classList.add('is-error');
 						}
 					})
 					.finally(function () {

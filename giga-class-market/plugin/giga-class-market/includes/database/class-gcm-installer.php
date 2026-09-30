@@ -185,6 +185,7 @@ class GCM_Installer {
 			zoom_meeting_id VARCHAR(100) NULL,
 			zoom_join_url TEXT NULL,
 			zoom_start_url TEXT NULL,
+			zoom_passcode VARCHAR(32) NULL,
 			started_at DATETIME NULL,
 			ended_at DATETIME NULL,
 			created_at DATETIME NOT NULL,
@@ -401,9 +402,80 @@ class GCM_Installer {
 			dbDelta( $statement );
 		}
 
+		self::maybe_add_class_passcode_column();
 		self::maybe_migrate_one_teacher_per_course();
 		self::seed_default_options();
 		update_option( 'gcm_db_version', GCM_DB_VERSION );
+	}
+
+	/**
+	 * Insert a row, omitting nulls so MySQL strict mode does not reject empty dates.
+	 *
+	 * @param string $table Table name with prefix.
+	 * @param array  $data  Column => value.
+	 * @return int|false Insert ID or false.
+	 */
+	public static function insert_row( $table, $data ) {
+		global $wpdb;
+
+		$clean = array();
+		foreach ( (array) $data as $key => $value ) {
+			if ( null !== $value ) {
+				$clean[ $key ] = $value;
+			}
+		}
+
+		if ( empty( $clean ) ) {
+			return false;
+		}
+
+		$ok = $wpdb->insert( $table, $clean );
+		if ( $ok ) {
+			return (int) $wpdb->insert_id;
+		}
+
+		$error = (string) $wpdb->last_error;
+		if ( $error && false !== stripos( $error, "doesn't exist" ) ) {
+			self::install();
+			$ok = $wpdb->insert( $table, $clean );
+			if ( $ok ) {
+				return (int) $wpdb->insert_id;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether a plugin table exists.
+	 *
+	 * @param string $table Table name with prefix.
+	 * @return bool
+	 */
+	public static function table_exists( $table ) {
+		global $wpdb;
+
+		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		return ( $found === $table );
+	}
+
+	/**
+	 * Add zoom_passcode on existing installs when dbDelta misses it.
+	 *
+	 * @return void
+	 */
+	private static function maybe_add_class_passcode_column() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'gcm_classes';
+		if ( ! self::table_exists( $table ) ) {
+			return;
+		}
+
+		$col = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", 'zoom_passcode' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( empty( $col ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD zoom_passcode VARCHAR(32) NULL AFTER zoom_start_url" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
 	}
 
 	/**
@@ -583,5 +655,6 @@ class GCM_Installer {
 
 		update_option( 'gcm_settings', $settings, false );
 		update_option( 'gcm_plugin_version', GCM_VERSION, false );
+		update_option( 'gcm_cache_bust', (string) time(), false );
 	}
 }

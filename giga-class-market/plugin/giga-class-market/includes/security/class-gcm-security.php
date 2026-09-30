@@ -24,7 +24,8 @@ class GCM_Security {
 	public static function verify_ajax_nonce( $action = 'gcm_ajax_nonce', $field = 'nonce' ) {
 		$nonce = isset( $_REQUEST[ $field ] ) ? sanitize_text_field( wp_unslash( $_REQUEST[ $field ] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, $action ) ) {
-			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'giga-class-market' ) ), 403 );
+			// HTTP 200 so host WAFs do not replace the JSON body with an HTML error page.
+			wp_send_json_error( array( 'message' => __( 'Security check failed. Please refresh the page and try again.', 'giga-class-market' ) ), 200 );
 		}
 	}
 
@@ -36,7 +37,7 @@ class GCM_Security {
 	 */
 	public static function require_capability( $capability ) {
 		if ( ! current_user_can( $capability ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'giga-class-market' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'giga-class-market' ) ), 200 );
 		}
 	}
 

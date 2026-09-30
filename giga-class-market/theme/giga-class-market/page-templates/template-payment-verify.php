@@ -44,8 +44,9 @@ get_header();
 			<?php endif; ?>
 		</div>
 
-		<form class="gcm-contact-form gcm-animate" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-gcm-ajax-form>
+		<form class="gcm-contact-form gcm-animate" method="post" enctype="multipart/form-data" action="<?php echo esc_url( function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ) ); ?>" data-gcm-ajax-form>
 			<input type="hidden" name="action" value="gcm_payment_submit">
+			<input type="hidden" name="gcm_ajax" value="1">
 			<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
 			<input type="hidden" name="course_id" value="<?php echo esc_attr( $course_id ); ?>">
 
@@ -113,7 +114,7 @@ get_header();
 		data.append('course_id', btn.getAttribute('data-course-id'));
 		data.append('coupon_code', code ? code.value : '');
 		if (status) status.textContent = 'Checking…';
-		fetch(window.gcmTheme.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
+		fetch((window.gcmTheme && (gcmTheme.formUrl || gcmTheme.ajaxUrl)) || window.gcmPublic.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
 			.then(function (r) { return r.json(); })
 			.then(function (json) {
 				if (!json.success) {

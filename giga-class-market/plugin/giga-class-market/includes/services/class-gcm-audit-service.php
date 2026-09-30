@@ -36,7 +36,7 @@ class GCM_Audit_Service {
 				'admin_id'    => $admin_id,
 				'action'      => sanitize_key( $action ),
 				'object_type' => sanitize_key( $object_type ),
-				'object_id'   => $object_id ? absint( $object_id ) : null,
+				'object_id'   => $object_id ? absint( $object_id ) : 0,
 				'meta'        => wp_json_encode( $meta ),
 				'ip_address'  => self::get_ip_address(),
 				'created_at'  => current_time( 'mysql' ),

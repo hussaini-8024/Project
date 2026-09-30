@@ -28,43 +28,55 @@ class GCM_Contact_Service {
 			return new WP_Error( 'gcm_invalid_email', __( 'Please provide a valid email address.', 'giga-class-market' ) );
 		}
 
-		$inserted = $wpdb->insert(
-			$wpdb->prefix . 'gcm_contacts',
-			array(
-				'full_name'    => sanitize_text_field( $data['full_name'] ?? '' ),
-				'email'        => $email,
-				'whatsapp'     => sanitize_text_field( $data['whatsapp'] ?? '' ),
-				'subject'      => sanitize_text_field( $data['subject'] ?? '' ),
-				'message'      => sanitize_textarea_field( $data['message'] ?? '' ),
-				'status'       => 'new',
-				'created_at'   => current_time( 'mysql' ),
-				'contacted_at' => null,
-				'updated_at'   => current_time( 'mysql' ),
-			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
-		);
+		$full_name = sanitize_text_field( $data['full_name'] ?? '' );
+		$subject   = sanitize_text_field( $data['subject'] ?? '' );
+		$message   = sanitize_textarea_field( $data['message'] ?? '' );
 
-		if ( ! $inserted ) {
-			return new WP_Error( 'gcm_contact_failed', __( 'Unable to submit your message.', 'giga-class-market' ) );
+		if ( '' === $full_name || '' === $subject || '' === $message ) {
+			return new WP_Error( 'gcm_missing_fields', __( 'Please fill in your name, service, and message.', 'giga-class-market' ) );
 		}
 
-		$contact_id = (int) $wpdb->insert_id;
-		$settings   = GCM_Settings_Service::get_settings();
+		$table = $wpdb->prefix . 'gcm_contacts';
+		if ( class_exists( 'GCM_Installer' ) && ! GCM_Installer::table_exists( $table ) ) {
+			GCM_Installer::install();
+		}
+
+		$contact_id = GCM_Installer::insert_row(
+			$table,
+			array(
+				'full_name'  => $full_name,
+				'email'      => $email,
+				'whatsapp'   => sanitize_text_field( $data['whatsapp'] ?? '' ),
+				'subject'    => $subject,
+				'message'    => $message,
+				'status'     => 'new',
+				'created_at' => current_time( 'mysql' ),
+				'updated_at' => current_time( 'mysql' ),
+			)
+		);
+
+		if ( ! $contact_id ) {
+			return new WP_Error( 'gcm_contact_failed', __( 'Unable to submit your message. Please try again or WhatsApp us.', 'giga-class-market' ) );
+		}
+
+		$settings   = class_exists( 'GCM_Settings_Service' ) ? GCM_Settings_Service::get_settings() : array();
 		$admin_mail = $settings['company']['email'] ?? get_option( 'admin_email' );
 
-		GCM_Notification_Service::queue_email(
-			0,
-			'contact_received',
-			__( 'New contact message received', 'giga-class-market' ),
-			sprintf(
-				/* translators: 1: name, 2: subject */
-				__( 'A new contact message was submitted by %1$s about "%2$s".', 'giga-class-market' ),
-				esc_html( $data['full_name'] ?? '' ),
-				esc_html( $data['subject'] ?? '' )
-			),
-			$admin_mail,
-			array( 'contact_id' => $contact_id )
-		);
+		if ( class_exists( 'GCM_Notification_Service' ) ) {
+			GCM_Notification_Service::queue_email(
+				0,
+				'contact_received',
+				__( 'New contact message received', 'giga-class-market' ),
+				sprintf(
+					/* translators: 1: name, 2: subject */
+					__( 'A new contact message was submitted by %1$s about "%2$s".', 'giga-class-market' ),
+					esc_html( $full_name ),
+					esc_html( $subject )
+				),
+				is_email( $admin_mail ) ? $admin_mail : get_option( 'admin_email' ),
+				array( 'contact_id' => $contact_id )
+			);
+		}
 
 		return $contact_id;
 	}

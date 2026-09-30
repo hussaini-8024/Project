@@ -65,6 +65,76 @@ class GCM_Frontend {
 	}
 
 	/**
+	 * Front-door AJAX for guests (signup / contact / coupons).
+	 * Avoids /wp-admin/admin-ajax.php which some hosts block.
+	 *
+	 * @return void
+	 */
+	public function serve_public_ajax() {
+		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+			return;
+		}
+		if ( empty( $_REQUEST['gcm_ajax'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+
+		nocache_headers();
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: application/json; charset=utf-8' );
+			header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+			header( 'X-StackCache-Cacheable: no' );
+		}
+
+		self::dispatch_ajax_action();
+	}
+
+	/**
+	 * REST fallback for the same public form actions.
+	 *
+	 * @return void
+	 */
+	public function register_rest_routes() {
+		register_rest_route(
+			'gcm/v1',
+			'/form',
+			array(
+				'methods'             => 'POST',
+				'permission_callback' => '__return_true',
+				'callback'            => array( $this, 'rest_form' ),
+			)
+		);
+	}
+
+	/**
+	 * REST callback for public forms.
+	 *
+	 * @return void
+	 */
+	public function rest_form() {
+		self::dispatch_ajax_action();
+	}
+
+	/**
+	 * Run a registered GCM_Ajax method from POST[action].
+	 *
+	 * @return void
+	 */
+	public static function dispatch_ajax_action() {
+		$action = isset( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( 0 !== strpos( $action, 'gcm_' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'giga-class-market' ) ), 200 );
+		}
+
+		$method = substr( $action, 4 );
+		$ajax   = new GCM_Ajax();
+		if ( ! $method || ! method_exists( $ajax, $method ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'giga-class-market' ) ), 200 );
+		}
+
+		$ajax->{$method}();
+	}
+
+	/**
 	 * Register shortcodes.
 	 *
 	 * @return void
@@ -90,7 +160,9 @@ class GCM_Frontend {
 			'gcm-public',
 			'gcmPublic',
 			array(
-				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'ajaxUrl'    => function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ),
+				'adminAjax'  => admin_url( 'admin-ajax.php' ),
+				'restUrl'    => rest_url( 'gcm/v1/form' ),
 				'nonce'      => wp_create_nonce( 'gcm_ajax_nonce' ),
 				'paymentUrl' => home_url( '/payment/' ),
 			)

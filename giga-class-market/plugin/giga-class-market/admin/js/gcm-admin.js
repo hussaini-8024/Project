@@ -38,12 +38,23 @@
 			payload.reason = reason;
 		}
 
+		if (action === 'gcm_start_class') {
+			var $row = $button.closest('tr, li, .gcm-teacher-class');
+			var pass = $row.find('.gcm-host-passcode').first().val();
+			if (pass) {
+				payload.passcode = pass;
+			}
+		}
+
 		$button.prop('disabled', true);
 		$.post(gcmAdmin.ajaxUrl, payload)
 			.done(function (response) {
 				showNotice(response.data && response.data.message ? response.data.message : 'Done.', response.success);
 				if (response.success && response.data && response.data.whatsapp_url) {
 					window.open(response.data.whatsapp_url, '_blank', 'noopener');
+				}
+				if (response.success && action === 'gcm_start_class' && response.data && (response.data.start_url || response.data.join_url)) {
+					window.open(response.data.start_url || response.data.join_url, '_blank', 'noopener');
 				}
 				if (response.success && action !== 'gcm_whatsapp_payment_reminder') {
 					window.setTimeout(function () {
@@ -179,5 +190,44 @@
 		var $button = $(this);
 		$($button.data('target')).val('0');
 		$($button.data('preview')).removeClass('has-image').html('<span>No banner selected</span>');
+	});
+	$(document).on('click', '.gcm-copy-value, .gcm-copy-invite, .gcm-share-invite', function (event) {
+		event.preventDefault();
+		var $btn = $(this);
+		var value = $btn.attr('data-copy') || '';
+		if ($btn.hasClass('gcm-copy-invite') || $btn.hasClass('gcm-share-invite')) {
+			var source = $btn.closest('.gcm-meeting-invite').find('.gcm-invite-source').val() || '';
+			if ($btn.hasClass('gcm-share-invite')) {
+				var shareData = {
+					title: $btn.attr('data-title') || 'Live class invitation',
+					text: source,
+					url: $btn.attr('data-url') || ''
+				};
+				if (navigator.share) {
+					navigator.share(shareData).catch(function () {});
+					return;
+				}
+				value = [shareData.text, shareData.url].filter(Boolean).join('\n\n');
+			} else {
+				value = source;
+			}
+		}
+		if (!value) {
+			return;
+		}
+		var original = $btn.text();
+		var done = function () {
+			$btn.text('Copied');
+			window.setTimeout(function () {
+				$btn.text(original);
+			}, 1600);
+		};
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(value).then(done).catch(function () {
+				window.prompt('Copy this:', value);
+			});
+		} else {
+			window.prompt('Copy this:', value);
+		}
 	});
 })(jQuery);

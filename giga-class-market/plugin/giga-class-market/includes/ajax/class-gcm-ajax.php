@@ -45,6 +45,7 @@ class GCM_Ajax {
 			'schedule_class',
 			'start_class',
 			'end_class',
+			'update_class_passcode',
 			'upload_note',
 			'delete_note',
 			'send_teacher_message',
@@ -101,7 +102,7 @@ class GCM_Ajax {
 		$email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$key   = 'contact|' . GCM_Security::get_ip_address() . '|' . $email;
 		if ( ! GCM_Security::rate_limit( $key, 3, 10 * MINUTE_IN_SECONDS ) ) {
-			wp_send_json_error( array( 'message' => __( 'Too many submissions. Please wait and try again.', 'giga-class-market' ) ), 429 );
+			wp_send_json_error( array( 'message' => __( 'Too many submissions. Please wait and try again.', 'giga-class-market' ) ), 200 );
 		}
 
 		$result = GCM_Contact_Service::submit(
@@ -128,7 +129,7 @@ class GCM_Ajax {
 		$email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$key   = 'payment|' . GCM_Security::get_ip_address() . '|' . $email;
 		if ( ! GCM_Security::rate_limit( $key, 5, HOUR_IN_SECONDS ) ) {
-			wp_send_json_error( array( 'message' => __( 'Too many payment submissions. Please wait and try again.', 'giga-class-market' ) ), 429 );
+			wp_send_json_error( array( 'message' => __( 'Too many payment submissions. Please wait and try again.', 'giga-class-market' ) ), 200 );
 		}
 
 		$file = isset( $_FILES['screenshot'] ) ? $_FILES['screenshot'] : array();
@@ -544,6 +545,7 @@ class GCM_Ajax {
 				'title'         => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
 				'scheduled_at'  => isset( $_POST['scheduled_at'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_at'] ) ) : '',
 				'scheduled_end' => isset( $_POST['scheduled_end'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_end'] ) ) : '',
+				'passcode'      => isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
 			)
 		);
 		$this->send_service_response( $result, __( 'Class scheduled.', 'giga-class-market' ) );
@@ -559,25 +561,62 @@ class GCM_Ajax {
 		$this->require_teacher_or_admin();
 
 		$class_id = isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0;
+		$passcode = isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '';
 		$existing = GCM_Class_Service::get( $class_id );
 
 		// If already live with a broken link, repair and return URLs.
 		if ( $existing && 'live' === $existing->status ) {
 			$result = GCM_Class_Service::ensure_meeting_links( $class_id );
+			if ( ! is_wp_error( $result ) && '' !== $passcode ) {
+				$result = GCM_Class_Service::update_passcode( $class_id, $passcode, get_current_user_id() );
+			}
 		} else {
-			$result = GCM_Class_Service::start( $class_id, get_current_user_id() );
+			$result = GCM_Class_Service::start( $class_id, get_current_user_id(), $passcode );
 		}
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
 		}
 
+		$payload = GCM_Class_Service::meeting_payload( $result );
 		wp_send_json_success(
-			array(
-				'message'   => __( 'Class started. Opening the live meeting…', 'giga-class-market' ),
-				'join_url'  => $result->zoom_join_url ?? '',
-				'start_url' => ! empty( $result->zoom_start_url ) ? $result->zoom_start_url : ( $result->zoom_join_url ?? '' ),
-				'id'        => (int) $result->id,
+			array_merge(
+				$payload,
+				array(
+					'message' => __( 'Class started. Meeting ID, passcode, and invitation are ready to share.', 'giga-class-market' ),
+					'id'      => (int) $result->id,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Teacher customizes the live meeting passcode.
+	 *
+	 * @return void
+	 */
+	public function update_class_passcode() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Class_Service::update_passcode(
+			isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0,
+			isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
+			get_current_user_id()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		$payload = GCM_Class_Service::meeting_payload( $result );
+		wp_send_json_success(
+			array_merge(
+				$payload,
+				array(
+					'message' => __( 'Passcode updated. Copy the new invitation to share it.', 'giga-class-market' ),
+					'id'      => (int) $result->id,
+				)
 			)
 		);
 	}
@@ -750,13 +789,18 @@ class GCM_Ajax {
 		}
 
 		$joined_at = ! empty( $result->joined_at ) ? (string) $result->joined_at : '';
+		$class     = GCM_Class_Service::get( isset( $_POST['class_id'] ) ? absint( $_POST['class_id'] ) : 0 );
+		$payload   = $class ? GCM_Class_Service::meeting_payload( $class ) : array();
 
 		wp_send_json_success(
-			array(
-				'message'           => __( 'Opening live class…', 'giga-class-market' ),
-				'join_url'          => $result->join_url,
-				'joined_at'         => $joined_at,
-				'joined_at_display' => $joined_at ? mysql2date( get_option( 'date_format' ) . ' H:i:s', $joined_at ) : '',
+			array_merge(
+				$payload,
+				array(
+					'message'           => __( 'Opening live class…', 'giga-class-market' ),
+					'join_url'          => $result->join_url,
+					'joined_at'         => $joined_at,
+					'joined_at_display' => $joined_at ? mysql2date( get_option( 'date_format' ) . ' H:i:s', $joined_at ) : '',
+				)
 			)
 		);
 	}
@@ -834,7 +878,7 @@ class GCM_Ajax {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		wp_send_json_success(
@@ -1269,11 +1313,11 @@ class GCM_Ajax {
 	 */
 	private function send_service_response( $result, $success_message ) {
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 200 );
 		}
 
 		if ( false === $result || null === $result ) {
-			wp_send_json_error( array( 'message' => __( 'The request could not be completed.', 'giga-class-market' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'The request could not be completed.', 'giga-class-market' ) ), 200 );
 		}
 
 		$data = array(

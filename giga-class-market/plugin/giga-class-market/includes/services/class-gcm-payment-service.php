@@ -48,6 +48,10 @@ class GCM_Payment_Service {
 			return new WP_Error( 'gcm_missing_transaction', __( 'Transaction ID is required.', 'giga-class-market' ) );
 		}
 
+		if ( class_exists( 'GCM_Installer' ) && ! GCM_Installer::table_exists( $wpdb->prefix . 'gcm_payments' ) ) {
+			GCM_Installer::install();
+		}
+
 		$amount         = class_exists( 'GCM_Coupon_Service' ) ? GCM_Coupon_Service::get_course_price( $course_id ) : (float) $course['price'];
 		$coupon_code    = sanitize_text_field( $data['coupon_code'] ?? '' );
 		$coupon_id      = 0;
@@ -63,35 +67,30 @@ class GCM_Payment_Service {
 			$amount          = (float) $validated['final_price'];
 		}
 
-		$inserted = $wpdb->insert(
+		$inserted = GCM_Installer::insert_row(
 			$wpdb->prefix . 'gcm_payments',
 			array(
-				'user_id'          => get_current_user_id() ? get_current_user_id() : null,
-				'course_id'        => $course_id,
-				'full_name'        => sanitize_text_field( $data['full_name'] ?? '' ),
-				'email'            => $email,
-				'whatsapp'         => sanitize_text_field( $data['whatsapp'] ?? '' ),
-				'address'          => sanitize_textarea_field( $data['address'] ?? '' ),
-				'transaction_id'   => $transaction_id,
-				'payment_method'   => sanitize_text_field( $data['payment_method'] ?? '' ),
-				'amount'           => $amount,
-				'screenshot_id'    => $screenshot_id ? absint( $screenshot_id ) : null,
-				'status'           => 'under_review',
-				'rejection_reason' => null,
-				'submitted_at'     => current_time( 'mysql' ),
-				'reviewed_at'      => null,
-				'reviewed_by'      => null,
-				'account_created'  => 0,
-				'credentials_sent_at' => null,
-			),
-			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s' )
+				'user_id'         => get_current_user_id() ? get_current_user_id() : null,
+				'course_id'       => $course_id,
+				'full_name'       => sanitize_text_field( $data['full_name'] ?? '' ),
+				'email'           => $email,
+				'whatsapp'        => sanitize_text_field( $data['whatsapp'] ?? '' ),
+				'address'         => sanitize_textarea_field( $data['address'] ?? '' ),
+				'transaction_id'  => $transaction_id,
+				'payment_method'  => sanitize_text_field( $data['payment_method'] ?? '' ),
+				'amount'          => $amount,
+				'screenshot_id'   => $screenshot_id ? absint( $screenshot_id ) : null,
+				'status'          => 'under_review',
+				'submitted_at'    => current_time( 'mysql' ),
+				'account_created' => 0,
+			)
 		);
 
 		if ( ! $inserted ) {
 			return new WP_Error( 'gcm_payment_failed', __( 'Unable to submit payment. Please try again.', 'giga-class-market' ) );
 		}
 
-		$payment_id = (int) $wpdb->insert_id;
+		$payment_id = (int) $inserted;
 
 		if ( $coupon_id && class_exists( 'GCM_Coupon_Service' ) ) {
 			GCM_Coupon_Service::apply_to_payment( $coupon_id, $payment_id, get_current_user_id(), $course_id, $discount_amount );

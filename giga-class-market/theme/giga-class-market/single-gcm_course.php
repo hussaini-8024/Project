@@ -187,7 +187,7 @@ get_header();
 					<?php endif; ?>
 
 					<?php if ( $is_enrolled ) : ?>
-						<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>">
+						<form class="gcm-contact-form" data-gcm-ajax-form method="post" action="<?php echo esc_url( function_exists( 'gcm_public_ajax_url' ) ? gcm_public_ajax_url() : admin_url( 'admin-ajax.php' ) ); ?>">
 							<input type="hidden" name="action" value="gcm_submit_review">
 							<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>">
 							<input type="hidden" name="course_id" value="<?php echo esc_attr( $course_id ); ?>">
