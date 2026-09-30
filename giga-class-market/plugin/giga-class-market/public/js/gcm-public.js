@@ -37,13 +37,20 @@
 			if (json.success && form.classList.contains('gcm-contact-form')) {
 				form.reset();
 			}
-			if (json.success && (form.classList.contains('gcm-teacher-form') || form.getAttribute('data-action') === 'gcm_send_course_message')) {
+			var action = form.getAttribute('data-action');
+			if (json.success && json.data && json.data.id && (action === 'gcm_host_meeting' || action === 'gcm_start_class')) {
+				var hosted = new URL(window.location.href);
+				hosted.searchParams.set('hosted', String(json.data.id));
+				hosted.hash = 'hosted-meeting';
+				window.setTimeout(function () {
+					window.location.assign(hosted.toString());
+				}, 350);
+				return;
+			}
+			if (json.success && (form.classList.contains('gcm-teacher-form') || action === 'gcm_send_course_message')) {
 				window.setTimeout(function () {
 					window.location.reload();
 				}, 600);
-			}
-			if (json.success && json.data && json.data.start_url && form.getAttribute('data-action') === 'gcm_start_class') {
-				window.open(json.data.start_url, '_blank', 'noopener');
 			}
 		}).catch(function () {
 			setMessage(form, 'Request failed. Please try again.', false);
@@ -122,12 +129,11 @@
 				button.disabled = false;
 				return;
 			}
-			var meetingUrl = (json.data && (json.data.start_url || json.data.join_url)) || '';
-			if (meetingUrl && button.getAttribute('data-action') === 'gcm_start_class') {
-				window.open(meetingUrl, '_blank', 'noopener');
-				window.setTimeout(function () {
-					window.location.reload();
-				}, 500);
+			if (button.getAttribute('data-action') === 'gcm_start_class' && json.data && json.data.id) {
+				var hosted = new URL(window.location.href);
+				hosted.searchParams.set('hosted', String(json.data.id));
+				hosted.hash = 'hosted-meeting';
+				window.location.assign(hosted.toString());
 				return;
 			}
 			window.setTimeout(function () {
@@ -277,6 +283,13 @@
 			return;
 		}
 		copyText([shareData.text, shareData.url].filter(Boolean).join('\n\n'), shareBtn);
+	});
+
+	document.addEventListener('focusin', function (event) {
+		var field = event.target;
+		if (field && field.matches && field.matches('.gcm-meeting-invite input[readonly]')) {
+			field.select();
+		}
 	});
 
 	function escapeHtml(value) {

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GCM_THEME_VERSION', '1.8.0' );
+define( 'GCM_THEME_VERSION', '1.8.1' );
 define( 'GCM_THEME_DIR', get_template_directory() );
 define( 'GCM_THEME_URI', get_template_directory_uri() );
 
@@ -79,11 +79,16 @@ function gcm_enqueue_assets() {
 		$asset_ver
 	);
 
+	$dash_deps = array( 'gcm-main' );
+	if ( wp_style_is( 'gcm-public', 'registered' ) ) {
+		$dash_deps[] = 'gcm-public';
+	}
+
 	if ( is_page_template( 'page-templates/template-student-dashboard.php' ) || is_page_template( 'page-templates/template-course-learn.php' ) || is_page_template( 'page-templates/template-teacher-dashboard.php' ) ) {
 		wp_enqueue_style(
 			'gcm-dashboard',
 			GCM_THEME_URI . '/assets/css/dashboard.css',
-			array( 'gcm-main' ),
+			$dash_deps,
 			$asset_ver
 		);
 	}

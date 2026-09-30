@@ -53,6 +53,23 @@ $quizzes = ( $active_course_id && class_exists( 'GCM_Quiz_Service' ) )
 	? GCM_Quiz_Service::get_for_course( $active_course_id )
 	: array();
 
+$hosted_id    = isset( $_GET['hosted'] ) ? absint( $_GET['hosted'] ) : 0;
+$hosted_class = null;
+if ( $hosted_id && class_exists( 'GCM_Class_Service' ) ) {
+	$candidate = GCM_Class_Service::get( $hosted_id );
+	if ( $candidate && 'live' === $candidate->status ) {
+		$fixed = GCM_Class_Service::ensure_meeting_links( $hosted_id );
+		$hosted_class = is_wp_error( $fixed ) ? $candidate : $fixed;
+	}
+}
+if ( ! $hosted_class && $active_course_id && class_exists( 'GCM_Class_Service' ) ) {
+	$live = GCM_Class_Service::get_live_for_course( $active_course_id );
+	if ( $live ) {
+		$fixed = GCM_Class_Service::ensure_meeting_links( (int) $live->id );
+		$hosted_class = is_wp_error( $fixed ) ? $live : $fixed;
+	}
+}
+
 $upcoming = array_values(
 	array_filter(
 		(array) $classes,
@@ -74,9 +91,37 @@ get_header();
 	<div class="gcm-container">
 		<p class="gcm-eyebrow"><?php esc_html_e( 'Teacher dashboard', 'giga-class-market' ); ?></p>
 		<h1><?php echo esc_html( sprintf( __( 'Welcome, %s', 'giga-class-market' ), $user->display_name ) ); ?></h1>
-		<p><?php esc_html_e( 'Run live classes: set start and end times, start Zoom, share study materials, answer the course chat, and track attendance.', 'giga-class-market' ); ?></p>
+		<p><?php esc_html_e( 'Log in, host a meeting, then share the invitation link, Meeting ID, and passcode with your class.', 'giga-class-market' ); ?></p>
 	</div>
 </section>
+
+<?php if ( $hosted_class && 'live' === $hosted_class->status ) : ?>
+	<section id="hosted-meeting" class="gcm-hosted-meeting">
+		<div class="gcm-container">
+			<div class="gcm-hosted-meeting__card">
+				<p class="gcm-eyebrow"><?php esc_html_e( 'You are hosting', 'giga-class-market' ); ?></p>
+				<h2><?php echo esc_html( $hosted_class->title ); ?></h2>
+				<p><?php esc_html_e( 'Share these details with students. You can customize the passcode before they join.', 'giga-class-market' ); ?></p>
+				<p class="gcm-hosted-meeting__open">
+					<?php if ( ! empty( $hosted_class->zoom_start_url ) && class_exists( 'GCM_Zoom_Service' ) && GCM_Zoom_Service::is_usable_meeting_url( $hosted_class->zoom_start_url ) ) : ?>
+						<a class="gcm-button gcm-button--gold" href="<?php echo esc_url( $hosted_class->zoom_start_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open live class as host', 'giga-class-market' ); ?></a>
+					<?php endif; ?>
+					<button type="button" class="gcm-button gcm-button--outline gcm-teacher-action" data-action="gcm_end_class" data-class-id="<?php echo esc_attr( $hosted_class->id ); ?>"><?php esc_html_e( 'End class', 'giga-class-market' ); ?></button>
+				</p>
+				<?php
+				GCM_Class_Service::render_invite_panel(
+					$hosted_class,
+					array(
+						'can_edit_passcode' => true,
+						'is_host'           => true,
+						'variant'           => 'hosted',
+					)
+				);
+				?>
+			</div>
+		</div>
+	</section>
+<?php endif; ?>
 
 <section class="gcm-dashboard gcm-teacher-dashboard" data-gcm-teacher-dashboard>
 	<div class="gcm-container gcm-dashboard__grid">
@@ -105,7 +150,20 @@ get_header();
 						<h2><?php echo esc_html( sprintf( __( 'Classes — %s', 'giga-class-market' ), get_the_title( $active_course_id ) ) ); ?></h2>
 					</div>
 
-					<details class="gcm-teacher-panel" open>
+					<details class="gcm-teacher-panel" open id="host-meeting">
+						<summary><?php esc_html_e( 'Host a meeting now', 'giga-class-market' ); ?></summary>
+						<p><?php esc_html_e( 'After you host, this page shows the invitation link, Meeting ID, and passcode so you can share them.', 'giga-class-market' ); ?></p>
+						<form class="gcm-ajax-form gcm-teacher-form" data-action="gcm_host_meeting">
+							<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />
+							<input type="hidden" name="course_id" value="<?php echo esc_attr( $active_course_id ); ?>" />
+							<label><?php esc_html_e( 'Meeting title', 'giga-class-market' ); ?><input type="text" name="title" placeholder="<?php esc_attr_e( 'Optional', 'giga-class-market' ); ?>" /></label>
+							<label><?php esc_html_e( 'Passcode (optional)', 'giga-class-market' ); ?><input type="text" name="passcode" maxlength="10" placeholder="<?php esc_attr_e( 'Leave blank to auto-generate', 'giga-class-market' ); ?>" autocomplete="off" /></label>
+							<button type="submit" class="gcm-button gcm-button--gold"><?php esc_html_e( 'Host meeting', 'giga-class-market' ); ?></button>
+							<div class="gcm-form-message" aria-live="polite"></div>
+						</form>
+					</details>
+
+					<details class="gcm-teacher-panel">
 						<summary><?php esc_html_e( 'Schedule class (start & end)', 'giga-class-market' ); ?></summary>
 						<form class="gcm-ajax-form gcm-teacher-form" data-action="gcm_schedule_class">
 							<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'gcm_ajax_nonce' ) ); ?>" />

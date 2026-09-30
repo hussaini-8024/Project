@@ -330,54 +330,94 @@
 .gcm-host-passcode-field {
 	display: grid;
 	gap: 0.2rem;
-	font-size: 0.8rem;
-	font-weight: 700;
-	color: var(--gcm-muted);
+	font-size: 0.85rem;
+	font-weight: 800;
+	color: var(--gcm-navy-deep);
 }
 
 .gcm-host-passcode-field input {
 	width: 8.5rem;
-	padding: 0.45rem 0.6rem;
-	border: 1px solid var(--gcm-border);
+	padding: 0.5rem 0.65rem;
+	border: 2px solid var(--gcm-navy);
 	border-radius: 8px;
-	font-weight: 700;
+	font-weight: 800;
+	color: var(--gcm-navy-deep);
+	background: #fff;
+}
+
+.gcm-hosted-meeting {
+	padding: 0 0 1.5rem;
+	background: var(--gcm-bg);
+}
+
+.gcm-hosted-meeting__card {
+	padding: 1.5rem 1.6rem 1.7rem;
+	border-radius: 18px;
+	background:
+		linear-gradient(180deg, #fffdf6 0%, #ffffff 48%),
+		#fff;
+	border: 2px solid #e0a045;
+	box-shadow: 0 18px 40px rgba(7, 38, 46, 0.12);
+	color: var(--gcm-navy-deep);
+}
+
+.gcm-hosted-meeting__card h2 {
+	margin: 0.15rem 0 0.4rem;
+	color: var(--gcm-navy-deep);
+}
+
+.gcm-hosted-meeting__card > p {
+	color: #1c3d44;
+	font-size: 1.05rem;
+	font-weight: 600;
+}
+
+.gcm-hosted-meeting__open {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.65rem;
+	margin: 0.9rem 0 1.1rem;
 }
 
 .gcm-meeting-invite {
 	flex: 1 1 100%;
 	margin-top: 0.75rem;
-	padding: 0.95rem 1rem;
-	border-radius: 12px;
-	background: #fff;
-	color: var(--gcm-navy-deep, #0d3b45);
-	border: 1px solid var(--gcm-border);
+	padding: 1.1rem 1.15rem;
+	border-radius: 14px;
+	background: #0d3b45;
+	color: #fff;
+	border: 0;
 }
 
-.gcm-live-banner .gcm-meeting-invite {
-	background: rgba(255, 255, 255, 0.96);
+.gcm-live-banner .gcm-meeting-invite,
+.gcm-hosted-meeting .gcm-meeting-invite {
+	background: #0d3b45;
+	color: #fff;
 }
 
 .gcm-meeting-invite__label {
-	margin: 0 0 0.6rem;
-	font-size: 0.78rem;
+	margin: 0 0 0.75rem;
+	font-size: 0.82rem;
 	font-weight: 800;
-	letter-spacing: 0.04em;
+	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--gcm-muted);
+	color: #f0d08e;
 }
 
 .gcm-meeting-invite__grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-	gap: 0.75rem 1rem;
-	margin: 0;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.9rem 1.25rem;
+	margin: 0 0 1rem;
 }
 
 .gcm-meeting-invite__grid dt {
-	font-size: 0.75rem;
-	font-weight: 700;
-	color: var(--gcm-muted);
-	margin-bottom: 0.2rem;
+	font-size: 0.8rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #f0d08e;
+	margin-bottom: 0.3rem;
 }
 
 .gcm-meeting-invite__grid dd {
@@ -385,53 +425,127 @@
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 0.4rem;
+	gap: 0.5rem;
 }
 
 .gcm-meeting-invite code {
-	font-size: 1rem;
+	font-family: var(--gcm-font-ui), ui-monospace, monospace;
+	font-size: 1.45rem;
 	font-weight: 800;
-	letter-spacing: 0.04em;
+	letter-spacing: 0.06em;
+	color: #ffffff;
+	background: rgba(0, 0, 0, 0.22);
+	padding: 0.2rem 0.55rem;
+	border-radius: 8px;
 }
 
 .gcm-copy-value {
 	border: 0;
-	background: transparent;
-	color: var(--gcm-navy, #0d3b45);
-	font-weight: 700;
+	background: #e0a045;
+	color: #07262e;
+	font-weight: 800;
 	cursor: pointer;
-	padding: 0.1rem 0.35rem;
-	text-decoration: underline;
+	padding: 0.35rem 0.7rem;
+	border-radius: 999px;
+	text-decoration: none;
+	font-size: 0.85rem;
+}
+
+.gcm-copy-value:hover {
+	filter: brightness(1.08);
+	color: #07262e;
+}
+
+.gcm-meeting-invite__url {
+	margin-top: 0.85rem;
+}
+
+.gcm-meeting-invite__url label {
+	display: block;
+	margin: 0 0 0.35rem;
+	font-size: 0.8rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #f0d08e;
+}
+
+.gcm-meeting-invite__url-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.gcm-meeting-invite__url-row input[type="text"] {
+	flex: 1 1 220px;
+	min-width: 0;
+	max-width: none;
+	margin: 0;
+	padding: 0.7rem 0.85rem;
+	border: 2px solid #f0d08e;
+	border-radius: 10px;
+	background: #fff;
+	color: #07262e;
+	font-weight: 700;
+	font-size: 0.95rem;
 }
 
 .gcm-meeting-invite__passcode {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: flex-end;
-	gap: 0.6rem;
-	margin-top: 0.85rem;
+	gap: 0.65rem;
+	margin-top: 1rem;
+	padding: 0.85rem;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.1);
 }
 
 .gcm-meeting-invite__passcode label {
 	flex: 1 1 180px;
 	margin: 0;
+	color: #fff;
+	font-weight: 800;
+}
+
+.gcm-meeting-invite__passcode input[type="text"] {
+	margin-top: 0.35rem;
+	border: 2px solid #f0d08e;
+	background: #fff;
+	color: #07262e;
+	font-weight: 800;
+	font-size: 1.05rem;
 }
 
 .gcm-meeting-invite__hint {
-	margin: 0.5rem 0 0;
-	font-size: 0.85rem;
-	color: var(--gcm-muted);
+	margin: 0.6rem 0 0;
+	font-size: 0.9rem;
+	color: #f7ead0;
 }
 
 .gcm-meeting-invite__share {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin-top: 0.85rem;
+	gap: 0.55rem;
+	margin-top: 1rem;
 }
 
 .gcm-invite-source {
 	display: none !important;
+}
+
+.gcm-meeting-invite .gcm-button--outline {
+	background: #fff;
+	color: #0d3b45;
+	border-color: #f0d08e;
+}
+
+.gcm-meeting-invite .gcm-button--gold,
+.gcm-meeting-invite .gcm-copy-invite {
+	background: #e0a045;
+	color: #07262e;
+	border-color: #c4842a;
 }
 
 @media (max-width: 900px) {

@@ -43,6 +43,7 @@ class GCM_Ajax {
 
 		$teacher_actions = array(
 			'schedule_class',
+			'host_meeting',
 			'start_class',
 			'end_class',
 			'update_class_passcode',
@@ -552,6 +553,40 @@ class GCM_Ajax {
 	}
 
 	/**
+	 * Teacher hosts a meeting now (create + start) and returns shareable details.
+	 *
+	 * @return void
+	 */
+	public function host_meeting() {
+		GCM_Security::verify_ajax_nonce();
+		$this->require_teacher_or_admin();
+
+		$result = GCM_Class_Service::host_now(
+			array(
+				'course_id'  => isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0,
+				'teacher_id' => get_current_user_id(),
+				'title'      => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+				'passcode'   => isset( $_POST['passcode'] ) ? sanitize_text_field( wp_unslash( $_POST['passcode'] ) ) : '',
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		$payload = GCM_Class_Service::meeting_payload( $result );
+		wp_send_json_success(
+			array_merge(
+				$payload,
+				array(
+					'message' => __( 'Meeting hosted. Share the invitation link, Meeting ID, and passcode below.', 'giga-class-market' ),
+					'id'      => (int) $result->id,
+				)
+			)
+		);
+	}
+
+	/**
 	 * Teacher starts a class (creates Zoom meeting).
 	 *
 	 * @return void
@@ -583,7 +618,7 @@ class GCM_Ajax {
 			array_merge(
 				$payload,
 				array(
-					'message' => __( 'Class started. Meeting ID, passcode, and invitation are ready to share.', 'giga-class-market' ),
+					'message' => __( 'Meeting is live. Share the invitation link, Meeting ID, and passcode on this page.', 'giga-class-market' ),
 					'id'      => (int) $result->id,
 				)
 			)

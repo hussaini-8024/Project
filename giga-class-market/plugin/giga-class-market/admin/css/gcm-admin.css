@@ -266,33 +266,29 @@
 
 .gcm-meeting-invite {
 	margin-top: 8px;
-	padding: 12px 14px;
+	padding: 14px 16px;
 	border-radius: 12px;
-	background: #f7faf9;
-	border: 1px solid #e7e1d1;
-	max-width: 520px;
+	background: #0d3b45;
+	border: 0;
+	color: #fff;
+	max-width: 640px;
 }
 
-.gcm-meeting-invite__label {
+.gcm-meeting-invite__label,
+.gcm-meeting-invite__grid dt,
+.gcm-meeting-invite__url label {
 	margin: 0 0 8px;
 	font-size: 11px;
 	font-weight: 800;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: #5b6b70;
+	color: #f0d08e;
 }
 
 .gcm-meeting-invite__grid {
 	display: grid;
-	gap: 8px 12px;
-	margin: 0;
-}
-
-.gcm-meeting-invite__grid dt {
-	font-size: 11px;
-	font-weight: 700;
-	color: #5b6b70;
-	margin-bottom: 2px;
+	gap: 10px 12px;
+	margin: 0 0 12px;
 }
 
 .gcm-meeting-invite__grid dd {
@@ -304,17 +300,45 @@
 }
 
 .gcm-meeting-invite code {
-	font-size: 14px;
+	font-size: 18px;
 	font-weight: 800;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.22);
+	padding: 3px 8px;
+	border-radius: 8px;
 }
 
 .gcm-copy-value {
 	border: 0;
-	background: transparent;
-	color: var(--gcm-navy);
-	font-weight: 700;
+	background: #e0a045;
+	color: #07262e;
+	font-weight: 800;
 	cursor: pointer;
-	text-decoration: underline;
+	padding: 4px 10px;
+	border-radius: 999px;
+	text-decoration: none;
+}
+
+.gcm-meeting-invite__url {
+	margin-top: 10px;
+}
+
+.gcm-meeting-invite__url-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+.gcm-meeting-invite__url-row input[type="text"] {
+	flex: 1 1 220px;
+	min-width: 180px;
+	padding: 8px 10px;
+	border: 2px solid #f0d08e;
+	border-radius: 8px;
+	background: #fff;
+	color: #07262e;
+	font-weight: 700;
 }
 
 .gcm-meeting-invite__passcode {
@@ -322,17 +346,26 @@
 	flex-wrap: wrap;
 	align-items: flex-end;
 	gap: 8px;
-	margin-top: 10px;
+	margin-top: 12px;
+}
+
+.gcm-meeting-invite__passcode label {
+	color: #fff;
+	font-weight: 800;
 }
 
 .gcm-meeting-invite__share {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
-	margin-top: 10px;
+	margin-top: 12px;
 }
 
 .gcm-meeting-invite__hint {
 	margin: 6px 0 0;
-	color: #5b6b70;
+	color: #f7ead0;
+}
+
+.gcm-invite-source {
+	display: none !important;
 }

@@ -59,8 +59,10 @@
 				<li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>"><?php esc_html_e( 'About Us', 'giga-class-market' ); ?></a></li>
 				<?php if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) : ?>
 					<li class="gcm-menu__account"><a href="<?php echo esc_url( admin_url() ); ?>"><?php esc_html_e( 'Admin', 'giga-class-market' ); ?></a></li>
+					<li class="gcm-menu__account"><a href="<?php echo esc_url( home_url( '/teacher-dashboard/#host-meeting' ) ); ?>"><?php esc_html_e( 'Host meeting', 'giga-class-market' ); ?></a></li>
 				<?php elseif ( is_user_logged_in() && current_user_can( 'gcm_teacher_dashboard' ) ) : ?>
 					<li class="gcm-menu__account"><a href="<?php echo esc_url( home_url( '/teacher-dashboard/' ) ); ?>"><?php esc_html_e( 'Teacher Dashboard', 'giga-class-market' ); ?></a></li>
+					<li class="gcm-menu__account"><a href="<?php echo esc_url( home_url( '/teacher-dashboard/#host-meeting' ) ); ?>"><?php esc_html_e( 'Host meeting', 'giga-class-market' ); ?></a></li>
 				<?php endif; ?>
 			</ul>
 		</nav>

@@ -43,18 +43,28 @@ $uid        = 'gcm-meet-' . $class_id . '-' . $variant;
 				<?php endif; ?>
 			</dd>
 		</div>
-		<div class="gcm-meeting-invite__link">
-			<dt><?php esc_html_e( 'Join by link', 'giga-class-market' ); ?></dt>
-			<dd>
-				<?php if ( $join_url ) : ?>
-					<a href="<?php echo esc_url( $join_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open join link', 'giga-class-market' ); ?></a>
-					<button type="button" class="gcm-copy-value" data-copy="<?php echo esc_attr( $join_url ); ?>"><?php esc_html_e( 'Copy link', 'giga-class-market' ); ?></button>
-				<?php else : ?>
-					—
-				<?php endif; ?>
-			</dd>
-		</div>
 	</dl>
+
+	<?php if ( $invite_url ) : ?>
+		<div class="gcm-meeting-invite__url">
+			<label for="<?php echo esc_attr( $uid ); ?>-invite"><?php esc_html_e( 'Invitation link', 'giga-class-market' ); ?></label>
+			<div class="gcm-meeting-invite__url-row">
+				<input id="<?php echo esc_attr( $uid ); ?>-invite" type="text" readonly value="<?php echo esc_attr( $invite_url ); ?>" />
+				<button type="button" class="gcm-button gcm-button--small gcm-copy-value" data-copy="<?php echo esc_attr( $invite_url ); ?>"><?php esc_html_e( 'Copy link', 'giga-class-market' ); ?></button>
+			</div>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $join_url ) : ?>
+		<div class="gcm-meeting-invite__url">
+			<label for="<?php echo esc_attr( $uid ); ?>-join"><?php esc_html_e( 'Join by meeting link', 'giga-class-market' ); ?></label>
+			<div class="gcm-meeting-invite__url-row">
+				<input id="<?php echo esc_attr( $uid ); ?>-join" type="text" readonly value="<?php echo esc_attr( $join_url ); ?>" />
+				<button type="button" class="gcm-button gcm-button--small gcm-copy-value" data-copy="<?php echo esc_attr( $join_url ); ?>"><?php esc_html_e( 'Copy link', 'giga-class-market' ); ?></button>
+				<a class="gcm-button gcm-button--small gcm-button--outline" href="<?php echo esc_url( $join_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open', 'giga-class-market' ); ?></a>
+			</div>
+		</div>
+	<?php endif; ?>
 
 	<?php if ( $can_edit ) : ?>
 		<form class="gcm-ajax-form gcm-teacher-form gcm-meeting-invite__passcode" data-action="gcm_update_class_passcode">
@@ -79,10 +89,7 @@ $uid        = 'gcm-meet-' . $class_id . '-' . $variant;
 			type="button"
 			class="gcm-button gcm-button--small gcm-button--outline gcm-share-invite"
 			data-title="<?php echo esc_attr( sprintf( __( 'Join: %s', 'giga-class-market' ), $class->title ) ); ?>"
-			data-url="<?php echo esc_url( $join_url ? $join_url : $invite_url ); ?>"
+			data-url="<?php echo esc_url( $invite_url ? $invite_url : $join_url ); ?>"
 		><?php esc_html_e( 'Share invitation', 'giga-class-market' ); ?></button>
-		<?php if ( $invite_url ) : ?>
-			<button type="button" class="gcm-button gcm-button--small gcm-button--outline gcm-copy-value" data-copy="<?php echo esc_attr( $invite_url ); ?>"><?php esc_html_e( 'Copy invitation link', 'giga-class-market' ); ?></button>
-		<?php endif; ?>
 	</div>
 </div>

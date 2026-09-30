@@ -24,6 +24,8 @@ if ( ! $redirect_to || false !== strpos( $redirect_to, 'wp-login.php' ) ) {
 	$redirect_to = home_url( '/student-dashboard/' );
 }
 
+$is_host_login = ( false !== strpos( (string) $redirect_to, 'teacher-dashboard' ) || isset( $_GET['host'] ) );
+
 $action      = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : 'login';
 $error       = '';
 $info        = '';
@@ -76,6 +78,9 @@ if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['gcm_login
 					$target = ( $redirect_to && false !== strpos( $redirect_to, 'teacher' ) )
 						? $redirect_to
 						: home_url( '/teacher-dashboard/' );
+					if ( false === strpos( $target, 'host=' ) && false === strpos( $target, '#' ) ) {
+						$target = add_query_arg( 'host', '1', $target );
+					}
 				} elseif ( in_array( 'gcm_student', (array) $user->roles, true ) ) {
 					$target = $redirect_to ? $redirect_to : home_url( '/student-dashboard/' );
 				} else {
@@ -93,9 +98,9 @@ get_header();
 <section class="gcm-auth-page">
 	<div class="gcm-container gcm-auth-page__grid">
 		<div class="gcm-auth-page__copy gcm-animate">
-			<p class="gcm-eyebrow"><?php esc_html_e( 'Student & teacher access', 'giga-class-market' ); ?></p>
-			<h1><?php esc_html_e( 'Continue your premium learning path', 'giga-class-market' ); ?></h1>
-			<p><?php esc_html_e( 'Sign in with the credentials provided by Giga Class Market. Students land on their dashboard; teachers land on the teacher dashboard. Same login page for everyone.', 'giga-class-market' ); ?></p>
+			<p class="gcm-eyebrow"><?php echo esc_html( $is_host_login ? __( 'Host meeting', 'giga-class-market' ) : __( 'Student & teacher access', 'giga-class-market' ) ); ?></p>
+			<h1><?php echo esc_html( $is_host_login ? __( 'Log in to host your meeting', 'giga-class-market' ) : __( 'Continue your premium learning path', 'giga-class-market' ) ); ?></h1>
+			<p><?php echo esc_html( $is_host_login ? __( 'Sign in to host your meeting. After you host, you will see the invitation link, Meeting ID, and passcode.', 'giga-class-market' ) : __( 'Sign in with the credentials provided by Giga Class Market. Students land on their dashboard; teachers land on the teacher dashboard. Same login page for everyone.', 'giga-class-market' ) ); ?></p>
 		</div>
 
 		<?php if ( 'lostpassword' === $action ) : ?>

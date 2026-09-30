@@ -89,6 +89,39 @@ class GCM_Class_Service {
 	}
 
 	/**
+	 * Host a meeting immediately: schedule for now and start it.
+	 *
+	 * @param array $data Host data.
+	 * @return object|WP_Error Live class row.
+	 */
+	public static function host_now( $data ) {
+		$tz    = wp_timezone();
+		$start = new DateTimeImmutable( 'now', $tz );
+		$end   = $start->modify( '+60 minutes' );
+		$title = sanitize_text_field( $data['title'] ?? '' );
+		if ( ! $title ) {
+			$course_id = absint( $data['course_id'] ?? 0 );
+			$title     = sprintf( __( 'Live class — %s', 'giga-class-market' ), $course_id ? get_the_title( $course_id ) : __( 'Giga Class Market', 'giga-class-market' ) );
+		}
+
+		$class_id = self::schedule(
+			array(
+				'course_id'     => $data['course_id'] ?? 0,
+				'teacher_id'    => $data['teacher_id'] ?? get_current_user_id(),
+				'title'         => $title,
+				'scheduled_at'  => $start->format( 'Y-m-d H:i:s' ),
+				'scheduled_end' => $end->format( 'Y-m-d H:i:s' ),
+				'passcode'      => $data['passcode'] ?? '',
+			)
+		);
+		if ( is_wp_error( $class_id ) ) {
+			return $class_id;
+		}
+
+		return self::start( (int) $class_id, absint( $data['teacher_id'] ?? get_current_user_id() ), isset( $data['passcode'] ) ? (string) $data['passcode'] : '' );
+	}
+
+	/**
 	 * Duration in minutes from schedule.
 	 *
 	 * @param object $class Class row.

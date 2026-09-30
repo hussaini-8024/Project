@@ -32,18 +32,31 @@
 }
 
 .gcm-button,
-.gcm-ajax-form button,
 .gcm-course-search button,
 .gcm-complete-lesson {
 	background: #0d3b45;
-	border: 0;
+	border: 2px solid #0d3b45;
 	border-radius: 999px;
-	color: #e0a045;
+	color: #ffffff;
 	cursor: pointer;
 	display: inline-block;
-	font-weight: 700;
+	font-weight: 800;
 	padding: 10px 18px;
 	text-decoration: none;
+}
+
+.gcm-button--gold,
+.gcm-ajax-form .gcm-button--gold {
+	background: #e0a045;
+	border-color: #c4842a;
+	color: #07262e;
+}
+
+.gcm-button--outline,
+.gcm-ajax-form .gcm-button--outline {
+	background: #ffffff;
+	border: 2px solid #0d3b45;
+	color: #0d3b45;
 }
 
 .gcm-ajax-form label,

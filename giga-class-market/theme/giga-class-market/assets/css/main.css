@@ -7,21 +7,21 @@
 	--gcm-blue: #1FA8A0;
 	--gcm-bg: #F2F6F6;
 	--gcm-surface: #FFFFFF;
-	--gcm-text: #0D2A2E;
-	--gcm-muted: #5A7075;
+	--gcm-text: #0A1F24;
+	--gcm-muted: #35555B;
 	--gcm-border: rgba(13, 59, 69, 0.1);
 	--gcm-radius: 14px;
 	--gcm-shadow: 0 12px 40px rgba(7, 38, 46, 0.08);
 	/* First bold type system: Fraunces display + Outfit UI */
 	--gcm-font-ui: "Outfit", "Segoe UI", sans-serif;
 	--gcm-font-display: "Fraunces", Georgia, serif;
-	--gcm-fs-body: 1.0625rem;
+	--gcm-fs-body: 1.125rem;
 	--gcm-lh-body: 1.7;
 	--gcm-lh-tight: 1.12;
 	--gcm-tracking-display: -0.02em;
 	--gcm-tracking-ui: -0.01em;
 	--gcm-tracking-label: 0.14em;
-	--gcm-weight-display: 700;
+	--gcm-weight-display: 800;
 	--gcm-weight-body: 600;
 	--gcm-weight-strong: 800;
 	--gcm-header-height: 82px;
@@ -359,46 +359,58 @@ html[data-theme="dark"] .gcm-theme-toggle::after {
 	gap: 0.5rem;
 	min-height: 48px;
 	padding: 0.85rem 1.35rem;
-	border: 1px solid transparent;
+	border: 2px solid transparent;
 	border-radius: 999px;
 	background: var(--gcm-navy);
 	color: #fff;
 	font-family: var(--gcm-font-ui);
-	font-size: 0.94rem;
-	font-weight: 700;
+	font-size: 1rem;
+	font-weight: 800;
 	letter-spacing: 0.02em;
 	cursor: pointer;
 	box-shadow: 0 14px 30px rgba(11,27,51,0.12);
-	transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+	transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, filter 180ms ease;
 }
 
 .gcm-button:hover {
 	transform: translateY(-2px);
 	box-shadow: 0 20px 42px rgba(11,27,51,0.18);
+	filter: brightness(1.05);
+	color: #fff;
 }
 
 .gcm-button--gold {
-	background: linear-gradient(135deg, var(--gcm-gold), var(--gcm-gold-soft));
-	color: var(--gcm-navy-deep);
+	background: linear-gradient(135deg, #f3b45a, #e0a045);
+	border-color: #c4842a;
+	color: #07262e;
+}
+
+.gcm-button--gold:hover {
+	color: #07262e;
 }
 
 .gcm-button--ghost {
-	background: rgba(255,255,255,0.08);
+	background: rgba(255,255,255,0.14);
 	color: #fff;
-	border-color: rgba(255,255,255,0.22);
+	border-color: rgba(255,255,255,0.55);
 }
 
 .gcm-button--ghost-dark {
 	background: rgba(6,16,31,0.18);
 	color: #fff;
-	border-color: rgba(255,255,255,0.2);
+	border-color: rgba(255,255,255,0.45);
 }
 
 .gcm-button--outline {
-	background: transparent;
-	color: var(--gcm-text);
-	border-color: var(--gcm-border);
+	background: #fff;
+	color: var(--gcm-navy-deep);
+	border-color: var(--gcm-navy);
 	box-shadow: none;
+}
+
+.gcm-button--outline:hover {
+	background: var(--gcm-navy);
+	color: #fff;
 }
 
 .gcm-button--small {
@@ -1651,9 +1663,11 @@ textarea {
 }
 
 .gcm-auth-card__link {
-	color: var(--gcm-gold);
-	font-weight: 700;
+	color: #0d3b45;
+	font-weight: 800;
 	text-align: center;
+	text-decoration: underline;
+	text-underline-offset: 3px;
 }
 
 .gcm-auth-card .gcm-form-message {
